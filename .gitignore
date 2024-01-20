@@ -1,36 +1,47 @@
-# Idea
-.idea/*
+# Ignore docs files
+_gh_pages
+_site
+_drafts
+.ruby-version
 
-# Mac OS
+# Numerous always-ignore extensions
+*.diff
+*.err
+*.orig
+*.log
+*.rej
+*.swo
+*.swp
+*.zip
+*.vi
+*~
+
+# OS or Editor folders
 .DS_Store
+._*
+Thumbs.db
+.cache
+.project
+.settings
+.tmproj
+*.esproj
+nbproject
+*.sublime-project
+*.sublime-workspace
+.idea
 
-# Byte-compiled / optimized / DLL files
-*.manifest
-*.spec
+# Komodo
+*.komodoproject
+.komodotools
 
-# Jekyll dev or build
-_site/*
-_development_tool/*
-.sass-cache/*
-*.css.map
-*.scssc
-.bundle/*
-/vendor/
-.jekyll-cache/*
-*/.jekyll-cache/*
+# grunt-html-validation
+validation-status.json
+validation-report.json
 
-# Theme Gem
-Gemfile.lock
+# Folders to ignore
+_posts_ing
+theorydb.github.io
+node_modules
+.sass-cache
+.jekyll-metadata
 *.gem
-.gems
-jekyll-theme-type-on-strap.gemspec
-
-# Node.js
-**/node_modules/*
-**/package-lock.json
-
-# Misc
-*-test.md
-*copy.md
-test/*
-/type-on-strap*/*
