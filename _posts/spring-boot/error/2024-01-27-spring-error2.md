@@ -2,7 +2,7 @@
 title: Spring Error - Bean 등록 오류 Not a managed type; class org. ...
 author: cotes
 date: 2024-01-27
-categories: [Spring Boot, Error]
+categories: [Web, Spring Boot]
 tags: [Spring Boot, Error]
 ---
 

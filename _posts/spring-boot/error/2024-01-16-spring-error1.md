@@ -2,7 +2,7 @@
 title: Spring Error - Repository 생성 시 Not a managed type; class java.lang.Object 오류
 author: cotes
 date: 2024-01-16
-categories: [Spring Boot, Error]
+categories: [Web, Spring Boot]
 tags: [Spring Boot, Error]
 ---
 
@@ -54,7 +54,6 @@ public interface SpringDataMembershipRepository extends JpaRepository<Membership
 }
 ```
 
-## 참고
-
+## Reference
 - [[JPA] Respository 만들 때 Not a managed type: class java.lang.Object 오류](https://jinseobbae.github.io/jpa/2021/12/06/jpa-repository-not-managed-type-error.html)
 - [[Spring Data Common] Repository, @NoRepositoryBean](https://parkadd.tistory.com/107)
