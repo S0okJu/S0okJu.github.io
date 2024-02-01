@@ -1,7 +1,7 @@
 ---
 title: Terraform 기초 맛보기 - 2. Backend 
 author: cotes
-date: 2024-02-01ㄴ
+date: 2024-02-01
 categories: [DevOps, Terraform]
 tags: [DevOps, Terraform]
 ---
@@ -114,7 +114,6 @@ _출처 - 저자 캡쳐_
 참고로 Remote Backend을 설정하게 되면 로컬에 있는 상태 파일 내용은 사라지게 된다. 
 ![basic-terraform-img3](/assets/img/post/2024-02-01/basic-terraform-img3.png)
 _출처 - 저자 캡쳐_
-
 
 ## Reference
 - [Backend Type: s3, Terraform ,HashiCorp Developer](https://developer.hashicorp.com/terraform/language/settings/backends/s3)
