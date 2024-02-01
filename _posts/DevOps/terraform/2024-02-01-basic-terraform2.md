@@ -57,7 +57,7 @@ operation error S3: PutBucketAcl, https response error StatusCode: 400,
 > **Warning!** It is highly recommended that you enable [Bucket Versioning](https://docs.aws.amazon.com/AmazonS3/latest/userguide/manage-versioning-examples.html) on the S3 bucket to allow for state recovery in the case of accidental deletions and human error.
 > 
 > 
-> 출처 - [Backend Type: s3 ,Terraform, HashiCorp Developer](https://developer.> hashicorp.com/terraform/language/settings/backends/s3)
+> 출처 - [Backend Type: s3 ,Terraform, HashiCorp Developer](https://developer.hashicorp.com/terraform/language/settings/backends/s3)
 {: .prompt-danger }
 
 ```hcl
@@ -116,5 +116,5 @@ _출처 - 저자 캡쳐_
 _출처 - 저자 캡쳐_
 
 ## Reference
-- [Backend Type: s3, Terraform ,HashiCorp Developer](https://developer.hashicorp.com/terraform/language/settings/backends/s3)
+- [Backend Type: s3, Terraform, HashiCorp Developer](https://developer.hashicorp.com/terraform/language/settings/backends/s3)
 - [Backend 활용하기 :: Terraform & AWS 101](https://terraform101.inflearn.devopsart.dev/advanced/backend/)
