@@ -2,7 +2,7 @@
 title: Terraform 기초 맛보기 - 2. Backend 
 author: cotes
 date: 2024-02-01
-categories: [DevOps, Terraform]
+categories: [DevOps, laC]
 tags: [DevOps, Terraform]
 ---
 ## backend

@@ -2,7 +2,7 @@
 title: Terraform 기초 맛보기 - 1. 기본 문법 익히기  
 author: cotes
 date: 2024-01-25
-categories: [DevOps, Terraform]
+categories: [DevOps, laC]
 tags: [DevOps, Terraform]
 ---
 
