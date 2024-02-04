@@ -2,7 +2,7 @@
 title: Terraform Error - 강제 Backend S3 삭제로 인한 NoSuchBucket 오류 해결 
 author: cotes
 date: 2024-01-29
-categories: [DevOps, Terraform]
+categories: [DevOps, laC]
 tags: [DevOps, Terraform, Error]
 ---
 
