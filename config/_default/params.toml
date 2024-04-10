@@ -25,7 +25,7 @@ showMoreLink = "enable"
 showMoreLinkDest = "/posts"
 cardView = "enable"
 cardViewScreenWidth = false
-layoutBackgroundBlur = false
+layoutBackgroundBlur = "enable"
 
 [article]
 showDate = true
