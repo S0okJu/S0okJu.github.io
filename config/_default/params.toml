@@ -2,10 +2,12 @@ colorScheme = "blowfish"
 defaultAppearance = "light"
 autoSwitchAppearance = true
 enableSearch = true
-enableCodeCopy = false
+enableCodeCopy = "disable"
 disableImageOptimization = false
 disableTextInHeader = false
 smartTOC = true
+smartTOCHideUnfocusedChildren = "enable"
+defaultFeaturedImage = "featured.svg"
 
 [header]
 layout = "basic"

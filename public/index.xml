@@ -9,33 +9,13 @@
     <copyright>© 2024 D7MeKz</copyright>
     <lastBuildDate>Wed, 10 Apr 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>hello world</title>
-      <link>http://localhost:1313/posts/1712716549573-hello-world/</link>
+      <title>Gin 예외처리2. 커스텀 예외처리</title>
+      <link>http://localhost:1313/project/todopoint/gin-error-handling2/</link>
       <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/posts/1712716549573-hello-world/</guid>
-      <description>an example to get you started</description>
-      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/posts/1712716549573-hello-world/featured.png" />
-    </item>
-    
-    <item>
-      <title>newsletter New</title>
-      <link>http://localhost:1313/newsletter/1712719172480-newsletter-new/</link>
-      <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
-      
-      <guid>http://localhost:1313/newsletter/1712719172480-newsletter-new/</guid>
-      <description>an example to get you started</description>
-      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/newsletter/1712719172480-newsletter-new/featured.png" />
-    </item>
-    
-    <item>
-      <title>sample</title>
-      <link>http://localhost:1313/posts/1712716506693-sample/</link>
-      <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
-      
-      <guid>http://localhost:1313/posts/1712716506693-sample/</guid>
-      <description>an example to get you started</description>
-      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/posts/1712716506693-sample/featured.png" />
+      <guid>http://localhost:1313/project/todopoint/gin-error-handling2/</guid>
+      <description>Thumbnail: Designed by Freepik</description>
+      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/project/todopoint/gin-error-handling2/featured_todopoint.jpg" />
     </item>
     
   </channel>
