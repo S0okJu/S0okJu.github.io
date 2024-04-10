@@ -1,0 +1,17 @@
+languageCode = "en"
+languageName = "English"
+weight = 5
+title = "go D7MeKz"
+
+[params]
+displayName = "EN"
+isoCode = "en"
+rtl = false
+dateFormat = "2 January 2006"
+logo = "none"
+
+[author]
+name = "D7MeKz"
+image = "profile.jpg"
+links = [ { github = "https://github.com/D7MeKz" } ]
+headline = "#Go #Kubernetes #Cloud"

@@ -1,0 +1,37 @@
+[[main]]
+none = "none"
+
+[[main]]
+name = "Posts"
+pre = "none"
+pageRef = "posts"
+identifier = "7lR9hnBGtU"
+weight = 2
+
+[[main]]
+name = "Projects"
+pre = "none"
+pageRef = "project"
+identifier = "45jJ2sWfUN"
+weight = 1
+
+[[main]]
+name = "Newsletter"
+pageRef = "newsletter"
+identifier = "UC6XjwEfSh"
+weight = 3
+
+[[footer]]
+none = "none"
+
+[[footer]]
+name = "Tags"
+pageRef = "tags"
+identifier = "fDSwIocVfw"
+weight = 9999
+
+[[footer]]
+name = "Categories"
+pageRef = "categories"
+identifier = "8q8rK4e3J0"
+weight = 9999

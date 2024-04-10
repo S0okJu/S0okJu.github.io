@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Newsletters on go D7MeKz</title>
+    <link>http://localhost:1313/newsletter/</link>
+    <description>Recent content in Newsletters on go D7MeKz</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en</language>
+    <copyright>© 2024 D7MeKz</copyright>
+    <lastBuildDate>Wed, 10 Apr 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/newsletter/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>newsletter New</title>
+      <link>http://localhost:1313/newsletter/1712719172480-newsletter-new/</link>
+      <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/newsletter/1712719172480-newsletter-new/</guid>
+      <description>an example to get you started</description>
+      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/newsletter/1712719172480-newsletter-new/featured.png" />
+    </item>
+    
+  </channel>
+</rss>
