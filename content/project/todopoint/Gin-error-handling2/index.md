@@ -1,5 +1,5 @@
 ---
-title: "Gin 예외처리2. 커스텀 예외처리"
+title: "Gin 예외처리 - 2. 커스텀 예외처리"
 date: 2024-04-10
 draft: false
 tags: ["Golang", "Gin"]
