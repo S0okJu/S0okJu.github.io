@@ -33,7 +33,7 @@ layoutBackgroundBlur = "enable"
 showDate = "show"
 showViews = false
 showLikes = false
-showDateOnlyInArticle = false
+showDateOnlyInArticle = true
 showDateUpdated = true
 showAuthor = true
 showHero = "show"
@@ -45,12 +45,11 @@ showEdit = false
 editAppendPath = true
 seriesOpened = false
 showHeadingAnchors = true
-showPagination = true
-invertPagination = false
+showPagination = "show"
 showReadingTime = true
 showTableOfContents = "show"
 showTaxonomies = "show"
-showAuthorsBadges = false
+showAuthorsBadges = "show"
 showWordCount = false
 showZenMode = "show"
 heroStyle = "big"
@@ -80,7 +79,6 @@ showBreadcrumbs = "hide"
 showViews = false
 showLikes = false
 showTableOfContents = "show"
-
 
 [term]
 showHero = "show"

@@ -3,9 +3,10 @@ title: "Todopoint"
 description: "Thumbnail: Designed by Freepik"
 
 cascade:
-  showDate: false
-  showAuthor: false
-  invertPagination: true
+  showDate: true
+  showAuthor: true
+  invertPagination: false
+
 ---
 
 - GitHub :

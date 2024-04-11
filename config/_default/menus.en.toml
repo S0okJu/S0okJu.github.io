@@ -2,9 +2,9 @@
 none = "none"
 
 [[main]]
-name = "Posts"
+name = "Study"
 pre = "none"
-pageRef = "posts"
+pageRef = "study"
 identifier = "7lR9hnBGtU"
 weight = 2
 
