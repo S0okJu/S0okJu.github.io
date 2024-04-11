@@ -10,7 +10,7 @@ smartTOCHideUnfocusedChildren = "enable"
 defaultFeaturedImage = "featured.svg"
 
 [header]
-layout = "basic"
+layout = "fixed"
 
 [footer]
 showMenu = true
@@ -30,11 +30,11 @@ cardViewScreenWidth = false
 layoutBackgroundBlur = "enable"
 
 [article]
-showDate = true
+showDate = "show"
 showViews = false
 showLikes = false
 showDateOnlyInArticle = false
-showDateUpdated = false
+showDateUpdated = true
 showAuthor = true
 showHero = "show"
 layoutBackgroundBlur = true
@@ -52,35 +52,35 @@ showTableOfContents = "show"
 showTaxonomies = "show"
 showAuthorsBadges = false
 showWordCount = false
-showZenMode = false
-heroStyle = "background"
+showZenMode = "show"
+heroStyle = "big"
 
 [list]
-showHero = false
+showHero = "show"
 layoutBackgroundBlur = true
 layoutBackgroundHeaderSpace = true
-showBreadcrumbs = false
+showBreadcrumbs = true
 showSummary = false
 showViews = false
 showLikes = false
 showTableOfContents = false
 showCards = false
 groupByYear = true
-cardView = false
 cardViewScreenWidth = false
 constrainItemsWidth = false
+heroStyle = "background"
 
 [sitemap]
 excludedKinds = [ "taxonomy", "term" ]
 
 [taxonomy]
 showTermCount = "show"
-showHero = "sjpw"
+showHero = false
 showBreadcrumbs = "hide"
 showViews = false
 showLikes = false
 showTableOfContents = "show"
-cardView = "enable"
+cardView = "disable"
 
 [term]
 showHero = "show"
@@ -91,7 +91,7 @@ showTableOfContents = true
 groupByYear = false
 cardView = "enable"
 cardViewScreenWidth = false
-heroStyle = "basic"
+heroStyle = "background"
 
 [firebase]
 

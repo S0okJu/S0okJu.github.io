@@ -15,7 +15,6 @@ pageRef = "project"
 identifier = "45jJ2sWfUN"
 weight = 1
 
-
 [[main]]
 name = "Newsletter"
 pageRef = "newsletter"
@@ -29,10 +28,10 @@ none = "none"
 name = "Tags"
 pageRef = "tags"
 identifier = "fDSwIocVfw"
-weight = 9999
+weight = 2
 
 [[footer]]
 name = "Categories"
 pageRef = "categories"
 identifier = "8q8rK4e3J0"
-weight = 9999
+weight = 1
