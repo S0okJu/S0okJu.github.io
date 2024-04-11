@@ -60,11 +60,11 @@ showHero = "show"
 layoutBackgroundBlur = true
 layoutBackgroundHeaderSpace = true
 showBreadcrumbs = true
-showSummary = false
+showSummary = true
 showViews = false
 showLikes = false
 showTableOfContents = false
-showCards = false
+showCards = true
 groupByYear = true
 cardViewScreenWidth = false
 constrainItemsWidth = false
@@ -80,7 +80,7 @@ showBreadcrumbs = "hide"
 showViews = false
 showLikes = false
 showTableOfContents = "show"
-cardView = "disable"
+
 
 [term]
 showHero = "show"
@@ -89,7 +89,6 @@ showViews = false
 showLikes = false
 showTableOfContents = true
 groupByYear = false
-cardView = "enable"
 cardViewScreenWidth = false
 heroStyle = "background"
 
