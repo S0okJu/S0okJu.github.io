@@ -4,14 +4,14 @@ none = "none"
 [[main]]
 name = "Study"
 pre = "none"
-pageRef = "study"
+pageRef = "posts/study"
 identifier = "7lR9hnBGtU"
 weight = 2
 
 [[main]]
 name = "Projects"
 pre = "none"
-pageRef = "project"
+pageRef = "posts/project"
 identifier = "45jJ2sWfUN"
 weight = 1
 
