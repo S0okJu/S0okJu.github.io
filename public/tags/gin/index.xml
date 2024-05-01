@@ -2,30 +2,30 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Gin on NooOTe</title>
-    <link>http://localhost:1313/tags/gin/</link>
+    <link>http://localhost:49538/tags/gin/</link>
     <description>Recent content in Gin on NooOTe</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <copyright>© 2024 D7MeKz</copyright>
-    <lastBuildDate>Wed, 10 Apr 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/gin/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 10 Apr 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:49538/tags/gin/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Gin 예외처리 - 2. 커스텀 예외처리</title>
-      <link>http://localhost:1313/posts/project/todopoint/gin-error-handling2/</link>
+      <link>http://localhost:49538/posts/project/todopoint/gin-error-handling2/</link>
       <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/posts/project/todopoint/gin-error-handling2/</guid>
+      <guid>http://localhost:49538/posts/project/todopoint/gin-error-handling2/</guid>
       <description>Thumbnail: Designed by Freepik</description>
-      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/posts/project/todopoint/gin-error-handling2/featured_todopoint.jpg" />
+      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:49538/posts/project/todopoint/gin-error-handling2/featured_todopoint.jpg" />
     </item>
     
     <item>
       <title>Gin 예외처리 - 1. Go Error</title>
-      <link>http://localhost:1313/posts/project/todopoint/gin-error-handling1/</link>
+      <link>http://localhost:49538/posts/project/todopoint/gin-error-handling1/</link>
       <pubDate>Wed, 03 Apr 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:1313/posts/project/todopoint/gin-error-handling1/</guid>
+      <guid>http://localhost:49538/posts/project/todopoint/gin-error-handling1/</guid>
       <description>Thumbnail: Designed by Freepik</description>
-      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/posts/project/todopoint/gin-error-handling1/featured_todopoint.jpg" />
+      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:49538/posts/project/todopoint/gin-error-handling1/featured_todopoint.jpg" />
     </item>
     
   </channel>
