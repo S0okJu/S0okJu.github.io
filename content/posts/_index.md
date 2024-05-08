@@ -6,5 +6,5 @@ cascade:
   showDate: false
   showAuthor: false
   invertPagination: true
-  cardView: true
+  cardView: false
 ---

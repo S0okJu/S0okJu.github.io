@@ -2,68 +2,78 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on NooOTe</title>
-    <link>http://localhost:49538/tags/</link>
+    <link>http://localhost:1313/tags/</link>
     <description>Recent content in Tags on NooOTe</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <copyright>© 2024 D7MeKz</copyright>
-    <lastBuildDate>Wed, 01 May 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:49538/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 08 May 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Flutter</title>
+      <link>http://localhost:1313/tags/flutter/</link>
+      <pubDate>Wed, 08 May 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/tags/flutter/</guid>
+      <description></description>
+      
+    </item>
+    
     <item>
       <title>AWS</title>
-      <link>http://localhost:49538/tags/aws/</link>
+      <link>http://localhost:1313/tags/aws/</link>
       <pubDate>Wed, 01 May 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:49538/tags/aws/</guid>
+      <guid>http://localhost:1313/tags/aws/</guid>
       <description></description>
       
     </item>
     
     <item>
       <title>EKS</title>
-      <link>http://localhost:49538/tags/eks/</link>
+      <link>http://localhost:1313/tags/eks/</link>
       <pubDate>Wed, 01 May 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:49538/tags/eks/</guid>
+      <guid>http://localhost:1313/tags/eks/</guid>
       <description></description>
       
     </item>
     
     <item>
       <title>Kubernetes</title>
-      <link>http://localhost:49538/tags/kubernetes/</link>
+      <link>http://localhost:1313/tags/kubernetes/</link>
       <pubDate>Wed, 01 May 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:49538/tags/kubernetes/</guid>
+      <guid>http://localhost:1313/tags/kubernetes/</guid>
       <description></description>
       
     </item>
     
     <item>
       <title>Gin</title>
-      <link>http://localhost:49538/tags/gin/</link>
+      <link>http://localhost:1313/tags/gin/</link>
       <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:49538/tags/gin/</guid>
+      <guid>http://localhost:1313/tags/gin/</guid>
       <description></description>
       
     </item>
     
     <item>
       <title>Golang</title>
-      <link>http://localhost:49538/tags/golang/</link>
+      <link>http://localhost:1313/tags/golang/</link>
       <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:49538/tags/golang/</guid>
+      <guid>http://localhost:1313/tags/golang/</guid>
       <description></description>
       
     </item>
     
     <item>
       <title>Terraform</title>
-      <link>http://localhost:49538/tags/terraform/</link>
+      <link>http://localhost:1313/tags/terraform/</link>
       <pubDate>Thu, 25 Jan 2024 00:00:00 +0000</pubDate>
       
-      <guid>http://localhost:49538/tags/terraform/</guid>
+      <guid>http://localhost:1313/tags/terraform/</guid>
       <description></description>
       
     </item>
