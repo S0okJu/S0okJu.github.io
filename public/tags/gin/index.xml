@@ -14,7 +14,7 @@
       <pubDate>Sat, 11 May 2024 00:00:00 +0000</pubDate>
       
       <guid>http://localhost:1313/posts/project/todopoint/gin-fix1-error/</guid>
-      <description>Go를 활용하여 직접 2~3개의 서비스를 만들고 나니, 구현할때 지나쳤던 에러들이 큰 눈덩이로 변해서 덮쳐왔다.</description>
+      <description>Go를 활용하여 직접 2개의 서비스를 만들고 나니, 구현할때 지나쳤던 에러들이 큰 눈덩이로 변해서 덮쳐왔다.</description>
       <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/posts/project/todopoint/gin-fix1-error/featured_go.png" />
     </item>
     
