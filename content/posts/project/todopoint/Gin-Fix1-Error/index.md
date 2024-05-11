@@ -362,8 +362,6 @@ func TestSuccessResponse(t *testing.T) {
 하나의 간단한 CRUD가 있는 서비스 2개를 가지고 코드를 여러번 수정했다. 그 과정에서 다양한 오류를 만났고, 테스트 코드의 중요성도 확실히 알았다.
 특히 이번에 테스트 코드를 작성하면서 오류를 많이 마주 했는데, 이를 재빠르게 수정하면서 테스트의 중요성을 느끼게 되었다.
 
-뒤의 내용은 CRUD를 어떻게 리팩토링하고, 테스트 코드를 작성했는지 설명하려고 한다. 
-
 [^1]: https://pjh3749.tistory.com/273
 [^2]: https://gin-gonic.com/docs/testing/
 [^3]: https://bugoverdose.github.io/development/go-table-driven-tests/
