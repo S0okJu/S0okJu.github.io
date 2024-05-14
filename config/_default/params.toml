@@ -24,7 +24,7 @@ layout = "profile"
 showRecent = "enable"
 showRecentItems = 6
 showMoreLink = "enable"
-showMoreLinkDest = "/posts/study"
+showMoreLinkDest = "/posts"
 cardViewScreenWidth = false
 layoutBackgroundBlur = "enable"
 
@@ -35,7 +35,6 @@ showLikes = false
 showDateOnlyInArticle = true
 showDateUpdated = true
 showAuthor = true
-showHero = "show"
 layoutBackgroundBlur = true
 layoutBackgroundHeaderSpace = true
 showBreadcrumbs = "show"
@@ -51,7 +50,7 @@ showTaxonomies = "show"
 showAuthorsBadges = "show"
 showWordCount = false
 showZenMode = "show"
-heroStyle = "big"
+
 
 [list]
 showHero = "show"
