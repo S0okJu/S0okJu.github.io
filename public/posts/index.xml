@@ -7,7 +7,17 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en</language>
     <copyright>© 2024 D7MeKz</copyright>
-    <lastBuildDate>Wed, 01 May 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 22 May 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Entgo - Ent ORM</title>
+      <link>http://localhost:1313/posts/entgo-1/</link>
+      <pubDate>Wed, 22 May 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/posts/entgo-1/</guid>
+      <description>ORM 선택 # Go의 경우에는 JAVA와 달리 대표적인 ORM 프레임워크가 없어, 개발자가 직접 선택해서 사용해야 한다.</description>
+      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/posts/entgo-1/featured_go.png" />
+    </item>
+    
     <item>
       <title>AWS - EKS란 무엇인가</title>
       <link>http://localhost:1313/posts/what-is-eks/</link>
@@ -26,6 +36,26 @@
       <guid>http://localhost:1313/posts/iam-and-profile/</guid>
       <description>Introduction # Terraform 코드를 분석하고 있었다.</description>
       <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/posts/iam-and-profile/featured.png" />
+    </item>
+    
+    <item>
+      <title>Gin 예외처리 - 2. 커스텀 예외처리</title>
+      <link>http://localhost:1313/posts/gin-error-handling2/</link>
+      <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/posts/gin-error-handling2/</guid>
+      <description>이전에는 Gin이 어떻게 예외 처리를 하는지 언급했다.</description>
+      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/posts/gin-error-handling2/featured_go.png" />
+    </item>
+    
+    <item>
+      <title>Gin 예외처리 - 1. Go Error</title>
+      <link>http://localhost:1313/posts/gin-error-handling1/</link>
+      <pubDate>Wed, 03 Apr 2024 00:00:00 +0000</pubDate>
+      
+      <guid>http://localhost:1313/posts/gin-error-handling1/</guid>
+      <description>Go와 예외처리 # Go에서의 예외처리 # Go에서는 함수에서 반환된 에러 객체(error)로 처리한다.</description>
+      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/posts/gin-error-handling1/featured_go.png" />
     </item>
     
     <item>

@@ -28,25 +28,5 @@
       <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/project/todopoint/flutter-project-architecture/featured_flutter.png" />
     </item>
     
-    <item>
-      <title>Gin 예외처리 - 2. 커스텀 예외처리</title>
-      <link>http://localhost:1313/project/todopoint/gin-error-handling2/</link>
-      <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
-      
-      <guid>http://localhost:1313/project/todopoint/gin-error-handling2/</guid>
-      <description>Thumbnail: Designed by Freepik</description>
-      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/project/todopoint/gin-error-handling2/featured_todopoint.jpg" />
-    </item>
-    
-    <item>
-      <title>Gin 예외처리 - 1. Go Error</title>
-      <link>http://localhost:1313/project/todopoint/gin-error-handling1/</link>
-      <pubDate>Wed, 03 Apr 2024 00:00:00 +0000</pubDate>
-      
-      <guid>http://localhost:1313/project/todopoint/gin-error-handling1/</guid>
-      <description>Thumbnail: Designed by Freepik</description>
-      <media:content xmlns:media="http://search.yahoo.com/mrss/" url="http://localhost:1313/project/todopoint/gin-error-handling1/featured_todopoint.jpg" />
-    </item>
-    
   </channel>
 </rss>
