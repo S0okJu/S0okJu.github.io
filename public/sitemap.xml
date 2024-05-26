@@ -1,82 +1,87 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
-
-  <url>
-    <loc>http://localhost:1313/posts/entgo-1/</loc>
-    <lastmod>2024-05-22T00:00:00+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>
   <url>
     <loc>http://localhost:1313/</loc>
+    <lastmod>2024-05-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/about/</loc>
+    <lastmod>2024-05-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/categories/algorithm/</loc>
+    <lastmod>2024-05-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/boj/</loc>
+    <lastmod>2024-05-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/boj-1308/</loc>
+    <lastmod>2024-05-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/categories/</loc>
+    <lastmod>2024-05-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/go/</loc>
+    <lastmod>2024-05-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/page/</loc>
+    <lastmod>2024-05-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/post/</loc>
+    <lastmod>2024-05-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/</loc>
+    <lastmod>2024-05-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/entgo-ent-orm/</loc>
     <lastmod>2024-05-22T00:00:00+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>http://localhost:1313/posts/</loc>
+  </url><url>
+    <loc>http://localhost:1313/tags/orm/</loc>
     <lastmod>2024-05-22T00:00:00+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>http://localhost:1313/project/</loc>
-    <lastmod>2024-05-11T00:00:00+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>http://localhost:1313/project/todopoint/</loc>
-    <lastmod>2024-05-11T00:00:00+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>http://localhost:1313/project/todopoint/gin-fix1-error/</loc>
-    <lastmod>2024-05-11T00:00:00+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>http://localhost:1313/project/todopoint/flutter-project-architecture/</loc>
-    <lastmod>2024-05-08T00:00:00+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>http://localhost:1313/posts/what-is-eks/</loc>
+  </url><url>
+    <loc>http://localhost:1313/categories/web/</loc>
+    <lastmod>2024-05-22T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/aws/</loc>
     <lastmod>2024-05-01T00:00:00+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>http://localhost:1313/posts/iam-and-profile/</loc>
+  </url><url>
+    <loc>http://localhost:1313/p/aws-eks%EB%9E%80-%EB%AC%B4%EC%97%87%EC%9D%B8%EA%B0%80/</loc>
+    <lastmod>2024-05-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/categories/cloud/</loc>
+    <lastmod>2024-05-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/eks/</loc>
+    <lastmod>2024-05-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/categories/kubernetes/</loc>
+    <lastmod>2024-05-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/aws-iam-%EA%B7%B8%EB%A6%AC%EA%B3%A0-profile/</loc>
     <lastmod>2024-04-16T00:00:00+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>http://localhost:1313/posts/gin-error-handling2/</loc>
+  </url><url>
+    <loc>http://localhost:1313/tags/gin/</loc>
     <lastmod>2024-04-10T00:00:00+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>http://localhost:1313/posts/gin-error-handling1/</loc>
+  </url><url>
+    <loc>http://localhost:1313/p/gin-%EC%98%88%EC%99%B8%EC%B2%98%EB%A6%AC-2.-%EC%BB%A4%EC%8A%A4%ED%85%80-%EC%98%88%EC%99%B8%EC%B2%98%EB%A6%AC/</loc>
+    <lastmod>2024-04-10T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/gin-%EC%98%88%EC%99%B8%EC%B2%98%EB%A6%AC-1.-go-error/</loc>
     <lastmod>2024-04-03T00:00:00+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>http://localhost:1313/posts/basic-terraform1/</loc>
+  </url><url>
+    <loc>http://localhost:1313/categories/iac/</loc>
     <lastmod>2024-01-25T00:00:00+00:00</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>http://localhost:1313/newsletter/</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.5</priority>
+  </url><url>
+    <loc>http://localhost:1313/tags/terraform/</loc>
+    <lastmod>2024-01-25T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/basic-terraform-1/</loc>
+    <lastmod>2024-01-25T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/archives/</loc>
+    <lastmod>2019-05-28T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/links/</loc>
+  </url><url>
+    <loc>http://localhost:1313/search/</loc>
   </url>
 </urlset>
