@@ -1,4 +1,4 @@
-themes/
+# themes/
 
 # Hugo and Blowfish
 public/
@@ -34,8 +34,3 @@ node_modules
 .idea
 .Ulysses-Group.plist
 .Ulysses-Settings.plist
-
-public
-resources
-assets/jsconfig.json
-.hugo_build.lock
