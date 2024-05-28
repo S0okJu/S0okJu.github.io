@@ -6,7 +6,143 @@
         <description>Recent content on D7MeKz Tech</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Sun, 26 May 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Tue, 28 May 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>그 많은 서버 디스크 용량을 누가 잡아 먹었는가?</title>
+        <link>http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/</link>
+        <pubDate>Tue, 28 May 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/</guid>
+        <description>&lt;p&gt;Multipass를 구동하려고 하는 중 디스크 용량이 꽉찼다는 메세지를 얻게 되었다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;cannot create temporary directory for the root file system: No space left on device
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;서버에서 사용중인 SSD는 1TB인데 5개의 Multipass 인스턴스로 다 찬다는 것은 말이 되지 않았다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img1.png&#34;
+	width=&#34;752&#34;
+	height=&#34;206&#34;
+	srcset=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img1_huf9109ac56f521e9bddb532a4a65a95ea_48063_480x0_resize_box_3.png 480w, http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img1_huf9109ac56f521e9bddb532a4a65a95ea_48063_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;df -h 결과&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;365&#34;
+		data-flex-basis=&#34;876px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;실제 하드웨어 상에서 부착된 용량과 ubuntu lvm에서 사용되는 최대 용량이 달랐다. 그러므로 이 용량을 적절하게 조절해야 한다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img2.png&#34;
+	width=&#34;690&#34;
+	height=&#34;115&#34;
+	srcset=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img2_hub9d56ceace1a92c7e5c7aaa004579546_27130_480x0_resize_box_3.png 480w, http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img2_hub9d56ceace1a92c7e5c7aaa004579546_27130_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;fdisk -l 결과&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;600&#34;
+		data-flex-basis=&#34;1440px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;해결&#34;&gt;해결
+&lt;/h2&gt;&lt;p&gt;LV의 용량을 VG의 크기만큼 조절한다. &lt;a class=&#34;link&#34; href=&#34;https://askubuntu.com/questions/1106795/ubuntu-server-18-04-lvm-out-of-space-with-improper-default-partitioning&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;Stack Exchange&lt;/a&gt;에서 요구한대로 명령어를 사용하면 해결된다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;lvm
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;lvm&amp;gt; lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;lvm&amp;gt; &lt;span class=&#34;nb&#34;&gt;exit&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;resize2fs /dev/ubuntu-vg/ubuntu-lv
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;자세하게 봐보자. ubuntu-vg는 SSD의 용량만큼 적절하게 할당 받았다. 그러나 Alloc PE를 보면 100 GB 밖에 남지 않았다는 것을 알 수 있다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img3.png&#34;
+	width=&#34;640&#34;
+	height=&#34;466&#34;
+	srcset=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img3_hu88a71d965693f068016a8f9a3ebd14d7_67397_480x0_resize_box_3.png 480w, http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img3_hu88a71d965693f068016a8f9a3ebd14d7_67397_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;vgdisplay 결과&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;137&#34;
+		data-flex-basis=&#34;329px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;lvdisplay&lt;/code&gt;로 lv를 확인해보면 ubuntu-lv가 100GB로 할당되었음을 확인할 수 있다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img4.png&#34;
+	width=&#34;406&#34;
+	height=&#34;50&#34;
+	srcset=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img4_hu72b9b81b76a4cd920826ee267cb6b717_7229_480x0_resize_box_3.png 480w, http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img4_hu72b9b81b76a4cd920826ee267cb6b717_7229_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;lvdisplay 결과&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;812&#34;
+		data-flex-basis=&#34;1948px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;여기서 [[LVM(Logical Volume Manager)]]의 개념을 알아야 하는데, 파일 시스템에 추상화 계층을 추가하여 논리적 스토리지를 생성할 수 있게 해준다.&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img5.png&#34;
+	width=&#34;720&#34;
+	height=&#34;671&#34;
+	srcset=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img5_hufe7e44441d27029c48b3a31d76be990a_188274_480x0_resize_box_3.png 480w, http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img5_hufe7e44441d27029c48b3a31d76be990a_188274_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;출처 - https://medium.com/@yhakimi/lvm-how-to-create-and-extend-a-logical-volume-in-linux-9744f27eacfe&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;107&#34;
+		data-flex-basis=&#34;257px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;저자의 환경에서는 Root LV가 100GB로만 할당되어 있어, 하드 디스크의 용량 만큼 사용할 수 없었던 것이었다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img6.png&#34;
+	width=&#34;305&#34;
+	height=&#34;375&#34;
+	srcset=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img6_hu41efb97fdbd6675c4b4bbacceb6acbd4_14579_480x0_resize_box_3.png 480w, http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img6_hu41efb97fdbd6675c4b4bbacceb6acbd4_14579_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;VG, LV 관계도&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;81&#34;
+		data-flex-basis=&#34;195px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;현재 환경에서는 하나의 물리 디스크만 사용하기 때문에 설정하는데 복잡한 것은 없다. 그러므로 추가적으로 ubuntu-vg에 lv를 추가하지 않는 한 Root lv를 vg 크기만큼 사이즈를 키우면 된다.&lt;/p&gt;
+&lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
+&lt;hr&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn:1&#34;&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://tech.cloud.nongshim.co.kr/2018/11/23/lvmlogical-volume-manager-1-%EA%B0%9C%EB%85%90/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://tech.cloud.nongshim.co.kr/2018/11/23/lvmlogical-volume-manager-1-%EA%B0%9C%EB%85%90/&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        </item>
+        <item>
         <title>About</title>
         <link>http://localhost:1313/about/</link>
         <pubDate>Sun, 26 May 2024 00:00:00 +0000</pubDate>
