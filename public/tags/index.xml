@@ -6,7 +6,15 @@
         <description>Recent content in Tags on D7MeKz Tech</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Tue, 28 May 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Wed, 19 Jun 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>SpringBoot</title>
+        <link>http://localhost:1313/tags/springboot/</link>
+        <pubDate>Wed, 19 Jun 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/tags/springboot/</guid>
+        <description></description>
+        </item>
+        <item>
         <title>LVM</title>
         <link>http://localhost:1313/tags/lvm/</link>
         <pubDate>Tue, 28 May 2024 00:00:00 +0000</pubDate>
