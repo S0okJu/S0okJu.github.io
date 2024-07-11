@@ -1,6 +1,6 @@
 ---
 title: "Spring - Spring Boot 간략하게 알아보기"
-date: 2024-06-19
+date: 2024-02-03
 slug: basic-spring-1
 categories:
   - Web

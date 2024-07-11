@@ -6,15 +6,7 @@
         <description>Recent content in Tags on D7MeKz Tech</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Wed, 19 Jun 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
-        <title>SpringBoot</title>
-        <link>http://localhost:1313/tags/springboot/</link>
-        <pubDate>Wed, 19 Jun 2024 00:00:00 +0000</pubDate>
-        
-        <guid>http://localhost:1313/tags/springboot/</guid>
-        <description></description>
-        </item>
-        <item>
+        <lastBuildDate>Tue, 28 May 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
         <title>LVM</title>
         <link>http://localhost:1313/tags/lvm/</link>
         <pubDate>Tue, 28 May 2024 00:00:00 +0000</pubDate>
@@ -23,17 +15,9 @@
         <description></description>
         </item>
         <item>
-        <title>BOJ</title>
-        <link>http://localhost:1313/tags/boj/</link>
-        <pubDate>Sun, 26 May 2024 00:00:00 +0000</pubDate>
-        
-        <guid>http://localhost:1313/tags/boj/</guid>
-        <description></description>
-        </item>
-        <item>
         <title>Go</title>
         <link>http://localhost:1313/tags/go/</link>
-        <pubDate>Sun, 26 May 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 22 May 2024 00:00:00 +0000</pubDate>
         
         <guid>http://localhost:1313/tags/go/</guid>
         <description></description>
@@ -44,6 +28,22 @@
         <pubDate>Wed, 22 May 2024 00:00:00 +0000</pubDate>
         
         <guid>http://localhost:1313/tags/orm/</guid>
+        <description></description>
+        </item>
+        <item>
+        <title>Web</title>
+        <link>http://localhost:1313/tags/web/</link>
+        <pubDate>Wed, 22 May 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/tags/web/</guid>
+        <description></description>
+        </item>
+        <item>
+        <title>Gin</title>
+        <link>http://localhost:1313/tags/gin/</link>
+        <pubDate>Sat, 11 May 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/tags/gin/</guid>
         <description></description>
         </item>
         <item>
@@ -63,11 +63,19 @@
         <description></description>
         </item>
         <item>
-        <title>Gin</title>
-        <link>http://localhost:1313/tags/gin/</link>
-        <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
+        <title>Project</title>
+        <link>http://localhost:1313/tags/project/</link>
+        <pubDate>Sat, 09 Mar 2024 00:00:00 +0000</pubDate>
         
-        <guid>http://localhost:1313/tags/gin/</guid>
+        <guid>http://localhost:1313/tags/project/</guid>
+        <description></description>
+        </item>
+        <item>
+        <title>SpringBoot</title>
+        <link>http://localhost:1313/tags/springboot/</link>
+        <pubDate>Sat, 03 Feb 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/tags/springboot/</guid>
         <description></description>
         </item>
         <item>

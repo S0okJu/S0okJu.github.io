@@ -1,6 +1,7 @@
 ---
 title: "AWS - EKS란 무엇인가"
 date: 2024-05-01
+slug: what-is-eks
 tags:
   - AWS
   - EKS

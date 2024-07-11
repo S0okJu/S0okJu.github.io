@@ -1,11 +1,13 @@
 ---
 title: "Gin 예외처리 - 2. 커스텀 예외처리"
 date: 2024-04-10
+slug: gin-error-handling-2
 tags:
   - Go
   - Gin
-categories:
   - Web
+categories:
+  - TodoPoint
 ---
 
 이전에는 Gin이 어떻게 예외 처리를 하는지 언급했다. 이제부터 직접 구현하고자 한다.

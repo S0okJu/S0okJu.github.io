@@ -1,11 +1,13 @@
 ---
 title: "Entgo - Ent ORM"
 date: 2024-05-22
+slug: entgo-1
 tags:
   - Go
   - ORM
-categories:
   - Web
+categories:
+  - TodoPoint
 ---
 
 ## ORM 선택

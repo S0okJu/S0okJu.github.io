@@ -1,11 +1,13 @@
 ---
 title: "Gin 예외처리 - 1. Go Error"
 date: 2024-04-03
+slug: gin-error-handling-1
 tags:
   - Go
   - Gin
-categories:
   - Web
+categories:
+  - TodoPoint
 ---
 
 ## Go와 예외처리
