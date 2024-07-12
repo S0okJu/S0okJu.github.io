@@ -34,7 +34,7 @@ multipass는 Canonical에서 만들었으며 Ubuntu의 가상화환경(VM)을 �
 
 ### 쿠베네티스 구성
 
-자세한 설치 은 [enumclass tistory](https://enumclass.tistory.com/261)를 참고했다.
+자세한 설치는 [enumclass tistory](https://enumclass.tistory.com/261)를 참고했다.
 
 ### Calico 선택한 이유
 
