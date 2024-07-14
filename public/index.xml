@@ -6,7 +6,224 @@
         <description>Recent content on D7MeKz Tech</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Fri, 12 Jul 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Sun, 14 Jul 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>서버 구축기 - 2. Multipass를 활용한 NFS 구성</title>
+        <link>http://localhost:1313/p/server-setup-2/</link>
+        <pubDate>Sun, 14 Jul 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/p/server-setup-2/</guid>
+        <description>&lt;h2 id=&#34;들어가며&#34;&gt;들어가며
+&lt;/h2&gt;&lt;p&gt;쿠버네티스에서 유상태 애플리케이션을 실행할때 주로 PV, PVC를 활용해서 데이터를 저장한다. 위치에 따라 내부, 외부 저장 유무를 결정하는데, 내부적으로 저장하는 것은 접근성도 떨어질 뿐만 아니라 노드를 운용하는데 비효율적이라고 판단했다. 외부적인 방안은 네트워크를 통한 데이터 저장이다.&lt;/p&gt;
+&lt;p&gt;그렇다면 &lt;strong&gt;온프로미스 환경에서 네트워크로 통신하여 저장할 수 있는 방법이 있을까?&lt;/strong&gt; 직접 쿠버네티스 환경에 구축하여 적용하고자 한다.&lt;/p&gt;
+&lt;h2 id=&#34;nfsnetwork-file-system&#34;&gt;NFS(Network File System)
+&lt;/h2&gt;&lt;p&gt;네트워크에 파일을 저장하는 방식이다. 즉, 원격 컴퓨터에 있는 파일 및 디렉토리에 엑세스하고, 해당 파일 디렉토리가 로컬에 있는 것처럼 사용하는 분산 파일 시스템이다.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;파일 시스템 중에 ZFS가 있다. 중간에 두 개의 개념이 혼용돼서 NFS에 ZFS 파일 시스템을 설치했다. 그리고 다시 포맷팅했다..
+자세히 알고 싶으면 &lt;a class=&#34;link&#34; href=&#34;https://toss.tech/article/engineering-note-8&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;토스 블로그, OpenZFS로 성능과 비용, 두 마리 토끼 잡기&lt;/a&gt; 참고하길 바란다.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;용량-부족-문제&#34;&gt;용량 부족 문제
+&lt;/h2&gt;&lt;p&gt;유상태 애플리케이션은 무엇이 있을까? 대부분 데이터베이스를 꼽을 것이다. 데이터베이스는 생각보다 큰 용량을 차지한다. 자체 서버는 SSD 1TB용량을 가지고 있다. 그러나 4개의 노드 인스턴스와 시스템 데이터, 미래에 추가할 인스턴스까지 더하면 많은 용량이 요구된다. 개인적으로 SSD라는 비싼 저장소를 단순 데이터 보관용으로 사용하기에는 많이 아깝다고 생각했다.&lt;/p&gt;
+&lt;p&gt;다행히 DAS와 4TB HDD가 있었다. SSD에는 시스템에 활용될 데이터를 저장하고, 그 외의 데이터는 DAS에 저장하도록 구성하려고 한다.&lt;/p&gt;
+&lt;h2 id=&#34;구성&#34;&gt;구성
+&lt;/h2&gt;&lt;p&gt;가상 환경을 하나 만들어서 NFS 관련 패키지를 설치하고, 각각의 노드가 네트워킹을 통해 접속할 수 있게 구성할 예정이다.&lt;/p&gt;
+&lt;h3 id=&#34;구성도&#34;&gt;구성도
+&lt;/h3&gt;&lt;p&gt;구성을 간략하게 설명하자면 아래와 같다.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;NFS 서버 전용 가상 머신을 만든다.&lt;/li&gt;
+&lt;li&gt;Host 서버에 DAS를 마운팅하고, NFS Server 인스턴스에 host에 마운팅된 경로를 다시 마운트한다.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img1.png&#34;
+	width=&#34;1153&#34;
+	height=&#34;917&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-2/img1_hu1e3e28fb84ce4edd796f713f5fedf5b3_111298_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img1_hu1e3e28fb84ce4edd796f713f5fedf5b3_111298_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;서버 구성도&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;125&#34;
+		data-flex-basis=&#34;301px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;환경-설정하기&#34;&gt;환경 설정하기
+&lt;/h2&gt;&lt;h3 id=&#34;disk-format&#34;&gt;Disk Format
+&lt;/h3&gt;&lt;p&gt;DAS에 있는 HDD는 4TB로 1TB, 1TB, 1.8TB로 파티셔닝했다.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;디스크 포맷 및 파티셔닝은 &lt;a class=&#34;link&#34; href=&#34;https://zero-gravity.tistory.com/297&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;무중력 인간님의 블로그&lt;/a&gt;를 참고하자.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img2.png&#34;
+	width=&#34;673&#34;
+	height=&#34;98&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-2/img2_hu37a892cc2b77b26a6e7efde2db4bf33e_27385_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img2_hu37a892cc2b77b26a6e7efde2db4bf33e_27385_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;파티션 정보&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;686&#34;
+		data-flex-basis=&#34;1648px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;부팅될때마다 자동 마운팅이 될 수 있도록 &lt;a class=&#34;link&#34; href=&#34;https://guide.ncloud-docs.com/docs/server-ts-fstab-vpc&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;fstab 파일을 수정&lt;/a&gt;했다.&lt;/p&gt;
+&lt;h3 id=&#34;문제1-uuid가-없는-경우&#34;&gt;문제1. UUID가 없는 경우
+&lt;/h3&gt;&lt;p&gt;ext4로 포맷이 안된경우 PARTITION UUID만 있다. 그러므로 &lt;code&gt;mkfs.ext4&lt;/code&gt; 를 활용하여 ext4를 포맷시키자.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img3.png&#34;
+	width=&#34;577&#34;
+	height=&#34;212&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-2/img3_huf451f82611933230bebf929a138b7250_53224_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img3_huf451f82611933230bebf929a138b7250_53224_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;ext4 포맷이 완전히 안된 경우&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;272&#34;
+		data-flex-basis=&#34;653px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;문제-2-emergency-mode&#34;&gt;문제 2. Emergency Mode
+&lt;/h3&gt;&lt;p&gt;fsatab를 잘못 설정하면 Linux는 최소한의 권한만 제공하는 emergency mode로 도입하게 된다. fstab 파일을 적절하게 기입하자.&lt;/p&gt;
+&lt;h2 id=&#34;nfs-설치하기&#34;&gt;NFS 설치하기
+&lt;/h2&gt;&lt;h3 id=&#34;nfs-multipass-mounting&#34;&gt;NFS Multipass mounting
+&lt;/h3&gt;&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;multipass mount /mnt/das/vol1 nfs:/nfs/vol1
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img4.png&#34;
+	width=&#34;431&#34;
+	height=&#34;235&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-2/img4_hu42bdacf91740c6235dfc96aa01ba6181_28141_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img4_hu42bdacf91740c6235dfc96aa01ba6181_28141_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;nfs multipass 정보&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;183&#34;
+		data-flex-basis=&#34;440px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;nfs-server-설치&#34;&gt;NFS Server 설치
+&lt;/h3&gt;&lt;p&gt;NFS multipass Instance 내에 NFS 서버 라이브러리를 설치하자. 설정은 &lt;a class=&#34;link&#34; href=&#34;https://heartsavior.medium.com/%ED%98%B8%EC%8A%A4%ED%8A%B8-%EC%84%9C%EB%B2%84-ubuntu-20-04-%EC%97%90-nfs-%EB%A5%BC-%EC%84%A4%EC%A0%95%ED%95%98%EA%B3%A0-spark-on-kubernetes-%EC%97%90%EC%84%9C-%EB%8F%99%EC%A0%81%EC%9C%BC%EB%A1%9C-%EB%B3%BC%EB%A5%A8%EC%9D%84-%ED%95%A0%EB%8B%B9%EB%B0%9B%EA%B8%B0-6c80bc71e6ed&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;Jung-taek Lim님의 블로그&lt;/a&gt;를 참고했다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo apt-get install nfs-common nfs-kernel-server rpcbind portmap
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;systemctl &lt;span class=&#34;nb&#34;&gt;enable&lt;/span&gt; nfs-kernel-server
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;systemctl start nfs-kernel-server
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;네트워크 범위를 10.120.52.0/24로 지정했는데, 이는 multipass instance가 &lt;code&gt;10.120.52.0/24&lt;/code&gt; 범위 내에 있기 때문이다.&lt;/p&gt;
+&lt;p&gt;mulitpass에서 사용되는 네트워크 드라이브를 보면 qemu를 사용한다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img6.png&#34;
+	width=&#34;415&#34;
+	height=&#34;47&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-2/img6_hua25351a870f97f232b6acd5cdbceb596_8193_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img6_hua25351a870f97f232b6acd5cdbceb596_8193_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;multipass driver 확인&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;882&#34;
+		data-flex-basis=&#34;2119px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;네트워크 인터페이스를 보면 사용가능한 IP 범위는 &lt;code&gt;10.120.52.0/24&lt;/code&gt; 임을 알 수 있다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img7.png&#34;
+	width=&#34;627&#34;
+	height=&#34;161&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-2/img7_hu0462c05af9c7ef817d4d6ce1c18de1b5_39838_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img7_hu0462c05af9c7ef817d4d6ce1c18de1b5_39838_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;Network Interface 확인&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;389&#34;
+		data-flex-basis=&#34;934px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo mkdir -p /nfs/vol1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo chown nobody:nogroup /nfs/vol1
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# nfs가 공유할 수 있는 네트워크 설정&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo vim /etc/exports/nfs/vol1 10.120.52.0/24&lt;span class=&#34;o&#34;&gt;(&lt;/span&gt;rw,sync,no_subtree_check,no_root_squash&lt;span class=&#34;o&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 위의 설정 반영&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo exportfs -r
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;마스터 노드에 showmount하여 NFS가 제대로 작동되었는지 확인했을때 아래와 같이 export list가 잘 보여지면 된다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img8.png&#34;
+	width=&#34;533&#34;
+	height=&#34;68&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-2/img8_hu31fc685ff1ffcda1451f1b1fb853beb4_15926_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img8_hu31fc685ff1ffcda1451f1b1fb853beb4_15926_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;Show mount 정보&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;783&#34;
+		data-flex-basis=&#34;1881px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;dynamic-provisioner&#34;&gt;Dynamic Provisioner
+&lt;/h2&gt;&lt;p&gt;쿠버네티스에서 스토리지를 사용하는 방식을 생각해보자. 전역적인 데이터 스토리지에 접근하기 위해서는 [[D K8S- Pod|Pod]]를 생성할때 PVC를 생성하여, 관리자가 생성한 PV와 연결하게 된다. 그러나 파드를 생성할때마다 PV, PVC를 만들어서 스토리지에 접근해야 한다. 이와 같이 번거로움을 해결하고자 자동으로 볼륨을 생성해주는 Dynamic Provisioner를 사용하게 된다.&lt;/p&gt;
+&lt;p&gt;Provisioner는 &lt;a class=&#34;link&#34; href=&#34;https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner#with-helm&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;kubernetes-sigs Github에 있는 nfs-subdir-external-provisioner&lt;/a&gt;를 사용했다.&lt;/p&gt;
+&lt;p&gt;위의 파일을 적절하게 설정하게 test를 실행시키면, 아래와 같이 pvc가 만들어지게 된다. 또한 파드를 삭제하게 되면 자동으로 pvc가 삭제되는 것을 볼 수 있다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img9.png&#34;
+	width=&#34;958&#34;
+	height=&#34;154&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-2/img9_hu2a36d6b36efa78aa967f1201eb936900_39317_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img9_hu2a36d6b36efa78aa967f1201eb936900_39317_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;DAS에 저장된 데이터 확인&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;622&#34;
+		data-flex-basis=&#34;1492px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;참고&#34;&gt;참고
+&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;a class=&#34;link&#34; href=&#34;https://gruuuuu.github.io/cloud/k8s-volume/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://gruuuuu.github.io/cloud/k8s-volume/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class=&#34;link&#34; href=&#34;https://do-hansung.tistory.com/57&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://do-hansung.tistory.com/57&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class=&#34;link&#34; href=&#34;https://1week.tistory.com/114&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://1week.tistory.com/114&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        </item>
+        <item>
         <title>서버 구축기 - 1. 쿠버네티스 멀티 노드 환경 구성하기</title>
         <link>http://localhost:1313/p/server-setup-1/</link>
         <pubDate>Fri, 12 Jul 2024 00:00:00 +0000</pubDate>
@@ -22,14 +239,14 @@
 &lt;/ul&gt;
 &lt;p&gt;슬프게도 나는 두 방법에 실패하게 되었고 &lt;strong&gt;22.04LTS를 설치&lt;/strong&gt;하게 되었다. 그리고 깔끔하게 성공했다.&lt;/p&gt;
 &lt;h2 id=&#34;구축&#34;&gt;구축
-&lt;/h2&gt;&lt;p&gt;쿠버네티스의 구축 자체는 생각보다 간단하지만 상업 환경에서 안전하고 가용성 있게 지속적으로 관리하는 것은 어렵다. 그래서 자체 호스팅하는 것은 권장하지 않는다고 한다. &lt;sup id=&#34;fnref:3&#34;&gt;&lt;a href=&#34;#fn:3&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;3&lt;/a&gt;&lt;/sup&gt;
-그러나 교육의 관점에서는 자체 호스팅해서 사용하는 것은 좋은 선택이라고 생각한다. 퍼블릭 클라우드를 사용하다가 요금을 폭탄맞을 수 있기 때문이다.&lt;/p&gt;
+&lt;/h2&gt;&lt;p&gt;쿠버네티스의 구축 자체는 생각보다 간단하지만 상업 환경에서 안전하고 가용성 있게 지속적으로 관리하는 것은 어렵다. 그래서 자체 호스팅하는 것은 권장하지 않는다고 한다. &lt;sup id=&#34;fnref:3&#34;&gt;&lt;a href=&#34;#fn:3&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;3&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;그러나 교육의 관점에서는 자체 호스팅해서 사용하는 것은 좋은 선택이라고 생각한다. 퍼블릭 클라우드를 사용하다가 요금을 폭탄맞을 수 있기 때문이다.&lt;/p&gt;
 &lt;h3 id=&#34;multipass-선택한-이유&#34;&gt;Multipass 선택한 이유
-&lt;/h3&gt;&lt;p&gt;리눅스 기반 가상 머신은 선택지가 생각보다 다양하게 있다. 나는 vagrant, multipass 중에서 고민했다. Multipass를 선택한 이유는 사용하기 쉬워서이다.
-vagrant의 장점은 다양한 이미지를 사용할 수 있다는 점과 Vagrantfile를 통해 자동화 스크립트를 만들 수 있다는 점이었다. 하지만 단점이 존재했는데, 스크립트를 짜는 법을 알아야한다는 점과 내가 쿠버네티스 구축하는 전반적인 방식을 이해하지 못해 디버깅 하지 못한다는 것이었다. 실제로 깃허브의 오픈소스를 clone해서 구성해봤는데, 네트워크 할당이 제대로 되지 않아 많은 시간을 쓰기도 했다.
-multipass는 Canonical에서 만들었으며 Ubuntu의 가상화환경(VM)을 쉽게 구성할 수 있도록 해주는 도구&lt;sup id=&#34;fnref:4&#34;&gt;&lt;a href=&#34;#fn:4&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;4&lt;/a&gt;&lt;/sup&gt;이다. 즉 우분투 보급사가 만든 가상환경이라고 보면 된다. 우분투 외의 리눅스를 써야한다면 multipass는 좋은 선택지는 아니지만 centOS Linux가 더이상 지원되지 않는다는 점&lt;sup id=&#34;fnref:5&#34;&gt;&lt;a href=&#34;#fn:5&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;5&lt;/a&gt;&lt;/sup&gt;에서 쓸 수 있는 건 우분투 밖에 없는 것 같다.&lt;/p&gt;
+&lt;/h3&gt;&lt;p&gt;리눅스 기반 가상 머신은 선택지가 생각보다 다양하게 있다. 나는 vagrant, multipass 중에서 고민했다. Multipass를 선택한 이유는 사용하기 쉬워서이다.&lt;/p&gt;
+&lt;p&gt;vagrant의 장점은 다양한 이미지를 사용할 수 있다는 점과 Vagrantfile를 통해 자동화 스크립트를 만들 수 있다는 점이었다. 하지만 단점이 존재했는데, 스크립트를 짜는 법을 알아야한다는 점과 내가 쿠버네티스 구축하는 전반적인 방식을 이해하지 못해 디버깅 하지 못한다는 것이었다. 실제로 깃허브의 오픈소스를 clone해서 구성해봤는데, 네트워크 할당이 제대로 되지 않아 많은 시간을 쓰기도 했다.&lt;/p&gt;
+&lt;p&gt;multipass는 Canonical에서 만들었으며 Ubuntu의 가상화환경(VM)을 쉽게 구성할 수 있도록 해주는 도구&lt;sup id=&#34;fnref:4&#34;&gt;&lt;a href=&#34;#fn:4&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;4&lt;/a&gt;&lt;/sup&gt;이다. 즉 우분투 보급사가 만든 가상환경이라고 보면 된다. 우분투 외의 리눅스를 써야한다면 multipass는 좋은 선택지는 아니지만 centOS Linux가 더이상 지원되지 않는다는 점&lt;sup id=&#34;fnref:5&#34;&gt;&lt;a href=&#34;#fn:5&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;5&lt;/a&gt;&lt;/sup&gt;에서 쓸 수 있는 건 우분투 밖에 없는 것 같다.&lt;/p&gt;
 &lt;h3 id=&#34;쿠베네티스-구성&#34;&gt;쿠베네티스 구성
-&lt;/h3&gt;&lt;p&gt;자세한 설치 은 &lt;a class=&#34;link&#34; href=&#34;https://enumclass.tistory.com/261&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+&lt;/h3&gt;&lt;p&gt;자세한 설치는 &lt;a class=&#34;link&#34; href=&#34;https://enumclass.tistory.com/261&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;enumclass tistory&lt;/a&gt;를 참고했다.&lt;/p&gt;
 &lt;h3 id=&#34;calico-선택한-이유&#34;&gt;Calico 선택한 이유
 &lt;/h3&gt;&lt;p&gt;CNI 플러그인에서 가장 대중적으로 쓰이는 것은 &lt;a class=&#34;link&#34; href=&#34;https://docs.tigera.io/calico/latest/getting-started/kubernetes/quickstart&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
@@ -68,7 +285,7 @@ multipass는 Canonical에서 만들었으며 Ubuntu의 가상화환경(VM)을 �
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-1/img3.png&#34;
 	width=&#34;1213&#34;
 	height=&#34;960&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-1/img3_hu9653f2c370ff22b5b2ba3df64314a5ad_109800_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-1/img3_hu9653f2c370ff22b5b2ba3df64314a5ad_109800_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-1/img3_hu9653f2c370ff22b5b2ba3df64314a5ad_110642_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-1/img3_hu9653f2c370ff22b5b2ba3df64314a5ad_110642_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;쿠버네티스 구성도&#34;
