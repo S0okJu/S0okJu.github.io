@@ -6,12 +6,254 @@
         <description>Recent content on D7MeKz Tech</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Sun, 14 Jul 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Tue, 16 Jul 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>서버 구축기 - 3. 쿠버네티스에서 대시보드 접속하기 그리고 운영의 문제점</title>
+        <link>http://localhost:1313/p/server-access-dashboard-and-management-problems/</link>
+        <pubDate>Tue, 16 Jul 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/p/server-access-dashboard-and-management-problems/</guid>
+        <description>&lt;h2 id=&#34;서버-상태&#34;&gt;서버 상태
+&lt;/h2&gt;&lt;p&gt;지금까지 Multipass 를 활용하여 쿠버네티스 환경을 만들고, 실제로 적용하는 과정을 거쳤다.
+현재 3개의 노드로 구성되어 있으며, nfs, mysql, mongo와 같이 데이터베이스가 있는 인스턴스는 nfs, 젠킨스 서버는 ops 인스턴스에 저장했다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img1.png&#34;
+	width=&#34;524&#34;
+	height=&#34;230&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img1_hu3b9fa1d614f239c39936c910769789a7_33909_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img1_hu3b9fa1d614f239c39936c910769789a7_33909_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;multipass instance list&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;227&#34;
+		data-flex-basis=&#34;546px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;왜 데이터베이스를 쿠버네티스의 statefulset으로 정의하지 않고 별도로 설치했는지 궁금할 것이다. 이유는 최대한 클라우드 스토리지처럼 구현하고 싶어서였다.&lt;/p&gt;
+&lt;h2 id=&#34;대시보드-확인하기&#34;&gt;대시보드 확인하기
+&lt;/h2&gt;&lt;p&gt;일단 쿠버네티스 내에서는 외부와 통신할 수 있는 기능은 크게 두 가지이다.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Ingress&lt;/li&gt;
+&lt;li&gt;Nodeport&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;일단 사설 네트워크 내에서만 사용할 예정이므로 Nodeport 방식을 사용하도록 하겠다.&lt;/p&gt;
+&lt;h3 id=&#34;예제---grafana-ui-확인하기&#34;&gt;예제 - Grafana ui 확인하기
+&lt;/h3&gt;&lt;p&gt;예로 프로메테우스를 사용한다고 가정해보자. grafana 대시보드에 접근할 필요성이 있을 것이다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img2.png&#34;
+	width=&#34;655&#34;
+	height=&#34;364&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img2_hu80191caefbfade579344eb384cdf45ae_21579_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img2_hu80191caefbfade579344eb384cdf45ae_21579_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;server 구성도1&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;179&#34;
+		data-flex-basis=&#34;431px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;grafana ui와 관련된 애플리케이션의 service type를 nodeport로 변경해준 후에 Host server(192.168.50.27)에 방화벽을 설정하면 192.168.50.27 주소로 Grafana ui에 접근할 수 있다.
+그러나 문제도 존재한다. 서버에 문제가 생기면 재배포하게 되는데, 쿠버네티스 스케줄러에 따라서 다른 노드에 배치될 수 있다. 이럴 경우 배치된 노드를 확인해가며 기존의 방화벽을 닫고, 새로운 방화벽을 열어줘야 한다.&lt;/p&gt;
+&lt;p&gt;쿠버네티스에서는 여러 스케줄링 방식이 있는데&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;, 그 중 간단한 &lt;code&gt;nodeSelector&lt;/code&gt; 로 node1에 강제 배치하여 정적으로 사용할 수 있도록 구성했다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img3.png&#34;
+	width=&#34;719&#34;
+	height=&#34;364&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img3_hu527297b4e941814ed1c7d8627e17e2cc_26664_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img3_hu527297b4e941814ed1c7d8627e17e2cc_26664_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;server 구성도2&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;197&#34;
+		data-flex-basis=&#34;474px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h4 id=&#34;nodeselector-설정&#34;&gt;nodeSelector 설정
+&lt;/h4&gt;&lt;p&gt;node1에 label를 type=ui로 설정한다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;kubectl label nodes node1 &lt;span class=&#34;nv&#34;&gt;type&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;ui
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img4.png&#34;
+	width=&#34;473&#34;
+	height=&#34;168&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img4_huccb2d64dcd9ee0897b1704d1da0df03c_25348_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img4_huccb2d64dcd9ee0897b1704d1da0df03c_25348_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;kubectl describe node1&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;281&#34;
+		data-flex-basis=&#34;675px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h4 id=&#34;grafana-ui-service-type-변경&#34;&gt;grafana ui service type 변경
+&lt;/h4&gt;&lt;p&gt;Prometheus, Grafana의 원활한 설치를 위해 &lt;a class=&#34;link&#34; href=&#34;https://github.com/prometheus-operator/kube-prometheus&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;kube-prometheus helm&lt;/a&gt;을 사용했다. helm 차트의 특성상 values.yaml를 설정하여 값을 주입하므로 &lt;strong&gt;values.yaml&lt;/strong&gt; 를 확인해야 한다.
+kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정하고 싶은 서비스의 &lt;strong&gt;values.yaml&lt;/strong&gt;를 설정하면 된다.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;kube-prometheus-stack/charts/grafana/values.yaml&lt;/code&gt; 파일에 대략 216번째 줄에 아래와 같은 서비스 타입을 Nodeport로 변경한다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;## Expose the grafana service to be accessed from outside the cluster (LoadBalancer service).&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c&#34;&gt;## or access it from within the cluster (ClusterIP service). Set the service type and the port to serve it.&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c&#34;&gt;## ref: http://kubernetes.io/docs/user-guide/services/&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c&#34;&gt;##&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;service&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;enabled&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;kc&#34;&gt;true&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# type: ClusterIP&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;type&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;NodePort&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Custom&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;loadBalancerIP&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;loadBalancerClass&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;loadBalancerSourceRanges&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[]&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;80&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;targetPort&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;3000&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;nodePort&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;m&#34;&gt;30060&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# Custom&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h4 id=&#34;helm-nodeselector-설정&#34;&gt;helm nodeSelector 설정
+&lt;/h4&gt;&lt;p&gt;&lt;code&gt;kube-prometheus-stack/charts/grafana/values.yaml&lt;/code&gt; 의 314번째 줄에 node1에 배치되도록 설정했다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c&#34;&gt;## Node labels for pod assignment&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c&#34;&gt;## ref: https://kubernetes.io/docs/user-guide/node-selection/&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;c&#34;&gt;#&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;nodeSelector&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;type&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;l&#34;&gt;ui&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;helm으로 배포한 후 pod 리스트를 보면 &lt;strong&gt;{helm으로 배포한 이름}-grafana-{문자열}&lt;/strong&gt; 보이는데, 파드 내부에는 grafana와 관련된 컨테이너가 포함되어 있다. 즉, 우리가 찾던 ui도 grafana pod 내부에 있다는 것이다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img5.png&#34;
+	width=&#34;679&#34;
+	height=&#34;47&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img5_huc237422c3a942dacc900fccfd4819d76_15820_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img5_huc237422c3a942dacc900fccfd4819d76_15820_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;grafana pod&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;1444&#34;
+		data-flex-basis=&#34;3467px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;grafana 파드의 정보를 보면 nodeSelector가 정상적으로 적용되었음을 알 수 있다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img6.png&#34;
+	width=&#34;1012&#34;
+	height=&#34;84&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img6_hu10ab776f53576f6109d91344094916f0_17332_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img6_hu10ab776f53576f6109d91344094916f0_17332_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;grafana pod nodeSelector 확인&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;1204&#34;
+		data-flex-basis=&#34;2891px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h4 id=&#34;방화벽-설정&#34;&gt;방화벽 설정
+&lt;/h4&gt;&lt;p&gt;node1 인스턴스의 nodeport(30060)에 트래픽이 들어올 수 있도록 허용한다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo iptables -t nat -I PREROUTING -i enp3s0 -p tcp --dport &lt;span class=&#34;m&#34;&gt;30060&lt;/span&gt; -j DNAT --to-destination 10.120.52.23:30060
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo iptables -I FORWARD &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt; -p tcp -d 10.120.52.23 --dport &lt;span class=&#34;m&#34;&gt;30060&lt;/span&gt; -j ACCEPT
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;30060 포트로 enp3s0 인터페이스에 들어오는 트래픽을 10.120.52.23:30060로 리다이렉션한다.&lt;/li&gt;
+&lt;li&gt;10.120.52.23:30060에 접속하는 트래픽을 허용한다.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;서버의 IP로 접속하면 그라파나 대시보드를 확인할 수 있다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img7.png&#34;
+	width=&#34;1008&#34;
+	height=&#34;738&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img7_hua9350061aa49ba3ae41e27ec646a1e5d_570497_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img7_hua9350061aa49ba3ae41e27ec646a1e5d_570497_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;grafana dashboard 접속하기&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;136&#34;
+		data-flex-basis=&#34;327px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;문제점&#34;&gt;문제점
+&lt;/h2&gt;&lt;p&gt;Multipass로 인스턴스를 만들고, 외부와의 접속을 위해 트래픽을 제어하는 것은 문제점이 있다.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;외부와의 접속을 할때마다 iptable를 설정해야 한다.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;서버가 shutdown이 될 경우 이전에 설정했던 iptables rule이 사라진다. 이럴 경우 규칙을 다시 설정하거나, 이를 대비해서 별도의 패키지를 설치해서 iptables이 영속성이 있도록 설정&lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;해야 한다.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;인스턴스가 많으면 많을수록 관리하기 어렵다.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;쿠버네티스 이외에도 다양한 인스턴스가 있지만 일리리 명령어로 상태를 확인하고, 설정하는 것은 번거롭다. 그러므로 &lt;strong&gt;오케스트레이션 도구가 필요&lt;/strong&gt;했다.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;위의 해결책으로 &lt;a class=&#34;link&#34; href=&#34;https://www.openstack.org/software/project-navigator/openstack-components#openstack-services&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;OpenStack&lt;/a&gt; 서버를 구축하고자 한다. 인스턴스를 public cloud 처럼 자유자재로 생성 및 삭제할 수 있으며, 네트워크 설정이 용이했다. 또한 클라우드에 사용되는 기술을 대부분 활용할 수 있어 클라우드를 알아가는데 좋은 도구라고 생각했다.&lt;/p&gt;
+&lt;p&gt;다음 포스팅은 기존의 서버를 포맷시키고, openstack 서버 구축기로 찾아오겠다.&lt;/p&gt;
+&lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
+&lt;hr&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn:1&#34;&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://kubernetes.io/ko/docs/tasks/configure-pod-container/assign-pods-nodes/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://kubernetes.io/ko/docs/tasks/configure-pod-container/assign-pods-nodes/&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:2&#34;&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://unix.stackexchange.com/questions/52376/why-do-iptables-rules-disappear-when-restarting-my-debian-system&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://unix.stackexchange.com/questions/52376/why-do-iptables-rules-disappear-when-restarting-my-debian-system&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:2&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        </item>
+        <item>
         <title>서버 구축기 - 2. Multipass를 활용한 NFS 구성</title>
-        <link>http://localhost:1313/p/server-setup-2/</link>
+        <link>http://localhost:1313/p/server-setup-nfs-in-multipass-instance/</link>
         <pubDate>Sun, 14 Jul 2024 00:00:00 +0000</pubDate>
         
-        <guid>http://localhost:1313/p/server-setup-2/</guid>
+        <guid>http://localhost:1313/p/server-setup-nfs-in-multipass-instance/</guid>
         <description>&lt;h2 id=&#34;들어가며&#34;&gt;들어가며
 &lt;/h2&gt;&lt;p&gt;쿠버네티스에서 유상태 애플리케이션을 실행할때 주로 PV, PVC를 활용해서 데이터를 저장한다. 위치에 따라 내부, 외부 저장 유무를 결정하는데, 내부적으로 저장하는 것은 접근성도 떨어질 뿐만 아니라 노드를 운용하는데 비효율적이라고 판단했다. 외부적인 방안은 네트워크를 통한 데이터 저장이다.&lt;/p&gt;
 &lt;p&gt;그렇다면 &lt;strong&gt;온프로미스 환경에서 네트워크로 통신하여 저장할 수 있는 방법이 있을까?&lt;/strong&gt; 직접 쿠버네티스 환경에 구축하여 적용하고자 한다.&lt;/p&gt;
@@ -33,10 +275,10 @@
 &lt;li&gt;NFS 서버 전용 가상 머신을 만든다.&lt;/li&gt;
 &lt;li&gt;Host 서버에 DAS를 마운팅하고, NFS Server 인스턴스에 host에 마운팅된 경로를 다시 마운트한다.&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img1.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img1.png&#34;
 	width=&#34;1153&#34;
 	height=&#34;917&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-2/img1_hu1e3e28fb84ce4edd796f713f5fedf5b3_111298_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img1_hu1e3e28fb84ce4edd796f713f5fedf5b3_111298_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img1_hu1e3e28fb84ce4edd796f713f5fedf5b3_111298_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img1_hu1e3e28fb84ce4edd796f713f5fedf5b3_111298_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;서버 구성도&#34;
@@ -54,10 +296,10 @@
 &lt;p&gt;디스크 포맷 및 파티셔닝은 &lt;a class=&#34;link&#34; href=&#34;https://zero-gravity.tistory.com/297&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;무중력 인간님의 블로그&lt;/a&gt;를 참고하자.&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img2.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img2.png&#34;
 	width=&#34;673&#34;
 	height=&#34;98&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-2/img2_hu37a892cc2b77b26a6e7efde2db4bf33e_27385_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img2_hu37a892cc2b77b26a6e7efde2db4bf33e_27385_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img2_hu37a892cc2b77b26a6e7efde2db4bf33e_27385_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img2_hu37a892cc2b77b26a6e7efde2db4bf33e_27385_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;파티션 정보&#34;
@@ -72,10 +314,10 @@
     &gt;fstab 파일을 수정&lt;/a&gt;했다.&lt;/p&gt;
 &lt;h3 id=&#34;문제1-uuid가-없는-경우&#34;&gt;문제1. UUID가 없는 경우
 &lt;/h3&gt;&lt;p&gt;ext4로 포맷이 안된경우 PARTITION UUID만 있다. 그러므로 &lt;code&gt;mkfs.ext4&lt;/code&gt; 를 활용하여 ext4를 포맷시키자.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img3.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img3.png&#34;
 	width=&#34;577&#34;
 	height=&#34;212&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-2/img3_huf451f82611933230bebf929a138b7250_53224_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img3_huf451f82611933230bebf929a138b7250_53224_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img3_huf451f82611933230bebf929a138b7250_53224_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img3_huf451f82611933230bebf929a138b7250_53224_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;ext4 포맷이 완전히 안된 경우&#34;
@@ -98,10 +340,10 @@
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;multipass mount /mnt/das/vol1 nfs:/nfs/vol1
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img4.png&#34;
+&lt;/div&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img4.png&#34;
 	width=&#34;431&#34;
 	height=&#34;235&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-2/img4_hu42bdacf91740c6235dfc96aa01ba6181_28141_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img4_hu42bdacf91740c6235dfc96aa01ba6181_28141_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img4_hu42bdacf91740c6235dfc96aa01ba6181_28141_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img4_hu42bdacf91740c6235dfc96aa01ba6181_28141_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;nfs multipass 정보&#34;
@@ -129,10 +371,10 @@
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;네트워크 범위를 10.120.52.0/24로 지정했는데, 이는 multipass instance가 &lt;code&gt;10.120.52.0/24&lt;/code&gt; 범위 내에 있기 때문이다.&lt;/p&gt;
 &lt;p&gt;mulitpass에서 사용되는 네트워크 드라이브를 보면 qemu를 사용한다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img6.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img6.png&#34;
 	width=&#34;415&#34;
 	height=&#34;47&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-2/img6_hua25351a870f97f232b6acd5cdbceb596_8193_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img6_hua25351a870f97f232b6acd5cdbceb596_8193_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img6_hua25351a870f97f232b6acd5cdbceb596_8193_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img6_hua25351a870f97f232b6acd5cdbceb596_8193_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;multipass driver 확인&#34;
@@ -144,10 +386,10 @@
 	
 &gt;&lt;/p&gt;
 &lt;p&gt;네트워크 인터페이스를 보면 사용가능한 IP 범위는 &lt;code&gt;10.120.52.0/24&lt;/code&gt; 임을 알 수 있다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img7.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img7.png&#34;
 	width=&#34;627&#34;
 	height=&#34;161&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-2/img7_hu0462c05af9c7ef817d4d6ce1c18de1b5_39838_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img7_hu0462c05af9c7ef817d4d6ce1c18de1b5_39838_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img7_hu0462c05af9c7ef817d4d6ce1c18de1b5_39838_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img7_hu0462c05af9c7ef817d4d6ce1c18de1b5_39838_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Network Interface 확인&#34;
@@ -179,10 +421,10 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;마스터 노드에 showmount하여 NFS가 제대로 작동되었는지 확인했을때 아래와 같이 export list가 잘 보여지면 된다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img8.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img8.png&#34;
 	width=&#34;533&#34;
 	height=&#34;68&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-2/img8_hu31fc685ff1ffcda1451f1b1fb853beb4_15926_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img8_hu31fc685ff1ffcda1451f1b1fb853beb4_15926_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img8_hu31fc685ff1ffcda1451f1b1fb853beb4_15926_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img8_hu31fc685ff1ffcda1451f1b1fb853beb4_15926_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Show mount 정보&#34;
@@ -198,10 +440,10 @@
 &lt;p&gt;Provisioner는 &lt;a class=&#34;link&#34; href=&#34;https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner#with-helm&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;kubernetes-sigs Github에 있는 nfs-subdir-external-provisioner&lt;/a&gt;를 사용했다.&lt;/p&gt;
 &lt;p&gt;위의 파일을 적절하게 설정하게 test를 실행시키면, 아래와 같이 pvc가 만들어지게 된다. 또한 파드를 삭제하게 되면 자동으로 pvc가 삭제되는 것을 볼 수 있다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-2/img9.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img9.png&#34;
 	width=&#34;958&#34;
 	height=&#34;154&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-2/img9_hu2a36d6b36efa78aa967f1201eb936900_39317_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-2/img9_hu2a36d6b36efa78aa967f1201eb936900_39317_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img9_hu2a36d6b36efa78aa967f1201eb936900_39317_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img9_hu2a36d6b36efa78aa967f1201eb936900_39317_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;DAS에 저장된 데이터 확인&#34;
@@ -225,10 +467,10 @@
         </item>
         <item>
         <title>서버 구축기 - 1. 쿠버네티스 멀티 노드 환경 구성하기</title>
-        <link>http://localhost:1313/p/server-setup-1/</link>
+        <link>http://localhost:1313/p/server-setup-multinode-kubernetes/</link>
         <pubDate>Fri, 12 Jul 2024 00:00:00 +0000</pubDate>
         
-        <guid>http://localhost:1313/p/server-setup-1/</guid>
+        <guid>http://localhost:1313/p/server-setup-multinode-kubernetes/</guid>
         <description>&lt;p&gt;사이드 프로젝트를 직접 운영하기 위해 서버를 구축하기로 결심했다. 그래서 기존에 있는 Windows 데스크톱을 ubuntu 20.04 서버 환경으로 세팅했다.&lt;/p&gt;
 &lt;h2 id=&#34;rtl8125-오류&#34;&gt;RTL8125 오류
 &lt;/h2&gt;&lt;p&gt;여기서 문제가 발생했다. LAN 카드 정보 확인 결과, 네트워크 인터페이스가 제대로 인식되지 않았던 것이었다. 랜카드가 RTL8125의 경우에는 별도의 드라이버 설치가 필요했다. 하나의 모순이 생겼다. 우리가 패키지를 설치할때는 네트워크 연결이 필수지만, 네트워크에 문제가 생겨 외부 패키지를 다운받을 수 없던 것이었다.
@@ -251,10 +493,10 @@
 &lt;h3 id=&#34;calico-선택한-이유&#34;&gt;Calico 선택한 이유
 &lt;/h3&gt;&lt;p&gt;CNI 플러그인에서 가장 대중적으로 쓰이는 것은 &lt;a class=&#34;link&#34; href=&#34;https://docs.tigera.io/calico/latest/getting-started/kubernetes/quickstart&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;Calico&lt;/a&gt;이다. CNI 플러그인 벤치마크를 보면 리소스 사용률이나, 속도 측면에서 Calico가 우수한 편이다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-1/img1.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img1.png&#34;
 	width=&#34;1920&#34;
 	height=&#34;521&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-1/img1_hu38e8cfd265c925a3d7ed360056e55a03_463017_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-1/img1_hu38e8cfd265c925a3d7ed360056e55a03_463017_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img1_hu38e8cfd265c925a3d7ed360056e55a03_463017_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-multinode-kubernetes/img1_hu38e8cfd265c925a3d7ed360056e55a03_463017_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://itnext.io/benchmark-results-of-kubernetes-network-plugins-cni-over-10gbit-s-network-updated-august-2020-6e1b757b9e49&#34;
@@ -268,10 +510,10 @@
 &lt;p&gt;CNI의 특징은 Pod에 IP를 할당한다. 이러한 특징이 대규모 환경에서는 IP 부족으로 이어질 수 있다. &lt;sup id=&#34;fnref:6&#34;&gt;&lt;a href=&#34;#fn:6&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;6&lt;/a&gt;&lt;/sup&gt; 그러나 소규모 프로젝트는 많은 pod를 생성하지 않으므로 IP는 부족하지 않을 것이다.&lt;/p&gt;
 &lt;h2 id=&#34;결과&#34;&gt;결과
 &lt;/h2&gt;&lt;p&gt;10.120.52.x IP는 multipass instance의 IP이고, 192.168.x.x는 calico의 IP이다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-1/img2.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img2.png&#34;
 	width=&#34;705&#34;
 	height=&#34;192&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-1/img2_hu43a00d9557429e2d8a8e95d534f264d0_37047_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-1/img2_hu43a00d9557429e2d8a8e95d534f264d0_37047_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img2_hu43a00d9557429e2d8a8e95d534f264d0_37047_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-multinode-kubernetes/img2_hu43a00d9557429e2d8a8e95d534f264d0_37047_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Multipass Instance IP&#34;
@@ -282,10 +524,10 @@
 		data-flex-basis=&#34;881px&#34;
 	
 &gt;&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-1/img3.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img3.png&#34;
 	width=&#34;1213&#34;
 	height=&#34;960&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-1/img3_hu9653f2c370ff22b5b2ba3df64314a5ad_110642_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-1/img3_hu9653f2c370ff22b5b2ba3df64314a5ad_110642_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img3_hu9653f2c370ff22b5b2ba3df64314a5ad_110642_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-multinode-kubernetes/img3_hu9653f2c370ff22b5b2ba3df64314a5ad_110642_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;쿠버네티스 구성도&#34;
@@ -297,10 +539,10 @@
 	
 &gt;&lt;/p&gt;
 &lt;p&gt;실제로 파드를 생성해 실행시켜 보면 아래와 같은 결과를 얻을 수 있다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-1/img4.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img4.png&#34;
 	width=&#34;856&#34;
 	height=&#34;643&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-1/img4_hu8e7679c58d59427912c6eec2300b3a0d_107767_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-1/img4_hu8e7679c58d59427912c6eec2300b3a0d_107767_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img4_hu8e7679c58d59427912c6eec2300b3a0d_107767_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-multinode-kubernetes/img4_hu8e7679c58d59427912c6eec2300b3a0d_107767_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;nginx 파드 생성 결과&#34;
@@ -343,10 +585,10 @@
         </item>
         <item>
         <title>그 많은 서버 디스크 용량을 누가 잡아 먹었는가?</title>
-        <link>http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/</link>
+        <link>http://localhost:1313/p/server-management-disk-1/</link>
         <pubDate>Tue, 28 May 2024 00:00:00 +0000</pubDate>
         
-        <guid>http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/</guid>
+        <guid>http://localhost:1313/p/server-management-disk-1/</guid>
         <description>&lt;p&gt;Multipass를 구동하려고 하는 중 디스크 용량이 꽉찼다는 메세지를 얻게 되었다.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
@@ -357,10 +599,10 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;서버에서 사용중인 SSD는 1TB인데 5개의 Multipass 인스턴스로 다 찬다는 것은 말이 되지 않았다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img1.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-management-disk-1/img1.png&#34;
 	width=&#34;752&#34;
 	height=&#34;206&#34;
-	srcset=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img1_huf9109ac56f521e9bddb532a4a65a95ea_48063_480x0_resize_box_3.png 480w, http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img1_huf9109ac56f521e9bddb532a4a65a95ea_48063_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img1_huf9109ac56f521e9bddb532a4a65a95ea_48063_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-management-disk-1/img1_huf9109ac56f521e9bddb532a4a65a95ea_48063_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;df -h 결과&#34;
@@ -372,10 +614,10 @@
 	
 &gt;&lt;/p&gt;
 &lt;p&gt;실제 하드웨어 상에서 부착된 용량과 ubuntu lvm에서 사용되는 최대 용량이 달랐다. 그러므로 이 용량을 적절하게 조절해야 한다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img2.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-management-disk-1/img2.png&#34;
 	width=&#34;690&#34;
 	height=&#34;115&#34;
-	srcset=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img2_hub9d56ceace1a92c7e5c7aaa004579546_27130_480x0_resize_box_3.png 480w, http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img2_hub9d56ceace1a92c7e5c7aaa004579546_27130_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img2_hub9d56ceace1a92c7e5c7aaa004579546_27130_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-management-disk-1/img2_hub9d56ceace1a92c7e5c7aaa004579546_27130_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;lsblk 결과&#34;
@@ -406,10 +648,10 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;자세하게 봐보자. ubuntu-vg는 SSD의 용량만큼 적절하게 할당 받았다. 그러나 Alloc PE를 보면 100 GB 밖에 남지 않았다는 것을 알 수 있다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img3.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-management-disk-1/img3.png&#34;
 	width=&#34;640&#34;
 	height=&#34;466&#34;
-	srcset=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img3_hu88a71d965693f068016a8f9a3ebd14d7_67397_480x0_resize_box_3.png 480w, http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img3_hu88a71d965693f068016a8f9a3ebd14d7_67397_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img3_hu88a71d965693f068016a8f9a3ebd14d7_67397_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-management-disk-1/img3_hu88a71d965693f068016a8f9a3ebd14d7_67397_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;vgdisplay 결과&#34;
@@ -421,10 +663,10 @@
 	
 &gt;&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;lvdisplay&lt;/code&gt;로 lv를 확인해보면 ubuntu-lv가 100GB로 할당되었음을 확인할 수 있다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img4.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-management-disk-1/img4.png&#34;
 	width=&#34;406&#34;
 	height=&#34;50&#34;
-	srcset=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img4_hu72b9b81b76a4cd920826ee267cb6b717_7229_480x0_resize_box_3.png 480w, http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img4_hu72b9b81b76a4cd920826ee267cb6b717_7229_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img4_hu72b9b81b76a4cd920826ee267cb6b717_7229_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-management-disk-1/img4_hu72b9b81b76a4cd920826ee267cb6b717_7229_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;lvdisplay 결과&#34;
@@ -436,10 +678,10 @@
 	
 &gt;&lt;/p&gt;
 &lt;p&gt;여기서 LVM(Logical Volume Manager)의 개념을 알아야 하는데, 파일 시스템에 추상화 계층을 추가하여 논리적 스토리지를 생성할 수 있게 해준다.&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img5.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-management-disk-1/img5.png&#34;
 	width=&#34;720&#34;
 	height=&#34;671&#34;
-	srcset=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img5_hufe7e44441d27029c48b3a31d76be990a_188274_480x0_resize_box_3.png 480w, http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img5_hufe7e44441d27029c48b3a31d76be990a_188274_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img5_hufe7e44441d27029c48b3a31d76be990a_188274_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-management-disk-1/img5_hufe7e44441d27029c48b3a31d76be990a_188274_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://medium.com/@yhakimi/lvm-how-to-create-and-extend-a-logical-volume-in-linux-9744f27eacfe&#34;
@@ -451,10 +693,10 @@
 	
 &gt;&lt;/p&gt;
 &lt;p&gt;저자의 환경에서는 Root LV가 100GB로만 할당되어 있어, 하드 디스크의 용량 만큼 사용할 수 없었던 것이었다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img6.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-management-disk-1/img6.png&#34;
 	width=&#34;305&#34;
 	height=&#34;375&#34;
-	srcset=&#34;http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img6_hu41efb97fdbd6675c4b4bbacceb6acbd4_14579_480x0_resize_box_3.png 480w, http://localhost:1313/p/%EA%B7%B8-%EB%A7%8E%EC%9D%80-%EC%84%9C%EB%B2%84-%EB%94%94%EC%8A%A4%ED%81%AC-%EC%9A%A9%EB%9F%89%EC%9D%84-%EB%88%84%EA%B0%80-%EC%9E%A1%EC%95%84-%EB%A8%B9%EC%97%88%EB%8A%94%EA%B0%80/img6_hu41efb97fdbd6675c4b4bbacceb6acbd4_14579_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img6_hu41efb97fdbd6675c4b4bbacceb6acbd4_14579_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-management-disk-1/img6_hu41efb97fdbd6675c4b4bbacceb6acbd4_14579_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;VG, LV 관계도&#34;

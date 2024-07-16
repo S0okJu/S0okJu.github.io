@@ -1,6 +1,7 @@
 ---
 title: "그 많은 서버 디스크 용량을 누가 잡아 먹었는가?"
 date: 2024-05-28
+slug: server-management-disk-1
 tags:
   - LVM
 categories:

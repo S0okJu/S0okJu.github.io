@@ -1,12 +1,12 @@
 ---
 title: "서버 구축기 - 2. Multipass를 활용한 NFS 구성"
 date: 2024-07-14
-slug: server-setup-2
+slug: server-setup-nfs-in-multipass-instance
 tags:
   - Multipass
   - Kubernetes
 categories:
-  - Server Setup
+  - Server
 ---
 
 ## 들어가며

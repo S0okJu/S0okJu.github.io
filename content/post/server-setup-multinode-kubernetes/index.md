@@ -1,12 +1,12 @@
 ---
 title: "서버 구축기 - 1. 쿠버네티스 멀티 노드 환경 구성하기"
 date: 2024-07-12
-slug: server-setup-1
+slug: server-setup-multinode-kubernetes
 tags:
   - Multipass
   - Kubernetes
 categories:
-  - Server Setup
+  - Server
 ---
 
 사이드 프로젝트를 직접 운영하기 위해 서버를 구축하기로 결심했다. 그래서 기존에 있는 Windows 데스크톱을 ubuntu 20.04 서버 환경으로 세팅했다.
