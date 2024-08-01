@@ -110,6 +110,10 @@ export OS_PASSWORD="yourpassword"
 
 ![환경 변수 확인](img6.png)
 
+다시 terraform으로 kubernetes를 설치하면 정상적으로 실행된다.
+
+![배포 완료](img7.png)
+
 [^1]: https://www.quora.com/Which-Linux-distribution-is-best-suited-for-a-cloud-server-environment-and-why
 [^2]: https://github.com/terraform-provider-openstack/terraform-provider-openstack/issues/267
 [^3]: https://askubuntu.com/questions/395212/why-environment-variable-disappears-after-terminal-reopen
