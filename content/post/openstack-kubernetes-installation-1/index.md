@@ -1,7 +1,7 @@
 ---
-title: "Openstack - Kubernetes 설치 및 관련 오류 해결"
+title: "Openstack - Kubespray를 활용한 Kubernetes 설치 시 Terraform 오류"
 date: 2024-08-01
-slug: openstack-install-kubernetes-and-fix-error
+slug: openstack-kubernetes-installation-1
 tags:
   - Kubernetes
   - OpenStack
@@ -35,16 +35,26 @@ dashboard를 보면 정상적으로 이미지가 업로드된 것을 알 수 있
 
 ## Kubespray를 활용한 Kubernetes 구축
 
-2024년 7월 기준 최신 버전을 사용했습니다.
-
 - OS - Ubuntu 24.04
-- Openstack - 2024.1 Caracal
-- Kubespray - v2.25.0
+- Openstack - 2024.1
+- Kubespray - v2.21.0
 - Terraform - v1.9.3
 
 전반적인 설치 과정은 [변재한님의 velog](https://velog.io/@jaehan/Openstack-%EA%B8%B0%EB%B0%98-Kubernets-%EA%B5%AC%EC%B6%95-with-Kubespray)를 참고했습니다.
 
 > openstack v2, v3 API는 다른점이 많습니다. 만약에 v2 버전으로 하고 싶다면 운영체제와 kubespray, terraform 버전을 맞추는 것이 좋습니다.
+
+### ssh 통신을 위한 공개키 생성
+
+쿠버네티스 환경 설정을 위해 Ansible를 사용한다. Ansible은 ssh를 활용하여 대상에 접속할 수 있다. 이 키는 추후 Kubernetes에서 노드끼리 통신할 수 있는 openstack의 keypair로써 활용된다.
+
+```bash
+ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_rsa.kubespray
+
+eval $(ssh-agent -s)
+
+ssh-add ~/.ssh/id_rsa.kubespray
+```
 
 ## 오류 - One of auth_url or cloud must be specified
 
