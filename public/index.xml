@@ -6,12 +6,365 @@
         <description>Recent content on D7MeKz Tech</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Thu, 01 Aug 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
-        <title>Openstack - Kubernetes 설치 및 관련 오류 해결</title>
-        <link>http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/</link>
+        <lastBuildDate>Sat, 17 Aug 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>Openstack - Kubespray를 활용한 Kubernetes 설치 시 Ansible 오류</title>
+        <link>http://localhost:1313/p/openstack-kubernetes-installation-2/</link>
+        <pubDate>Sat, 17 Aug 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/p/openstack-kubernetes-installation-2/</guid>
+        <description>&lt;p&gt;Kubernetes 설치는 &lt;a class=&#34;link&#34; href=&#34;https://velog.io/@jaehan/Openstack-%EA%B8%B0%EB%B0%98-Kubernets-%EA%B5%AC%EC%B6%95-with-Kubespray&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;변재한님의 블로그&lt;/a&gt;를 참고했습니다.&lt;/p&gt;
+&lt;h2 id=&#34;ansible-ping-문제&#34;&gt;Ansible Ping 문제
+&lt;/h2&gt;&lt;p&gt;Ansible Ping 수행 시 모든 노드에 아래와 같은 오류가 발생했다. 에러 메세지를 확인해보니 ssh 키가 제대로 적용되지 않은 것처럼 보였다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;Kubernetes-k8s-node-nf-2 | UNREACHABLE! =&amp;gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &amp;#34;changed&amp;#34;: false,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &amp;#34;msg&amp;#34;: &amp;#34;Data could not be sent to remote host \&amp;#34;10.0.2.176\&amp;#34;. Make sure this host can be reached over ssh: kex_exchange_identification: Connection closed by remote host\r\nConnection closed by UNKNOWN port 65535\r\n&amp;#34;,
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &amp;#34;unreachable&amp;#34;: true
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;blockquote&gt;
+&lt;p&gt;Ansible은 ssh를 활용하여 target 노드와 통신한다.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h3 id=&#34;해결책-1-공개키-알고리즘-변경&#34;&gt;해결책 1. 공개키 알고리즘 변경
+&lt;/h3&gt;&lt;p&gt;openstack log를 확인해보니 debian image에 공개키가 authorized_keys에 제대로 복사되지 않아 ssh 통신을 제대로 수행하지 못한 것이었다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img1.png&#34;
+	width=&#34;608&#34;
+	height=&#34;123&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img1_hu5e189bffa2903f964d1ec255aed5c478_21933_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img1_hu5e189bffa2903f964d1ec255aed5c478_21933_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;publickey가 제대로 복사되지 않은 경우 instance log&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;494&#34;
+		data-flex-basis=&#34;1186px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;ssh 키를 ed25519 알고리즘으로 생성하면 키가 제대로 복사되지 않았지만 rsa로 변경하면 아래와 같이 키가 복사된다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img2.png&#34;
+	width=&#34;1135&#34;
+	height=&#34;149&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img2_hueb4a2278ad06d78850de68629c3498be_38628_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img2_hueb4a2278ad06d78850de68629c3498be_38628_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;publickey가 제대로 변경된 모습&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;761&#34;
+		data-flex-basis=&#34;1828px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;보안을 고려하면 rsa보다는 ed25519 알고리즘이 권장된다.&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;다시 ping을 수행하면 제대로 수행된다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img3.png&#34;
+	width=&#34;831&#34;
+	height=&#34;784&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img3_huddaed96501701af2a72c49a8edebcfa2_115901_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img3_huddaed96501701af2a72c49a8edebcfa2_115901_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;Ansible ping 성공&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;105&#34;
+		data-flex-basis=&#34;254px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;해결책-2-ssh-agent-실행&#34;&gt;해결책 2. ssh-agent 실행
+&lt;/h3&gt;&lt;p&gt;만약에 원격으로 openstack 서버에 접속한다고 가정해보자. 사용자를 변경하거나 세션을 한번 끊게 되면 동일한 이유로 문제가 생긴다.&lt;/p&gt;
+&lt;p&gt;우선 우리가 초기에 ansible를 세팅할 때 ssh-agent를 실행하고 private key를 추가하는 작업을 한다. ssh-agent는 ssh-add 명령어를 활용하여 키를 기억하고 사용하게 된다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;# 백그라운드에 agent 실행
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;eval &amp;#34;$(ssh-agent -s)&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;# 키 추가
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ssh-add ~/.ssh/id_rsa
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;ssh-agent는 프로세스로써 작동돼 중간에 ssh가 중단되더라도 프로세스가 남아있다. 그러므로 &lt;strong&gt;현재 사용자(stack)가 실행시킨 프로세스를 먼저 없애고 ssh-agent를 실행시키도록 구현&lt;/strong&gt;하면 된다.&lt;/p&gt;
+&lt;p&gt;openstack은 stack 사용자가 관리한다. stack 사용자의 &lt;code&gt;~/.bashrc&lt;/code&gt; 에 ssh-agent를 추가하여 stack 사용자로 로그인 성공할때마다 실행할 수 있도록 한다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;9
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Ansible ssh agent&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;## Delete used ssh-agent&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt; -f ~/scripts/delete_ssh_agent.sh &lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;        . ~/scripts/delete_ssh_agent.sh
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;## Create new ssh-agent&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;eval&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;ssh-agent -s&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ssh-add ~/.ssh/id_rsa.kubespray
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;code&gt;delete_ssh_agent.sh&lt;/code&gt; 은 openstack을 관리하는 사용자(stack)가 가지고 있는 ssh-agent를 삭제하는 스크립트이다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;#!/bin/bash
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;cp&#34;&gt;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Get all PIDs of ssh-agent processes owned by the user &amp;#39;stack&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nv&#34;&gt;pids&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;pgrep -u stack ssh-agent&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Check if any PIDs were found&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;[&lt;/span&gt; -z &lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$pids&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;]&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nb&#34;&gt;echo&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;No ssh-agent processes found for user &amp;#39;stack&amp;#39;.&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;nb&#34;&gt;exit&lt;/span&gt; &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;c1&#34;&gt;# Loop through each PID and attempt to kill the process&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;k&#34;&gt;for&lt;/span&gt; pid in &lt;span class=&#34;nv&#34;&gt;$pids&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;do&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;nb&#34;&gt;echo&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Killing ssh-agent process with PID &lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$pid&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;...&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;nb&#34;&gt;kill&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$pid&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    sleep &lt;span class=&#34;m&#34;&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;c1&#34;&gt;# Check if the process was successfully killed&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;k&#34;&gt;if&lt;/span&gt; pgrep -u stack -x ssh-agent &amp;gt; /dev/null&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;nb&#34;&gt;echo&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Failed to kill process with PID &lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$pid&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;. You may need to use sudo.&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;k&#34;&gt;else&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;      &lt;span class=&#34;nb&#34;&gt;echo&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;Successfully killed process with PID &lt;/span&gt;&lt;span class=&#34;nv&#34;&gt;$pid&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;.&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;    &lt;span class=&#34;k&#34;&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;k&#34;&gt;done&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;k&#34;&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;새롭게 접속하면 아래와 같이 정상적으로 실행되는 것을 알 수 있다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img7.png&#34;
+	width=&#34;610&#34;
+	height=&#34;92&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img7_hu24a1683acc6f33e9840867bfd9729474_23185_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img7_hu24a1683acc6f33e9840867bfd9729474_23185_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;stack login 성공&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;663&#34;
+		data-flex-basis=&#34;1591px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img8.png&#34;
+	width=&#34;723&#34;
+	height=&#34;67&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img8_hu5fdf33c77f01eb41f42b9c072c86c2cc_20230_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img8_hu5fdf33c77f01eb41f42b9c072c86c2cc_20230_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;ssh-agent 프로세스 확인&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;1079&#34;
+		data-flex-basis=&#34;2589px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;이 방식은 단일 사용자만 관리한다는 가정하에서 만든 해결책이다.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;nameserver-문제&#34;&gt;Nameserver 문제
+&lt;/h2&gt;&lt;p&gt;playbook를 배포해보자.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ansible-playbook --become -i inventory/test-cluster/hosts cluster.yml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;nameserver로 인해 문제가 발생했다. 보통 이런 문제는 nameserver의 설정이 잘못된 경우에 발생되며 안전한 google dns(8.8.8.8, 8.8.4.4)로 설정하면 해결된다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;   &amp;#34;msg&amp;#34;: &amp;#34;E: Failed to fetch http://security.debian.org/debian-security/pool/updates/main/p/python-apt/python-apt-common_1.8.4.3_all.deb  Temporary failure resolving &amp;#39;deb.debian.org&amp;#39;\nE: Failed to fetch http://security.debian.org/debian-security/pool/updates/main/p/python-apt/python3-apt_1.8.4.3_amd64.deb  Temporary failure resolving &amp;#39;deb.debian.org&amp;#39;\nE: Unable to fetch some archives, maybe run apt-get update or try with --fix-missing?&amp;#34;,
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id=&#34;해결책-1-resolvconf-수정잘못된-접근&#34;&gt;해결책 1. resolv.conf 수정(잘못된 접근)
+&lt;/h3&gt;&lt;p&gt;DNS를 설정하는 &lt;code&gt;resolv.conf&lt;/code&gt; 를 확인해보면 127.0.0.53로 설정되어 있다. 안전하게 google dns 서버로 변경해보자&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;# Dynamic resolv.conf(5) file for glibc resolver(3) generated by resolvconf(8)
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;#     DO NOT EDIT THIS FILE BY HAND -- YOUR CHANGES WILL BE OVERWRITTEN
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;nameserver 127.0.0.53
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;실제로는 &lt;strong&gt;우리가 직접 변경하면 안된다.&lt;/strong&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;DO NOT EDIT THIS FILE BY HAND &amp;ndash; YOUR CHANGES WILL BE OVERWRITTEN&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;resolv.conf은 /run 폴더 내에 심볼링 링크가 되어 있기 때문에 마음대로 수정하는 것은 권장하지 않는다.&lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img4.png&#34;
+	width=&#34;945&#34;
+	height=&#34;89&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img4_hu63706d7369c4b170a724b35011b2d70f_24121_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img4_hu63706d7369c4b170a724b35011b2d70f_24121_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;resolv.conf 심볼릭 링크&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;1061&#34;
+		data-flex-basis=&#34;2548px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;실제로 &lt;a class=&#34;link&#34; href=&#34;https://libguestfs.org/virt-customize.1.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;virt-customize&lt;/a&gt; 를 활용해서 resolv.conf를 수정하는 이미지를 별도로 만들었지만 의미가 없었다.&lt;/p&gt;
+&lt;h3 id=&#34;해결책-2-terraform-수정&#34;&gt;해결책 2. Terraform 수정
+&lt;/h3&gt;&lt;p&gt;가장 안전한 접근법이다.
+네트워크 토폴로지를 보면 쿠버네티스 노드들이 kubernetes-network subnet를 활용한다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img5.png&#34;
+	width=&#34;809&#34;
+	height=&#34;609&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img5_hua706cb8e78df85ab1b456d0c58171c6b_50408_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img5_hua706cb8e78df85ab1b456d0c58171c6b_50408_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;kubernetes 네트워크 토폴로지&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;132&#34;
+		data-flex-basis=&#34;318px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;Openstack의 subnet에 DNS nameserver를 명시할 수 있다. 그러므로 Openstack 인스턴스를 배포하는 terraform 파일을 수정한다.
+&lt;code&gt;~/kubespray/contrib/terraform/openstack/modules/network/main.tf&lt;/code&gt; 내에 &lt;code&gt;dns_nameservers&lt;/code&gt; 를 google dns로 변경시킨다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-tf&#34; data-lang=&#34;tf&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;kr&#34;&gt;resource&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;openstack_networking_subnet_v2&amp;#34;&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;k8s&amp;#34;&lt;/span&gt; &lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;na&#34;&gt;name&lt;/span&gt;            = &lt;span class=&#34;s2&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;${&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;var&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;cluster_name&lt;/span&gt;&lt;span class=&#34;si&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;-internal-network&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;na&#34;&gt;count&lt;/span&gt;           = &lt;span class=&#34;nb&#34;&gt;var&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;use_neutron&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;na&#34;&gt;network_id&lt;/span&gt;      = &lt;span class=&#34;nx&#34;&gt;openstack_networking_network_v2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;k8s&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;nb&#34;&gt;count&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;index&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;].&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;id&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;na&#34;&gt;cidr&lt;/span&gt;            = &lt;span class=&#34;nb&#34;&gt;var&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;nx&#34;&gt;subnet_cidr&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;na&#34;&gt;ip_version&lt;/span&gt;      = &lt;span class=&#34;m&#34;&gt;4&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;na&#34;&gt;dns_nameservers&lt;/span&gt; = &lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;8.8.8.8&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;8.8.4.4&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;원래라면 variables.tf를 수정해야 했지만 제대로 적용이 되지 않았고, google dns server는 거의 불변에 가깝기 때문에 main.tf에 직접 작성해도 된다고 판단했다.&lt;/p&gt;
+&lt;p&gt;아래와 같이 제대로 적용된다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img6.png&#34;
+	width=&#34;522&#34;
+	height=&#34;322&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img6_hu5fb6ac3cff366986319dbafb4d09c3d1_44123_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img6_hu5fb6ac3cff366986319dbafb4d09c3d1_44123_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;dns nameserver 성공&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;162&#34;
+		data-flex-basis=&#34;389px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;그-이외의-debian-문제들&#34;&gt;그 이외의 debian 문제들
+&lt;/h2&gt;&lt;p&gt;그 이후부터 debian에는 잡다한 문제가 발생했다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img9.png&#34;
+	width=&#34;1036&#34;
+	height=&#34;237&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img9_hu9314893c936785d88ea403279adca66b_54075_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img9_hu9314893c936785d88ea403279adca66b_54075_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;437&#34;
+		data-flex-basis=&#34;1049px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;해결책-1-클라우드-이미지를-ubuntu로-변경&#34;&gt;해결책 1. 클라우드 이미지를 ubuntu로 변경
+&lt;/h3&gt;&lt;p&gt;클라우드 이미지를 debian에서 ubuntu로 변경했다. ssh 키를 ed25519 알고리즘으로 적용해도 정상적으로 작동된다.
+Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&lt;/p&gt;
+&lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
+&lt;hr&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn:1&#34;&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://dev.to/ccoveille/how-to-generate-a-secure-and-robust-ssh-key-in-2024-3f4f&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://dev.to/ccoveille/how-to-generate-a-secure-and-robust-ssh-key-in-2024-3f4f&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:2&#34;&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://askubuntu.com/questions/351168/diffrence-between-the-dns-setting-in-etc-resolv-conf-and-etc-network-interfaces&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://askubuntu.com/questions/351168/diffrence-between-the-dns-setting-in-etc-resolv-conf-and-etc-network-interfaces&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:2&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        </item>
+        <item>
+        <title>Openstack - Kubespray를 활용한 Kubernetes 설치 시 Terraform 오류</title>
+        <link>http://localhost:1313/p/openstack-kubernetes-installation-1/</link>
         <pubDate>Thu, 01 Aug 2024 00:00:00 +0000</pubDate>
         
-        <guid>http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/</guid>
+        <guid>http://localhost:1313/p/openstack-kubernetes-installation-1/</guid>
         <description>&lt;h2 id=&#34;openstack-설치&#34;&gt;Openstack 설치
 &lt;/h2&gt;&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://velog.io/@im2sh/Ubuntu-22.04%EC%97%90%EC%84%9C-Devstack-%EC%84%A4%EC%B9%98&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;im2sh.log velog&lt;/a&gt;을 참고해서 Devstack을 활용해 Openstack을 설치하면 된다. 다만 로컬 환경에서만 수행할 예정이므로 가상 public ip 대역 생성은 제외했다.&lt;/p&gt;
@@ -40,10 +393,10 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;dashboard를 보면 정상적으로 이미지가 업로드된 것을 알 수 있다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img1.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img1.png&#34;
 	width=&#34;423&#34;
 	height=&#34;236&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img1_hu2485b8498761322fb83e2ace7e1071bb_15474_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img1_hu2485b8498761322fb83e2ace7e1071bb_15474_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img1_hu2485b8498761322fb83e2ace7e1071bb_15474_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img1_hu2485b8498761322fb83e2ace7e1071bb_15474_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;horizon에서 확인한 이미지&#34;
@@ -55,11 +408,10 @@
 	
 &gt;&lt;/p&gt;
 &lt;h2 id=&#34;kubespray를-활용한-kubernetes-구축&#34;&gt;Kubespray를 활용한 Kubernetes 구축
-&lt;/h2&gt;&lt;p&gt;2024년 7월 기준 최신 버전을 사용했습니다.&lt;/p&gt;
-&lt;ul&gt;
+&lt;/h2&gt;&lt;ul&gt;
 &lt;li&gt;OS - Ubuntu 24.04&lt;/li&gt;
-&lt;li&gt;Openstack - 2024.1 Caracal&lt;/li&gt;
-&lt;li&gt;Kubespray - v2.25.0&lt;/li&gt;
+&lt;li&gt;Openstack - 2024.1&lt;/li&gt;
+&lt;li&gt;Kubespray - v2.21.0&lt;/li&gt;
 &lt;li&gt;Terraform - v1.9.3&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;전반적인 설치 과정은 &lt;a class=&#34;link&#34; href=&#34;https://velog.io/@jaehan/Openstack-%EA%B8%B0%EB%B0%98-Kubernets-%EA%B5%AC%EC%B6%95-with-Kubespray&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
@@ -67,14 +419,32 @@
 &lt;blockquote&gt;
 &lt;p&gt;openstack v2, v3 API는 다른점이 많습니다. 만약에 v2 버전으로 하고 싶다면 운영체제와 kubespray, terraform 버전을 맞추는 것이 좋습니다.&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;h2 id=&#34;오류---one-of-auth_url-or-cloud-must-be-specified&#34;&gt;오류 - One of auth_url or cloud must be specified
+&lt;h3 id=&#34;ssh-통신을-위한-공개키-생성&#34;&gt;ssh 통신을 위한 공개키 생성
+&lt;/h3&gt;&lt;p&gt;쿠버네티스 환경 설정을 위해 Ansible를 사용한다. Ansible은 ssh를 활용하여 대상에 접속할 수 있다. 이 키는 추후 Kubernetes에서 노드끼리 통신할 수 있는 openstack의 keypair로써 활용된다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ssh-keygen -t ed25519 -N &lt;span class=&#34;s1&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt; -f ~/.ssh/id_rsa.kubespray
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nb&#34;&gt;eval&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;$(&lt;/span&gt;ssh-agent -s&lt;span class=&#34;k&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;ssh-add ~/.ssh/id_rsa.kubespray
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;오류---one-of-auth_url-or-cloud-must-be-specified&#34;&gt;오류 - One of auth_url or cloud must be specified
 &lt;/h2&gt;&lt;p&gt;결론부터 말하자면 클라이언트와 관련된 환경 변수가 저장되지 않아서 생긴 일이다.&lt;/p&gt;
 &lt;h3 id=&#34;해결-과정&#34;&gt;해결 과정
 &lt;/h3&gt;&lt;p&gt;아래의 오류를 읽어보면 openstack의 provider를 정의하는 tf파일에 속성이 정의되어 있지 않다고 한다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img2.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img2.png&#34;
 	width=&#34;890&#34;
 	height=&#34;330&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img2_hufb2680e2153ecf73f5f1d4b75c0a9946_45774_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img2_hufb2680e2153ecf73f5f1d4b75c0a9946_45774_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img2_hufb2680e2153ecf73f5f1d4b75c0a9946_45774_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img2_hufb2680e2153ecf73f5f1d4b75c0a9946_45774_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;kubernetes 설치 시 발생하는 오류&#34;
@@ -86,10 +456,10 @@
 	
 &gt;&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;~/kubespray/contrib/terraform/openstack/version.tf&lt;/code&gt; 를 보면 provider가 정의되어 있다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img4.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img4.png&#34;
 	width=&#34;536&#34;
 	height=&#34;172&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img4_hu990f20998c7cdcd4d3e7b7144fc1fa52_23353_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img4_hu990f20998c7cdcd4d3e7b7144fc1fa52_23353_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img4_hu990f20998c7cdcd4d3e7b7144fc1fa52_23353_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img4_hu990f20998c7cdcd4d3e7b7144fc1fa52_23353_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;~/kubespray/contrib/terraform/openstack/version.tf&#34;
@@ -126,10 +496,10 @@
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;즉 위와 같은 문제가 발생한 것은 클라이언트와 identity 서비스가 상호 작용을 위한 환경 변수가 없어서 생긴 일인 것이다.&lt;/p&gt;
 &lt;p&gt;다만 수동으로 terraform 파일에 작성하거나 환경변수를 설정하게 되면 Domain 정보가 부정확하다는 에러 메세지를 마주할 수 있다. openstack 버전에 따라서 지원하는 환경 변수도 다르거나, 같은 조건에 사람마다 실행 가능 여부가 다른 등 복합적인 이유가 존재한 것 같았다.&lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img3.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img3.png&#34;
 	width=&#34;937&#34;
 	height=&#34;174&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img3_huc6bea5c713829057f20d3962913b18e7_33792_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img3_huc6bea5c713829057f20d3962913b18e7_33792_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img3_huc6bea5c713829057f20d3962913b18e7_33792_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img3_huc6bea5c713829057f20d3962913b18e7_33792_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Invalid DomainID 오류&#34;
@@ -144,10 +514,10 @@
 &lt;/h3&gt;&lt;p&gt;Openstack에서 제공해주는 &lt;a class=&#34;link&#34; href=&#34;https://docs.openstack.org/liberty/ko_KR/install-guide-obs/keystone-openrc.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
     &gt;클라이언트 환경 스크립트(openrc)&lt;/a&gt;를 사용하면 된다.&lt;/p&gt;
 &lt;p&gt;horizon에 사용자를 클릭하면 openstack rc 파일이 있는데, 이를 다운로드해서 실행시키면 된다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img5.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img5.png&#34;
 	width=&#34;266&#34;
 	height=&#34;290&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img5_huf5abc3ef9b50032debddb4250465b672_14106_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img5_huf5abc3ef9b50032debddb4250465b672_14106_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img5_huf5abc3ef9b50032debddb4250465b672_14106_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img5_huf5abc3ef9b50032debddb4250465b672_14106_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;horizon에서 다운로드 가능한 OpenStack RC 파일&#34;
@@ -190,10 +560,10 @@
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
 &lt;/div&gt;&lt;p&gt;&lt;code&gt;source ~/.bashrc&lt;/code&gt;를 수행하면 아래와 같이 환경 변수가 정상적으로 설정된다.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img6.png&#34;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img6.png&#34;
 	width=&#34;304&#34;
 	height=&#34;85&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img6_hueeb804da5226453820177963321f9c57_14713_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-install-kubernetes-and-fix-error/img6_hueeb804da5226453820177963321f9c57_14713_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img6_hueeb804da5226453820177963321f9c57_14713_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img6_hueeb804da5226453820177963321f9c57_14713_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;환경 변수 확인&#34;
@@ -202,6 +572,21 @@
 		class=&#34;gallery-image&#34; 
 		data-flex-grow=&#34;357&#34;
 		data-flex-basis=&#34;858px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;다시 terraform으로 kubernetes를 설치하면 정상적으로 실행된다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img7.png&#34;
+	width=&#34;648&#34;
+	height=&#34;100&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img7_hu7326d02c32d59728d371aabe4120dfaa_9603_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img7_hu7326d02c32d59728d371aabe4120dfaa_9603_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;배포 완료&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;648&#34;
+		data-flex-basis=&#34;1555px&#34;
 	
 &gt;&lt;/p&gt;
 &lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
