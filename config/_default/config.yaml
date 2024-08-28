@@ -8,12 +8,12 @@ DefaultContentLanguage: en
 
 # Set hasCJKLanguage to true if DefaultContentLanguage is in [zh-cn ja ko]
 # This will make .Summary and .WordCount behave correctly for CJK languages.
-hasCJKLanguage: false
+hasCJKLanguage: yes
 
 languages:
     en:
-        languageName: D7MeKz
-        title: D7MeKz Tech
+        languageName: S0okJu
+        title: S0okJu.dev
         weight: 1
         params:
             description: 0-0
@@ -195,7 +195,7 @@ menu:
     social:
         - identifier: github
           name: GitHub
-          url: https://github.com/D7MeKz
+          url: https://github.com/S0okJu
           params:
               icon: brand-github
 
