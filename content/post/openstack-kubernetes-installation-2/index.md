@@ -5,9 +5,6 @@ slug: openstack-kubernetes-installation-2
 tags:
   - Kubernetes
   - OpenStack
-categories:
-  - Server
-  - OpenStack
 ---
 
 Kubernetes 설치는 [변재한님의 블로그](https://velog.io/@jaehan/Openstack-%EA%B8%B0%EB%B0%98-Kubernets-%EA%B5%AC%EC%B6%95-with-Kubespray)를 참고했습니다.

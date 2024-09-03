@@ -5,7 +5,7 @@ slug: server-access-dashboard-and-management-problems
 tags:
   - Kubernetes
 categories:
-  - Server
+  - OpsAthlan
 ---
 
 ## 서버 상태

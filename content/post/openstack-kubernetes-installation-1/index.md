@@ -5,9 +5,6 @@ slug: openstack-kubernetes-installation-1
 tags:
   - Kubernetes
   - OpenStack
-categories:
-  - Server
-  - OpenStack
 ---
 
 ## Openstack 설치

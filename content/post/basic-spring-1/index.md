@@ -2,10 +2,9 @@
 title: "Spring - Spring Boot 간략하게 알아보기"
 date: 2024-02-03
 slug: basic-spring-1
-categories:
-  - Web
 tags:
   - SpringBoot
+  - Web
 ---
 
 ## 스프링 부트

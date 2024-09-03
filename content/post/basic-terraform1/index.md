@@ -2,8 +2,6 @@
 title: "Terraform 기초 맛보기 - 1. 기본 문법 익히기"
 date: 2024-01-25
 slug: basic-terraform-1
-categories:
-  - IaC
 tags:
   - Terraform
 ---

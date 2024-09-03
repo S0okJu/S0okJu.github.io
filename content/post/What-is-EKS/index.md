@@ -5,9 +5,6 @@ slug: what-is-eks
 tags:
   - AWS
   - EKS
-categories:
-  - Cloud
-  - Kubernetes
 ---
 
 ## EKS

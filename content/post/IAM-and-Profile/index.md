@@ -4,8 +4,6 @@ date: 2024-04-16
 slug: iam-and-profile
 tags:
   - AWS
-categories:
-  - Cloud
 ---
 
 ## Introduction

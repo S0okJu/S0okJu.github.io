@@ -3,7 +3,7 @@ title: Links
 links:
   - title: GitHub
     description: GitHub is the world's largest software development platform.
-    website: https://github.com/D7MeKz
+    website: https://github.com/s0okju
     image: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
 
 menu:

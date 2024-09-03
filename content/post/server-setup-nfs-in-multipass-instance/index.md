@@ -6,7 +6,7 @@ tags:
   - Multipass
   - Kubernetes
 categories:
-  - Server
+  - OpsAthlan
 ---
 
 ## 들어가며
