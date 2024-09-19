@@ -4,7 +4,6 @@ date: 2024-09-15
 slug: gonetworker-1
 tags:
   - Go
-  - Projec의
 categories:
   - GoNetWorker
 ---
