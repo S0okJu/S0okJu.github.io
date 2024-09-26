@@ -217,7 +217,7 @@ management.endpoint.prometheus.enabled=true
 management.prometheus.metrics.export.enabled=true
 ```
 
-위와 같은 방식을 사용하게 되면 EOF 오류가 발생해 프로메테우스가 정상적으로 지표를 가져올 수 없었습니다. 그래서 `PrometheusMeterRegistry` 를 사용하여 `/metrics` 엔드포인트를 열어줍니다.
+위와 같은 방식을 사용하게 되면 EOF 오류가 발생해 프로메테우스가 정상적으로 지표를 가져올 수 없었습니다. 그래서 header를 `TEXT_PLAIN`으로 지정해주는 controller를 생성했습니다.
 
 ```java
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
