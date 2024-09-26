@@ -1,5 +1,5 @@
 ---
-title: "시나리오 1. Simple echo server"
+title: "OpsAthlan 1 - Simple echo server"
 date: 2024-09-19
 slug: opsathlan-1
 tags:

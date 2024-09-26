@@ -17,6 +17,12 @@
     <loc>http://localhost:1313/categories/opsathlan/</loc>
     <lastmod>2024-09-19T00:00:00+00:00</lastmod>
   </url><url>
+    <loc>http://localhost:1313/p/opsathlan-1/</loc>
+    <lastmod>2024-09-19T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/opsathlan-2-1/</loc>
+    <lastmod>2024-09-19T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>http://localhost:1313/post/</loc>
     <lastmod>2024-09-19T00:00:00+00:00</lastmod>
   </url><url>
@@ -24,9 +30,6 @@
     <lastmod>2024-09-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/terraform/</loc>
-    <lastmod>2024-09-19T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/p/opsathlan-1/</loc>
     <lastmod>2024-09-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/go/</loc>

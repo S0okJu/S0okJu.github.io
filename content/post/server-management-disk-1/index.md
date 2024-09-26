@@ -4,6 +4,8 @@ date: 2024-05-28
 slug: server-management-disk-1
 tags:
   - Linux
+categories:
+  - Ops
 ---
 
 Multipass를 구동하려고 하는 중 디스크 용량이 꽉찼다는 메세지를 얻게 되었다.

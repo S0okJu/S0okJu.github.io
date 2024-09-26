@@ -4,8 +4,9 @@ date: 2024-07-16
 slug: server-access-dashboard-and-management-problems
 tags:
   - Kubernetes
+
 categories:
-  - OpsAthlan
+  - Ops
 ---
 
 ## 서버 상태

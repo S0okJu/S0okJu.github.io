@@ -6,7 +6,7 @@ tags:
   - Multipass
   - Kubernetes
 categories:
-  - OpsAthlan
+  - Ops
 ---
 
 사이드 프로젝트를 직접 운영하기 위해 서버를 구축하기로 결심했다. 그래서 기존에 있는 Windows 데스크톱을 ubuntu 20.04 서버 환경으로 세팅했다.
