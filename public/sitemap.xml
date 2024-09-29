@@ -3,33 +3,36 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>http://localhost:1313/</loc>
-    <lastmod>2024-09-19T00:00:00+00:00</lastmod>
+    <lastmod>2024-09-29T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/ansible/</loc>
-    <lastmod>2024-09-19T00:00:00+00:00</lastmod>
+    <lastmod>2024-09-29T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/</loc>
-    <lastmod>2024-09-19T00:00:00+00:00</lastmod>
+    <lastmod>2024-09-29T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/openstack/</loc>
-    <lastmod>2024-09-19T00:00:00+00:00</lastmod>
+    <lastmod>2024-09-29T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/opsathlan/</loc>
-    <lastmod>2024-09-19T00:00:00+00:00</lastmod>
+    <lastmod>2024-09-29T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/p/opsathlan-1/</loc>
-    <lastmod>2024-09-19T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/p/opsathlan-2-1/</loc>
-    <lastmod>2024-09-19T00:00:00+00:00</lastmod>
+    <loc>http://localhost:1313/p/opsathlan-2-2/</loc>
+    <lastmod>2024-09-29T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/</loc>
-    <lastmod>2024-09-19T00:00:00+00:00</lastmod>
+    <lastmod>2024-09-29T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/</loc>
-    <lastmod>2024-09-19T00:00:00+00:00</lastmod>
+    <lastmod>2024-09-29T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/terraform/</loc>
+    <lastmod>2024-09-29T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/opsathlan-2-1/</loc>
+    <lastmod>2024-09-26T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/opsathlan-1/</loc>
     <lastmod>2024-09-19T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/go/</loc>
@@ -45,6 +48,9 @@
     <lastmod>2024-08-17T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/p/openstack-kubernetes-installation-2/</loc>
+    <lastmod>2024-08-17T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/categories/ops/</loc>
     <lastmod>2024-08-17T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/p/openstack-kubernetes-installation-1/</loc>

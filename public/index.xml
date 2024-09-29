@@ -6,7 +6,244 @@
         <description>Recent content on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Thu, 26 Sep 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Sun, 29 Sep 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>OpsAthlan 2 - 2. Advanced echo server 메트릭 분석</title>
+        <link>http://localhost:1313/p/opsathlan-2-2/</link>
+        <pubDate>Sun, 29 Sep 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/p/opsathlan-2-2/</guid>
+        <description>&lt;h2 id=&#34;jvm의-메모리-사용-형태&#34;&gt;JVM의 메모리 사용 형태
+&lt;/h2&gt;&lt;p&gt;JVM에는 3가지 메모리 사용 형태가 있습니다.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;used: JVM이 사용 중인 메모리 양&lt;/li&gt;
+&lt;li&gt;committed: JVM이 시스템에게 요청한 메모리 양&lt;/li&gt;
+&lt;li&gt;max : 실행 중인 환경에서 최대로 할당할 수 있는 메모리 양&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;메모리 용량은 used &amp;lt;= committed &amp;lt;= max를 따르는데, used 메모리 양이 committed, max 메모리보다 크게 된다면 OOM(Out Of Memory)이 발생&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;하게 됩니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image.png&#34;
+	width=&#34;1280&#34;
+	height=&#34;658&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image_hufebb5c3b53f481a360dba7f498d5854c_74292_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image_hufebb5c3b53f481a360dba7f498d5854c_74292_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;출처 - https://swmobenz.tistory.com/37&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;194&#34;
+		data-flex-basis=&#34;466px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;그라파나를 확인해보면 3가지의 메모리 형태를 알 수 있습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-1.png&#34;
+	width=&#34;1132&#34;
+	height=&#34;298&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-1_huf30075ee0146fd35b96d340bc7ef57c3_38487_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-1_huf30075ee0146fd35b96d340bc7ef57c3_38487_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;그라파나에서 확인한 JVM Memory&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;379&#34;
+		data-flex-basis=&#34;911px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;committed-memory의-역할&#34;&gt;Committed Memory의 역할
+&lt;/h3&gt;&lt;blockquote&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://swmobenz.tistory.com/37&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;YGwan님의 블로그: JVM Memory의 3가지 메트릭 지표 - Committed Memory란?&lt;/a&gt;를 읽어보는 것을 추천드립니다.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;strong&gt;메모리를 할당하고 해제하는데 필요한 오버헤드를 줄일 수 있다는 특징&lt;/strong&gt;을 가지고 있습니다.&lt;br&gt;
+JVM이 시스템을 통해 미리 메모리를 할당하여 사용 시 가지고 있는 여유 메모리 공간을 활용합니다. 이를 통해 메모리를 즉시 사용할 수 있으며 메모리를 할당하는데 발생하는 오버헤드를 줄일 수 있게 됩니다.&lt;/p&gt;
+&lt;h2 id=&#34;advanced-echo-server-jvm-메트릭-특징&#34;&gt;Advanced echo server jvm 메트릭 특징
+&lt;/h2&gt;&lt;p&gt;이전 글에서 스프링부트 컨테이너의 메모리가 지속적으로 증가한다고 언급했습니다. 그래서 저는 jvm에 문제가 있을 수 있겠다는 생각이 들어 관련 지표를 확인해보겠습니다.&lt;br&gt;
+처음에 눈여겨 봤던 것은 JVM의 committed 메모리 양이 점진적으로 증가하고 있다는 점이었습니다.&lt;/p&gt;
+&lt;p&gt;😂 사진에서는 잘 보이지 않지만 자세히 보면 1MB씩 상승하고 있습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-2.png&#34;
+	width=&#34;393&#34;
+	height=&#34;278&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-2_hu906c4252c24b6f858e7238bddf85bc3e_17166_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-2_hu906c4252c24b6f858e7238bddf85bc3e_17166_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;JVM 메모리 사용량&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;141&#34;
+		data-flex-basis=&#34;339px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;자세히 알아보기 전에 heap과 non-heap 메모리에 대해 알아봅시다.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Java Heap : Instance와 객체가 저장되는 공간으로 모든 Thread에 의해 공유되는 영역&lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/li&gt;
+&lt;li&gt;Native Area(non-heap) : OS레벨에서 관리하는 영역으로 JVM 크기에 강제되지 않기 때문에 &lt;strong&gt;프로세스가 이용할 수 있는 메모리 자원을 최대한 활용할 수 있습니다.&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-3.png&#34;
+	width=&#34;844&#34;
+	height=&#34;250&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-3_hu59e79084fcab3eb49d5f007681934d47_53216_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-3_hu59e79084fcab3eb49d5f007681934d47_53216_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;출처 : https://www.samsungsds.com/kr/insights/1232761_4627.html&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;337&#34;
+		data-flex-basis=&#34;810px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;다시 돌아와 제가 운영하고 있는 웹 애플리케이션을 확인해 볼까요.&lt;br&gt;
+정말 간단한 EchoController와 프로메테우스 metric 수집을 위한 MetricController가 있습니다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nd&#34;&gt;@RestController&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;public&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;class&lt;/span&gt; &lt;span class=&#34;nc&#34;&gt;EchoController&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;nd&#34;&gt;@GetMapping&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;(&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;/echo&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;)&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;kd&#34;&gt;public&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;n&#34;&gt;String&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nf&#34;&gt;echo&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;()&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;{&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;k&#34;&gt;return&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s&#34;&gt;&amp;#34;Hello, World!&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;}&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;웹 애플리케이션이 비교적 단순하기 때문에 Heap 영역의 문제는 아니라고 생각했습니다.&lt;br&gt;
+그래도 JVM Heap를 확인해 보겠습니다. 힙 메모리의 사용량은 매우 적게 사용되었고, 안정적으로 유지되었습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-4.png&#34;
+	width=&#34;793&#34;
+	height=&#34;464&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-4_hub7ba453322332850ad2757dbb6a5a562_32147_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-4_hub7ba453322332850ad2757dbb6a5a562_32147_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;JVM Heap Memory 사용량&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;170&#34;
+		data-flex-basis=&#34;410px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;non-heap 영역을 봐봅시다.&lt;br&gt;
+변화폭이 적어서 차이를 모르겠지만 메모리가 사용량이 조금씩 증가하고 있습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-5.png&#34;
+	width=&#34;475&#34;
+	height=&#34;278&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-5_huf47884a0827739a08725a9b25861c3a5_18977_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-5_huf47884a0827739a08725a9b25861c3a5_18977_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;JVM Non-Heap Memory 사용량&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;170&#34;
+		data-flex-basis=&#34;410px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;우선 &lt;a class=&#34;link&#34; href=&#34;https://ko.wikipedia.org/wiki/%ED%94%84%EB%A1%9C%ED%8C%8C%EC%9D%BC%EB%A7%81_%28%EC%BB%B4%ED%93%A8%ED%84%B0_%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%29&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;프로파일링&lt;/a&gt;은 무엇을 의미할까요. &lt;a class=&#34;link&#34; href=&#34;https://hudi.blog/jvm-warm-up/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;hudi.blog: 스프링 애플리케이션 배포 직후 발생하는 Latency의 원인과 이를 해결하기 위한 JVM Warm-up&lt;/a&gt;를 참고하겠습니다.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;JIT 컴파일러&lt;/strong&gt;는 애플리케이션에서 &lt;strong&gt;자주 실행된다고 판단되는 특정 부분만을 기계어로 컴파일&lt;/strong&gt;한다. 이 부분을 &lt;strong&gt;핫스팟(Hotspot)&lt;/strong&gt; 이라고 부른다. JIT 컴파일러는 실행중인 애플리케이션의 동작을 분석하고 코드 실행 횟수, 루프 반복 횟수, 메소드 호출 등의 정보를 측정하고 기록한다. 이를 &lt;strong&gt;프로파일링&lt;/strong&gt;이라고 한다.&lt;br&gt;
+JIT 컴파일러는 프로파일링 결과를 토대로 핫스팟을 식별한다. 핫스팟이 식별되었다면, JIT 컴파일러는 &lt;strong&gt;메소드 단위로 바이트 코드를 기계어로 번역&lt;/strong&gt;한다.
+JIT 컴파일러는 이렇게 번역된 기계어를 &lt;strong&gt;코드 캐시(Code Cache)&lt;/strong&gt; 라는 캐시공간에 저장한다.&lt;/p&gt;
+&lt;p&gt;출처 - &lt;a class=&#34;link&#34; href=&#34;https://hudi.blog/jvm-warm-up/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://hudi.blog/jvm-warm-up/&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;JIT는 전체 코드를 컴파일 하는 것이 아닌 자주 실행되는 부분에만 컴파일하며 이에 대한 데이터를 Code Cache에 저장하게 됩니다.&lt;/p&gt;
+&lt;p&gt;Non Heap과 관련된 지표를 확인해봅시다.&lt;br&gt;
+아래의 세 가지 지표가 미세하게 증가하고 있습니다.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Metaspace : JVM이 로드한 메타데이터를 저장&lt;/li&gt;
+&lt;li&gt;CodeHeap : JIT 컴파일러 관련 지표
+&lt;ul&gt;
+&lt;li&gt;profiled nmethods&lt;/li&gt;
+&lt;li&gt;non-profiled nmethods&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-6.png&#34;
+	width=&#34;1888&#34;
+	height=&#34;303&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-6_hu0fe1cc675d9df5833154d6ca38e0b1a6_51838_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-6_hu0fe1cc675d9df5833154d6ca38e0b1a6_51838_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;JVM Memory Pool(non-heap) 지표&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;623&#34;
+		data-flex-basis=&#34;1495px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;하지만 &lt;strong&gt;장기적인 관점에서 바라봤을때 메모리 낭비일 수 있겠다는 생각&lt;/strong&gt;이 들었습니다.&lt;br&gt;
+특히 Metaspace는 JVM 크기에 강제되지 않기 때문에 프로세스가 사용할 수 있는 메모리 자원을 최대한 활용할 수 있게 됩니다. 그러므로 Metaspace 메모리를 제한하여 운영할 필요가 있습니다.&lt;br&gt;
+이러한 성능 제한은 Metaspace에만 적용되는 것이 아니라 다른 영역에서의 메모리 사이즈 제한이 필요합니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-7.png&#34;
+	width=&#34;1600&#34;
+	height=&#34;922&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-7_hu51679a37e3d3766fd66c854fc5a3793a_571287_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-7_hu51679a37e3d3766fd66c854fc5a3793a_571287_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;출처 - https://cloud.theodo.com/en/blog/jvm-oom&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;173&#34;
+		data-flex-basis=&#34;416px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;안전하게 애플리케이션을 운영하기 위해서는 각 메모리 영역에 맞는 요구사항을 고려하여 결정하는 것이 바람직합니다.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Java 어플리케이션은 크게 위의 Heap과 Off-Heap 두 공간을 활용하여 동작하는데, 따라서 어플리케이션을 배포할 때 메모리 몇 GB를 할당해야 하는지 결정하기 위해서는 단순히 Xmx(Heap 메모리 최대치를 결정하는 Java 옵션) 값만 생각하면 OOME에 빠지기 쉽다. 실제로는 &lt;strong&gt;Xmx에 MaxMetaspace값을 더하고, 추가로 프로그램에서 NIO를 사용해 Native Memory를 직접 할당받는 로직을 고려해서 Heap + Native Memory 사용총량으로 할당을 해야 비교적 정확&lt;/strong&gt;하다. 특히 컨테이너의 경우 계산을 좀 더 정확하게 해야 시스템에서 OOM killed되는 상황을 면할 수 있다.&lt;/p&gt;
+&lt;p&gt;출처 - &lt;a class=&#34;link&#34; href=&#34;https://www.samsungsds.com/kr/insights/1232761_4627.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://www.samsungsds.com/kr/insights/1232761_4627.html&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;정리&#34;&gt;정리
+&lt;/h2&gt;&lt;p&gt;실제로 배포해보면서 컨테이너의 지속적인 메모리 사용량이 증가하는 것에 의문점을 가지게 되었습니다. 자바 컨테이너의 메모리 사용은 JVM이 컨트롤할 수 없는 부분이 많아 추적하기 어렵습니다&lt;sup id=&#34;fnref:3&#34;&gt;&lt;a href=&#34;#fn:3&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;3&lt;/a&gt;&lt;/sup&gt;.&lt;br&gt;
+그래서 자세히 확인할 수 있는 JVM 위주로 확인하게 되었습니다. non-heap 영역이 미세하게 상승하고 있었고, 이는 정상적인 지표라고 생각했습니다. 그러나 장기적으로는 메모리 낭비가 될 수 있으므로 메모리 사이즈를 제한하여 운영해야 합니다.&lt;/p&gt;
+&lt;h2 id=&#34;reference&#34;&gt;Reference
+&lt;/h2&gt;&lt;ul&gt;
+&lt;li&gt;&lt;a class=&#34;link&#34; href=&#34;https://swmobenz.tistory.com/37&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://swmobenz.tistory.com/37&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class=&#34;link&#34; href=&#34;https://hudi.blog/jvm-warm-up/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://hudi.blog/jvm-warm-up/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class=&#34;link&#34; href=&#34;https://velog.io/@dongvelop/Spring-Boot-%EC%84%9C%EB%B2%84-%EB%AA%A8%EB%8B%88%ED%84%B0%EB%A7%81-%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C%EB%B3%84-%EC%84%A4%EB%AA%85-%EB%B0%8F-%EC%9C%A0%EC%9D%98%EC%82%AC%ED%95%AD#codeheap-non-profiled-nmethods-non-heap&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://velog.io/@dongvelop/Spring-Boot-%EC%84%9C%EB%B2%84-%EB%AA%A8%EB%8B%88%ED%84%B0%EB%A7%81-%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C%EB%B3%84-%EC%84%A4%EB%AA%85-%EB%B0%8F-%EC%9C%A0%EC%9D%98%EC%82%AC%ED%95%AD#codeheap-non-profiled-nmethods-non-heap&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.samsungsds.com/kr/insights/1232761_4627.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://www.samsungsds.com/kr/insights/1232761_4627.html&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class=&#34;link&#34; href=&#34;https://obv-cloud.com/41&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://obv-cloud.com/41&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
+&lt;hr&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn:1&#34;&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://swmobenz.tistory.com/37&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://swmobenz.tistory.com/37&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:2&#34;&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://12bme.tistory.com/382&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://12bme.tistory.com/382&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:2&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:3&#34;&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://stackoverflow.com/questions/53451103/java-using-much-more-memory-than-heap-size-or-size-correctly-docker-memory-limi&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://stackoverflow.com/questions/53451103/java-using-much-more-memory-than-heap-size-or-size-correctly-docker-memory-limi&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:3&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        </item>
+        <item>
         <title>OpsAthlan 2 - 1. Advanced echo server 구축</title>
         <link>http://localhost:1313/p/opsathlan-2-1/</link>
         <pubDate>Thu, 26 Sep 2024 00:00:00 +0000</pubDate>
@@ -370,7 +607,7 @@ docker-compose를 통해 컨테이너를 배포했습니다.&lt;/p&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;na&#34;&gt;management.prometheus.metrics.export.enabled&lt;/span&gt;&lt;span class=&#34;o&#34;&gt;=&lt;/span&gt;&lt;span class=&#34;s&#34;&gt;true&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 &lt;/div&gt;
-&lt;/div&gt;&lt;p&gt;위와 같은 방식을 사용하게 되면 EOF 오류가 발생해 프로메테우스가 정상적으로 지표를 가져올 수 없었습니다. 그래서 &lt;code&gt;PrometheusMeterRegistry&lt;/code&gt; 를 사용하여 &lt;code&gt;/metrics&lt;/code&gt; 엔드포인트를 열어줍니다.&lt;/p&gt;
+&lt;/div&gt;&lt;p&gt;위와 같은 방식을 사용하게 되면 EOF 오류가 발생해 프로메테우스가 정상적으로 지표를 가져올 수 없었습니다. 그래서 header를 &lt;code&gt;TEXT_PLAIN&lt;/code&gt;으로 지정해주는 controller를 생성했습니다.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
