@@ -6,20 +6,28 @@
         <description>Recent content in Tags on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Sun, 29 Sep 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
-        <title>Ansible</title>
-        <link>http://localhost:1313/tags/ansible/</link>
-        <pubDate>Sun, 29 Sep 2024 00:00:00 +0000</pubDate>
+        <lastBuildDate>Tue, 01 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>Kubernetes</title>
+        <link>http://localhost:1313/tags/kubernetes/</link>
+        <pubDate>Tue, 01 Oct 2024 00:00:00 +0000</pubDate>
         
-        <guid>http://localhost:1313/tags/ansible/</guid>
+        <guid>http://localhost:1313/tags/kubernetes/</guid>
         <description></description>
         </item>
         <item>
         <title>Openstack</title>
         <link>http://localhost:1313/tags/openstack/</link>
-        <pubDate>Sun, 29 Sep 2024 00:00:00 +0000</pubDate>
+        <pubDate>Tue, 01 Oct 2024 00:00:00 +0000</pubDate>
         
         <guid>http://localhost:1313/tags/openstack/</guid>
+        <description></description>
+        </item>
+        <item>
+        <title>Ansible</title>
+        <link>http://localhost:1313/tags/ansible/</link>
+        <pubDate>Sun, 29 Sep 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/tags/ansible/</guid>
         <description></description>
         </item>
         <item>
@@ -36,14 +44,6 @@
         <pubDate>Sun, 15 Sep 2024 00:00:00 +0000</pubDate>
         
         <guid>http://localhost:1313/tags/go/</guid>
-        <description></description>
-        </item>
-        <item>
-        <title>Kubernetes</title>
-        <link>http://localhost:1313/tags/kubernetes/</link>
-        <pubDate>Sat, 17 Aug 2024 00:00:00 +0000</pubDate>
-        
-        <guid>http://localhost:1313/tags/kubernetes/</guid>
         <description></description>
         </item>
         <item>
