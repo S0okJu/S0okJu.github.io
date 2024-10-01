@@ -112,7 +112,7 @@ neutron_external_interface: "enp3s0"
 
 저는 ip forward를 사용했습니다.
 
-> IP-Forward란 커널 기반으로 라우팅 포워딩으로 하나의 인터페이스로 들어온 패킷을 다른 서브넷을 가진 네트워크 인터페이스로 패킷을 포워딩시키는 것이다.
+> IP-Forward란 커널 기반 라우팅 포워딩으로 하나의 인터페이스로 들어온 패킷을 다른 서브넷을 가진 네트워크 인터페이스로 패킷을 포워딩시키는 것이다.
 
 ```sh
 # Kernel parameter update
