@@ -6,7 +6,31 @@
         <description>Recent content in Tags on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Tue, 01 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Wed, 09 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>Docker</title>
+        <link>http://localhost:1313/tags/docker/</link>
+        <pubDate>Wed, 09 Oct 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/tags/docker/</guid>
+        <description></description>
+        </item>
+        <item>
+        <title>Gin</title>
+        <link>http://localhost:1313/tags/gin/</link>
+        <pubDate>Wed, 09 Oct 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/tags/gin/</guid>
+        <description></description>
+        </item>
+        <item>
+        <title>Go</title>
+        <link>http://localhost:1313/tags/go/</link>
+        <pubDate>Wed, 09 Oct 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/tags/go/</guid>
+        <description></description>
+        </item>
+        <item>
         <title>Kubernetes</title>
         <link>http://localhost:1313/tags/kubernetes/</link>
         <pubDate>Tue, 01 Oct 2024 00:00:00 +0000</pubDate>
@@ -39,14 +63,6 @@
         <description></description>
         </item>
         <item>
-        <title>Go</title>
-        <link>http://localhost:1313/tags/go/</link>
-        <pubDate>Sun, 15 Sep 2024 00:00:00 +0000</pubDate>
-        
-        <guid>http://localhost:1313/tags/go/</guid>
-        <description></description>
-        </item>
-        <item>
         <title>Multipass</title>
         <link>http://localhost:1313/tags/multipass/</link>
         <pubDate>Sun, 14 Jul 2024 00:00:00 +0000</pubDate>
@@ -76,14 +92,6 @@
         <pubDate>Wed, 22 May 2024 00:00:00 +0000</pubDate>
         
         <guid>http://localhost:1313/tags/web/</guid>
-        <description></description>
-        </item>
-        <item>
-        <title>Gin</title>
-        <link>http://localhost:1313/tags/gin/</link>
-        <pubDate>Sat, 11 May 2024 00:00:00 +0000</pubDate>
-        
-        <guid>http://localhost:1313/tags/gin/</guid>
         <description></description>
         </item>
         <item>
