@@ -109,8 +109,8 @@ Go는 독특한 문법 체계를 가지고 있어 다른 언어에 비해 응용
 &lt;p&gt;각각의 서비스를 만드는 것은 어렵지 않았습니다. 그러나 &lt;strong&gt;공통 모듈&lt;/strong&gt;이라는 것을 만들려고 했을때 모든 것이 꼬이기 시작했습니다.
 공통 모듈에는 필요한 인증 미들웨어나 전체적으로 통일된 형식의 구조체(http response값, 오류 메세지 타입 등)가 포함되어 있습니다.
 Go는 외부 라이브러리 저장소로 github를 주로 사용합니다. 공통 모듈을 github에 업로드하여 애플리케이션을 빌드할때마다 제작한 공통 모듈을 다운로드 받고 사용해야 할까요? 개발 초기 단계라 공통 모듈 수정이 잦습니다. 즉, 수정사항을 반영할때 비효율적입니다.&lt;/p&gt;
-&lt;p&gt;이때 당시 &amp;ldquo;공통 모듈이 필요한가?&amp;ldquo;에 대해 많이 생각했던 것 같습니다. 저는 개인적으로 필요하다고 생각했습니다. 요구사항에 따라 다르겠지만 공통적인 부분이 많을수록 모듈화하여 관리하는 것이 효율적이라고 생각했기 때문이었습니다. 다만 어느정도 구조가 완성된 상태에서 사용해야 한다고 생각이 들었습니다.&lt;/p&gt;
-&lt;p&gt;외부 다운로드 외에 다른 방법이 있었습니다. Go는 Workspace라는 개념이 있으며 go.work 파일을 통해 모듈을 포함시킬 수 있습니다. 그래서 동일 프로젝트 폴더 내에 모듈을 만들어 workspace로 명시적으로 포함시켰습니다.&lt;/p&gt;
+&lt;p&gt;이때 당시 &amp;ldquo;공통 모듈이 필요한가?&amp;ldquo;에 대해 많이 생각했던 것 같습니다. 저는 개인적으로 필요하다고 생각했습니다. 요구사항에 따라 다르겠지만 공통적인 부분이 많을수록 모듈화하여 관리하는 것이 효율적이라고 생각했기 때문이었습니다. 그대신어느정도 구조가 완성된 상태에서 사용해야 한다고 생각이 들었습니다.&lt;/p&gt;
+&lt;p&gt;외부 다운로드 외에 다른 방법이 있었습니다. Go는 Workspace라는 개념이 있으며 go.work 파일을 통해 명시적으로 모듈을 포함시킬 수 있습니다.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
@@ -137,7 +137,7 @@ Go는 외부 라이브러리 저장소로 github를 주로 사용합니다. 공�
 &lt;p&gt;Workspace는 로컬 사용에 적합하다는 의견이 있습니다.&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
 &lt;/blockquote&gt;
 &lt;p&gt;만든 Go 애플리케이션을 컨테이너로 실행시키기 위해서는 Dockerfile로 만들어야 합니다.&lt;br&gt;
-우선 go 애플리케이션으로 빌드하기 위해서는 공통 모듈을 모두 복사하고 &lt;code&gt;go work use&lt;/code&gt; 를 수행한 후 &lt;code&gt;$GOPATH/src&lt;/code&gt;에 모듈을 저장하는 작업이 필요합니다. 그러나 개발 환경과 도커 내부 환경이 달라서 도커 내부에 go work use를 할 수 있도록 Dockerfile를 만들었습니다.&lt;/p&gt;
+우선 go 애플리케이션으로 빌드하기 위해서는 공통 모듈을 모두 복사하고 &lt;code&gt;go work use&lt;/code&gt; 를 수행한 후 &lt;code&gt;$GOPATH/src&lt;/code&gt;에 모듈을 저장하는 작업이 필요합니다. 그러나 개발 환경과 도커 내부 환경이 달라서 도커 내부에 go work use를 할 수 있도록 스크립트를 제작한 후 Dockerfile를 만들었습니다.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
 &lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
 &lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
@@ -205,13 +205,13 @@ Go는 외부 라이브러리 저장소로 github를 주로 사용합니다. 공�
 &lt;/div&gt;&lt;p&gt;결국 해결하지 못했습니다. 경로 문제, 모듈이 제대로 설정되지 않는 문제 등 원인은 다양했습니다.&lt;br&gt;
 해결책을 모색하다가 느낀건 &amp;ldquo;내가 Go를 적절하게 사용한 것이 맞나?&amp;rdquo; 였습니다. 그리고 거슬러 올라가 &lt;strong&gt;MSA를 채택한 것이 문제였다는 결론에 도달&lt;/strong&gt;했습니다.&lt;/p&gt;
 &lt;h2 id=&#34;마이크로서비스-하지-말았어야-했다&#34;&gt;마이크로서비스 하지 말았어야 했다.
-&lt;/h2&gt;&lt;p&gt;결국 모든 원인은 &lt;strong&gt;아무 생각 없이 마이크로서비스를 도입&lt;/strong&gt;했기 때문이라고 생각합니다. 그때 당시 MSA라고 불리는 용어가 트렌드처럼 떠올랐고, 규모가 있는 기업이 해당 능력을 요구하면서 능력이 필수라고 생각했습니다.
+&lt;/h2&gt;&lt;p&gt;결국 모든 원인은 &lt;strong&gt;아무 생각 없이 마이크로서비스를 도입&lt;/strong&gt;했기 때문이라고 생각합니다. 그때 당시 MSA라고 불리는 용어가 트렌드처럼 떠올랐고, 규모가 있는 기업이 해당 능력을 요구하면서 능력이 필수라고 생각했습니다.&lt;br&gt;
 &lt;strong&gt;왜 규모가 있는 기업이 MSA를 사용하는가?&lt;/strong&gt; 에 대한 역질문을 생각하지 못한 것 같습니다.&lt;br&gt;
 기업이 MSA를 채택한 이유는 &lt;strong&gt;서비스 간 결합도를 낮춰 요구사항에 대한 빠른 대처&lt;/strong&gt;하기 위해서 라고 생각합니다.
 제 프로젝트는 MSA로 할만큼 큰 서비스가 아니였고 이를 구현할 능력을 가지고 있지 않았습니다. 즉 &lt;strong&gt;오버 엔지니어링&lt;/strong&gt;을 한 것이었습니다.&lt;/p&gt;
 &lt;h2 id=&#34;실패-이후의-새로운-시작&#34;&gt;실패 이후의 새로운 시작
 &lt;/h2&gt;&lt;p&gt;이 프로젝트를 수행하면서 많은 시간을 사용했습니다. 노력 끝에 완성된 것이 하나 없으니 한편으로는 아쉽다는 생각이 들었습니다.&lt;br&gt;
-한편으로 프로젝트가 저에게는 새로운 시작을 알렸던 것 같습니다.&lt;br&gt;
+하지만 이 프로젝트가 저에게는 새로운 시작을 알렸던 것 같습니다.&lt;br&gt;
 &lt;strong&gt;&amp;ldquo;기초부터 공부할 예정이라면 기본적인 구성부터 공부해보자.&amp;rdquo;&lt;/strong&gt; 라는 생각이 들었습니다. 이후로 저는 기초부터 공부할 수 있도록 작은 프로젝트를 기획하게 되었습니다.&lt;/p&gt;
 &lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
 &lt;hr&gt;
