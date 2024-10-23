@@ -6,7 +6,15 @@
         <description>Recent content in Tags on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Wed, 16 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Wed, 23 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>Terraform</title>
+        <link>http://localhost:1313/tags/terraform/</link>
+        <pubDate>Wed, 23 Oct 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/tags/terraform/</guid>
+        <description></description>
+        </item>
+        <item>
         <title>SpringBoot</title>
         <link>http://localhost:1313/tags/springboot/</link>
         <pubDate>Wed, 16 Oct 2024 00:00:00 +0000</pubDate>
@@ -76,14 +84,6 @@
         <pubDate>Sun, 29 Sep 2024 00:00:00 +0000</pubDate>
         
         <guid>http://localhost:1313/tags/ansible/</guid>
-        <description></description>
-        </item>
-        <item>
-        <title>Terraform</title>
-        <link>http://localhost:1313/tags/terraform/</link>
-        <pubDate>Sun, 29 Sep 2024 00:00:00 +0000</pubDate>
-        
-        <guid>http://localhost:1313/tags/terraform/</guid>
         <description></description>
         </item>
         <item>
