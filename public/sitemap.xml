@@ -137,6 +137,9 @@
     <loc>http://localhost:1313/tags/aws/</loc>
     <lastmod>2024-05-01T00:00:00+00:00</lastmod>
   </url><url>
+    <loc>http://localhost:1313/categories/aws/</loc>
+    <lastmod>2024-05-01T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>http://localhost:1313/p/what-is-eks/</loc>
     <lastmod>2024-05-01T00:00:00+00:00</lastmod>
   </url><url>
@@ -170,7 +173,7 @@
     <loc>http://localhost:1313/p/terraform-backend/</loc>
     <lastmod>2024-01-29T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/p/terraform-basic/</loc>
+    <loc>http://localhost:1313/p/basic-terraform-1/</loc>
     <lastmod>2024-01-25T00:00:00+00:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/archives/</loc>
