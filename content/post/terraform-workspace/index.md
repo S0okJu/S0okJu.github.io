@@ -12,7 +12,7 @@ categories:
 
 하나의 프로젝트에는 하나의 상태 파일이 존재한다. 그러면 궁금증을 가지게 된다.
 
-> Q. 만약에 개발, 운영 코드를 짠다고 한다면 어떻게 짤까?
+> Q. 만약에 개발, 운영 코드를 짠다고 한다면 어떻게 짤까?  
 > A. 공통의 기능이 포함된 root 모듈을 만든 후 운영, 개발 프로젝트를 만든다.
 
 공통의 인프라 리소스가 포함된 모듈 생성할 것이다. 별도의 모듈을 생성하게 된다면 공통 모듈의 상태 관리 문제를 빼놓을 수 없을 것이다.
@@ -26,9 +26,7 @@ Terraform은 이러한 문제를 해결하기 위해 [Workspace](https://develop
 
 Terraform은 위와 같은 문제점을 해결하기 위해 Workspace을 도입하게 되었다. Workspace는 하나의 프로젝트에 여러개의 상태파일을 관리할 수 있게 되었다. 간단하게 말해서 Workspace는 **상태 파일을 관리하는 그릇**이라고 보면 된다.
 
-{{< notice note >}}
-자세한 명령어는 [공식 홈페이지](https://developer.hashicorp.com/terraform/cli/commands/workspace)를 참고하길 바랍니다.
-{{< /notice >}}
+> 자세한 명령어는 [공식 홈페이지](https://developer.hashicorp.com/terraform/cli/commands/workspace)를 참고하길 바랍니다.
 
 ## Multiple Workspace Backend
 

@@ -34,9 +34,7 @@ Terraform에서 상태 파일은 테러폼 코드와 인프라 객체를 매핑�
 
 상태 파일이 유실되는 경우를 대비해서 Backup을 해야 한다. S3을 사용할때는 versioning을 사용하여 히스토리를 기억한다.
 
-{{< notice tip >}}
-stack overflow에 [Terraform fails because tfstate (S3 backend) is lost](https://stackoverflow.com/questions/54122890/terraform-fails-because-tfstate-s3-backend-is-lost)을 읽어보는 것을 추천합니다.
-{{< /notice >}}
+> stack overflow에 [Terraform fails because tfstate (S3 backend) is lost](https://stackoverflow.com/questions/54122890/terraform-fails-because-tfstate-s3-backend-is-lost)을 읽어보는 것을 추천합니다.
 
 ## 실습 1. S3 Backend 만들기
 

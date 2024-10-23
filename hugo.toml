@@ -1,4 +1,3 @@
 baseURL = 'https://s0okju.github.io/'
 languageCode = 'en-us'
 title = 'S0okJu.dev'
-theme = ["hugo-notice"]
