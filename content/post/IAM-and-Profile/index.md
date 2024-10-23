@@ -2,6 +2,8 @@
 title: "AWS - IAM 그리고 Profile"
 date: 2024-04-16
 slug: iam-and-profile
+categories:
+  - AWS
 tags:
   - AWS
 ---
