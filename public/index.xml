@@ -6,7 +6,122 @@
         <description>Recent content on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Wed, 23 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Sun, 27 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>클라우드 네트워크 - 클라우드와 VLAN</title>
+        <link>http://localhost:1313/p/cloud-network-1/</link>
+        <pubDate>Sun, 27 Oct 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/p/cloud-network-1/</guid>
+        <description>&lt;h2 id=&#34;lan이란&#34;&gt;LAN이란
+&lt;/h2&gt;&lt;p&gt;LAN(Local Address Network)은 위키백과에 의하면 네트워크 매체를 이용하여 가까운 지역을 한데 묶은 컴퓨터 네트워크&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;입니다.
+그런데 이 말 자체는 상당히 추상적이라고 생각합니다. 여러 글을 찾던 중 &lt;a class=&#34;link&#34; href=&#34;https://aws-hyoh.tistory.com/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;네트워크 엔지니어 환영의 기술 블로그&lt;/a&gt;에서 &lt;a class=&#34;link&#34; href=&#34;https://aws-hyoh.tistory.com/85&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;LAN에 대해 잘 설명한 글&lt;/a&gt;을 알게 되었습니다.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;집과 같은 소규모 네트워크에서부터 사무실, 회사와 같은 중규모 이상의 네트워크에 이르기까지 &lt;strong&gt;동일한 IP 대역과 동일한 Subnet Mask를 사용&lt;/strong&gt;한다면 크기와 상관 없이 LAN이라고 부를 수 있다.&lt;/p&gt;
+&lt;p&gt;출처 - &lt;a class=&#34;link&#34; href=&#34;https://aws-hyoh.tistory.com/85&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;네트워크 엔지니어 환영의 기술블로그 : LAN 쉽게 이해하기 &lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;예시를 들어보겠습니다. 저는 현재 홈 서버를 운영하고 있습니다. 기기의 IP주소를 확인하게 되면 192.168.50.x라는 동일한 IP 대역을 가지고 있습니다. 다시말해 저는 LAN을 쓰고 있다고 보면 됩니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/cloud-network-1/image.png&#34;
+	width=&#34;441&#34;
+	height=&#34;291&#34;
+	srcset=&#34;http://localhost:1313/p/cloud-network-1/image_hu8d466b21a43677aa8c0ea17a09355f88_13896_480x0_resize_box_3.png 480w, http://localhost:1313/p/cloud-network-1/image_hu8d466b21a43677aa8c0ea17a09355f88_13896_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;홈 서버 구성도&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;151&#34;
+		data-flex-basis=&#34;363px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;여기 문제가 발생하게 됩니다. 만약에 다양한 IP 대역을 쓰고 싶다면 어떻게 해야할까요? 물리적인 장치를 추가하는 방법이 있습니다만 상황에 따라서는 불가능할 수 있습니다. 또 다른 해결 방안으로 VLAN이 있습니다.&lt;/p&gt;
+&lt;h2 id=&#34;vlan&#34;&gt;VLAN
+&lt;/h2&gt;&lt;p&gt;하나의 단일 네트워크는 하나의 브로드캐스트 영역이며 이러한 구간을 LAN이라고 합니다. 이때 VLAN은 LAN 논리적으로 브로드캐스트 도메인을 나누는 영역이라고 표현할 수 있습니다. 즉 하나의 스위치 만으로도 &lt;strong&gt;여러 개의 네트워크 대역을 사용&lt;/strong&gt;할 수 있게 되는 것입니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/cloud-network-1/image-1.png&#34;
+	width=&#34;645&#34;
+	height=&#34;363&#34;
+	srcset=&#34;http://localhost:1313/p/cloud-network-1/image-1_hua31fdabbf1ee7548690b1594fb019eb8_28126_480x0_resize_box_3.png 480w, http://localhost:1313/p/cloud-network-1/image-1_hua31fdabbf1ee7548690b1594fb019eb8_28126_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;출처 - https://yoursmaddy.medium.com/vlans-segmenting-networks-for-better-performance-and-security-306d5d6b47a&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;177&#34;
+		data-flex-basis=&#34;426px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;VLAN은 네트워크를 분할만하지 서로 통신하는 기능을 제공하지 않습니다.&lt;/strong&gt; 위의 그림처럼 VLAN2의 패킷을 VLAN3에 보낼 수 없게 됩니다. 그러므로 L3 스위치 또는 라우터를 사용하여 VLAN 간의 라우팅을 수행해야 합니다.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;L3 스위치와 라우터는 초기에는 기술적인 차이가 있었으나 기술의 발전으로 차이가 거의 없다고 합니다.&lt;br&gt;
+L3 스위치가 L2 스위치 + 라우터의 특징을 가지고 있으며, VLAN을 사용하기가 더 효율적이라고 합니다. &lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;VLAN은 이와 같은 설명이 전부는 아닙니다. 스위치 간 어떻게 통신할지 등등 관련된 이야기가 많습니다. 그러나 이해를 위해 네트워크를 분할한다는 점만 알아주세요.&lt;/p&gt;
+&lt;h2 id=&#34;vlan과-cloud-network&#34;&gt;VLAN과 Cloud Network
+&lt;/h2&gt;&lt;p&gt;퍼블릭 클라우드에서는 VPC를 정의한 후 Private, Public 서브넷을 정의하게 됩니다. 당연한 말이지만 물리적인 장치와 1:1 매칭하다보면 &amp;ldquo;어떻게?&amp;rdquo; 라는 물음만 남는 것 같습니다. 자료를 찾아보면서 내린 결론은 클라우드 네트워킹의 핵심은 &lt;strong&gt;가상화&lt;/strong&gt;라는 것이었습니다.&lt;/p&gt;
+&lt;p&gt;Cloud에서는 가상 라우터를 통해 Network(VPC)를 구성하고, VLAN을 활용하여 Subnet을 구성하게 됩니다. 그리고 클라우드 리소스는 Subent에서 ip를 할당받아 네트워크 범위 내에서 통신하게 됩니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/cloud-network-1/image-2.png&#34;
+	width=&#34;1108&#34;
+	height=&#34;516&#34;
+	srcset=&#34;http://localhost:1313/p/cloud-network-1/image-2_hu95cda8b251a1eb1ea1865a64fcff5ee7_55773_480x0_resize_box_3.png 480w, http://localhost:1313/p/cloud-network-1/image-2_hu95cda8b251a1eb1ea1865a64fcff5ee7_55773_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;출처 - https://www.shapeblue.com/a-beginners-guide-to-cloudstack-networking/&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;214&#34;
+		data-flex-basis=&#34;515px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;다음-이야기---openstack를-통해-알아보는-클라우드-네트워크&#34;&gt;다음 이야기 - Openstack를 통해 알아보는 클라우드 네트워크
+&lt;/h2&gt;&lt;p&gt;Openstack은 Cloud OS로 오픈소스입니다. AWS와 같은 퍼블릭 클라우드 내부구조는 공개되지 않았지만 Openstack를 통해 큰 틀의 클라우드 구조를 파악할 수 있습니다.&lt;br&gt;
+Openstack은 네트워크 구성 시 OVS를 사용합니다. Openstack에서도 다른 퍼블릭 클라우드처럼 Subnet 개념이 존재하며 VLAN 기술을 사용하게 됩니다.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;OVS는 다중 계층 스위치의 오픈소스 구현체로 여러 프로토콜 및 표준을 지원하면서 하드웨어 가상화 환경을 위한 스위칭 스택을 제공합니다.&lt;sup id=&#34;fnref:3&#34;&gt;&lt;a href=&#34;#fn:3&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;3&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/cloud-network-1/image-3.png&#34;
+	width=&#34;1194&#34;
+	height=&#34;534&#34;
+	srcset=&#34;http://localhost:1313/p/cloud-network-1/image-3_hue35cf1d2fb24e7e5563c30a55f8b72c9_84156_480x0_resize_box_3.png 480w, http://localhost:1313/p/cloud-network-1/image-3_hue35cf1d2fb24e7e5563c30a55f8b72c9_84156_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;출처 - https://platform9.com/blog/getting-started-openstack-neutron/&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;223&#34;
+		data-flex-basis=&#34;536px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;현재 홈서버로 Openstack를 활용하고 있습니다. 다음 글에서 홈서버를 통해 어떻게 네트워크가 구성되었는지 자세히 말씀 드리겠습니다.&lt;/p&gt;
+&lt;h1 id=&#34;reference&#34;&gt;Reference
+&lt;/h1&gt;&lt;ul&gt;
+&lt;li&gt;&lt;a class=&#34;link&#34; href=&#34;https://aws-hyoh.tistory.com/75&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://aws-hyoh.tistory.com/75&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
+&lt;hr&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn:1&#34;&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://ko.wikipedia.org/wiki/%EA%B7%BC%EA%B1%B0%EB%A6%AC_%ED%86%B5%EC%8B%A0%EB%A7%9D&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://ko.wikipedia.org/wiki/%EA%B7%BC%EA%B1%B0%EB%A6%AC_%ED%86%B5%EC%8B%A0%EB%A7%9D&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:2&#34;&gt;
+&lt;p&gt;그림으로 배우는 네트워크 원리, Gene 저자, 영진닷컴&amp;#160;&lt;a href=&#34;#fnref:2&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:3&#34;&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://en.wikipedia.org/wiki/Open_vSwitch&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://en.wikipedia.org/wiki/Open_vSwitch&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:3&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        </item>
+        <item>
         <title>Terraform - Workspace</title>
         <link>http://localhost:1313/p/terraform-workspace/</link>
         <pubDate>Wed, 23 Oct 2024 00:00:00 +0000</pubDate>
