@@ -6,10 +6,10 @@
         <description>Recent content in Gin on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Wed, 09 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/gin/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Wed, 09 Oct 2024 00:00:00 +0900</lastBuildDate><atom:link href="http://localhost:1313/tags/gin/index.xml" rel="self" type="application/rss+xml" /><item>
         <title>왜 TodoPoint 프로젝트를 실패했는가?</title>
         <link>http://localhost:1313/p/todopoint-final-review/</link>
-        <pubDate>Wed, 09 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 09 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/todopoint-final-review/</guid>
         <description>&lt;h2 id=&#34;todopoint-프로젝트에-대한-소개&#34;&gt;TodoPoint 프로젝트에 대한 소개
@@ -227,7 +227,7 @@ Go는 외부 라이브러리 저장소로 github를 주로 사용합니다. 공�
         <item>
         <title>Todopoint 서버코드 개선기 -  1. 공동 에러 처리하기</title>
         <link>http://localhost:1313/p/go-code-refactor-error-1/</link>
-        <pubDate>Sat, 11 May 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sat, 11 May 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/go-code-refactor-error-1/</guid>
         <description>&lt;p&gt;Go를 활용하여 직접 2~3개의 서비스를 만들고 나니, 구현할때 지나쳤던 에러들이 큰 눈덩이로 변해서 덮쳐왔다.
@@ -880,7 +880,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
         <item>
         <title>Gin 예외처리 - 2. 커스텀 예외처리</title>
         <link>http://localhost:1313/p/gin-error-handling-2/</link>
-        <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 10 Apr 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/gin-error-handling-2/</guid>
         <description>&lt;p&gt;이전에는 Gin이 어떻게 예외 처리를 하는지 언급했다. 이제부터 직접 구현하고자 한다.&lt;/p&gt;
@@ -1196,7 +1196,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
         <item>
         <title>Gin 예외처리 - 1. Go Error</title>
         <link>http://localhost:1313/p/gin-error-handling-1/</link>
-        <pubDate>Wed, 03 Apr 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 03 Apr 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/gin-error-handling-1/</guid>
         <description>&lt;h2 id=&#34;go와-예외처리&#34;&gt;Go와 예외처리

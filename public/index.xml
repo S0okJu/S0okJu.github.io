@@ -6,10 +6,364 @@
         <description>Recent content on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Sun, 27 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Mon, 04 Nov 2024 00:00:00 +0900</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>OpsAthlan 3-1. Hello MySQL</title>
+        <link>http://localhost:1313/p/opsathlan-3-1/</link>
+        <pubDate>Mon, 04 Nov 2024 00:00:00 +0900</pubDate>
+        
+        <guid>http://localhost:1313/p/opsathlan-3-1/</guid>
+        <description>&lt;h2 id=&#34;시나리오&#34;&gt;시나리오
+&lt;/h2&gt;&lt;p&gt;데이터베이스를 설치하고 읽기와 쓰기를 탐색해보자&lt;/p&gt;
+&lt;h4 id=&#34;구성도&#34;&gt;구성도
+&lt;/h4&gt;&lt;ol&gt;
+&lt;li&gt;Jenkins를 활용한 컨테이너 자동 빌드 및 docker-compose 배포&lt;/li&gt;
+&lt;li&gt;Nova에 Mysql 서버 설치 및 volume에 데이터 저장&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image.png&#34;
+	width=&#34;1140&#34;
+	height=&#34;460&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image_hueddf90ed18bf43cd37d2789863552bb2_42831_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image_hueddf90ed18bf43cd37d2789863552bb2_42831_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;전체 구성도&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;247&#34;
+		data-flex-basis=&#34;594px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;trove-설치-실패&#34;&gt;Trove 설치 실패
+&lt;/h2&gt;&lt;p&gt;초기 설계에서는 RDS와 유사하다고 생각한&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt; 서비스인 Trove를 활용해서 구성할 예정이었습니다. 그런데 따로 네트워크를 구축하고 설치해보면서 다양한 오류사항을 마주했습니다. 원인은 대략적으로 찾았으나 구체적인 해결 방안을 찾지 못해서 &lt;strong&gt;Nova 인스턴스에 mysql 서버를 사용하는 방식으로 전환&lt;/strong&gt;했습니다.&lt;/p&gt;
+&lt;h4 id=&#34;오류사항&#34;&gt;오류사항
+&lt;/h4&gt;&lt;p&gt;우선 Trove가 무엇인지 알아봅시다. &lt;a class=&#34;link&#34; href=&#34;https://wiki.openstack.org/wiki/Trove&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;공식문서&lt;/a&gt;에 의하면 trove는 다른 퍼블릭 클라우드의 데이터베이스 서비스과 유사한 기능을 가지고 있습니다. 안정성을 위한 대부분의 기능을 제공합니다.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Trove is &lt;strong&gt;Database as a Service&lt;/strong&gt; for OpenStack. It&amp;rsquo;s designed to run entirely on &lt;a class=&#34;link&#34; href=&#34;https://wiki.openstack.org/wiki/OpenStack&#34;  title=&#34;OpenStack&#34;
+     target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;OpenStack&lt;/a&gt;, with the goal of allowing users to quickly and easily utilize the features of a relational or non-relational database without the burden of handling complex administrative tasks.
+&amp;hellip; Initially, the service will focus on providing resource isolation at high performance while &lt;strong&gt;automating complex administrative tasks including deployment, configuration, patching, backups, restores, and monitoring.&lt;/strong&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;저는 Kolla-Ansible를 사용하고 있어 쉽게 리소스를 추가할 수 있습니다. &lt;code&gt;globals.yml&lt;/code&gt; 에서 trove 리소스 부분을 yes로 바꾸기만 하면 됩니다. 설정을 추가하고 재배포하면 총 3개의 trove 컨테이너가 생성됩니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-1.png&#34;
+	width=&#34;569&#34;
+	height=&#34;126&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-1_hufbe4aefa0eb558bde03b5172a90b220a_29003_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-1_hufbe4aefa0eb558bde03b5172a90b220a_29003_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;trove 서비스 관련 컨테이너&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;451&#34;
+		data-flex-basis=&#34;1083px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;Trove는 Nova 인스턴스 내에서 작동됩니다. 관련 이미지를 다운로드 받아서 glace에 업로드한 후 datastore version을 정의할때 사용합니다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Image 다운로드&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;wget https://tarballs.opendev.org/openstack/trove/images/trove-master-guest-ubuntu-jammy.qcow2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 이미지 Glance로 업로드&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;openstack image create Trove-Ubuntu --disk-format qcow2 --container-format bare --public --tag trove --tag mysql --file trove-master-guest-ubuntu-jammy.qcow2
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# datastore version 정의&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;openstack datastore version create 5.7.29 mysql mysql &lt;span class=&#34;s2&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt; --image-tags trove,mysql --active --default --version-number 5.7.29
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;위의 명령어를 모두 수행한 후 아래의 명령어를 확인해보면 mysql에 해당되는 datastore를 확인할 수 있습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-2.png&#34;
+	width=&#34;538&#34;
+	height=&#34;103&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-2_hu114020747d4eda385546dc915587845d_12001_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-2_hu114020747d4eda385546dc915587845d_12001_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;datastore 확인&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;522&#34;
+		data-flex-basis=&#34;1253px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;그리고 trove 관리 네트워크를 따로 만든 후에 데이터베이스를 생성했습니다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;9
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;openstack database instance create test_db &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    --flavor m1.medium &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    --size &lt;span class=&#34;m&#34;&gt;10&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;    --nic net-id&lt;span class=&#34;o&#34;&gt;={&lt;/span&gt;custom trove manangement network id&lt;span class=&#34;o&#34;&gt;}&lt;/span&gt; &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;     --database testdb &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;     --users tester:mypassword &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;     --datastore mysql &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;     --datastore-version 5.7.29 &lt;span class=&#34;se&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;se&#34;&gt;&lt;/span&gt;     --allowed-cidr 0.0.0.0/0
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;명령어 수행 이후 빌드 시간이 길었습니다. Timeout 에러가 발생할 것이라고 예상했고, 생각한대로 오류가 발생했습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-3.png&#34;
+	width=&#34;1529&#34;
+	height=&#34;171&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-3_hu4e0ea2295b582830b959937a8edfa4df_34817_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-3_hu4e0ea2295b582830b959937a8edfa4df_34817_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;trove 생성 에러&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;894&#34;
+		data-flex-basis=&#34;2145px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;trove - api 에서 taskmanager로 작업을 수행할때 message bus 부분에서 문제가 생긴 것 같습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-4.png&#34;
+	width=&#34;300&#34;
+	height=&#34;184&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-4_hu822d45c9e412396f6eb282b2bf32cf1d_37109_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-4_hu822d45c9e412396f6eb282b2bf32cf1d_37109_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;출처 - https://www.odbms.org/2016/02/10-things-you-should-know-about-openstack-trove-the-open-source-database-as-a-service/&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;163&#34;
+		data-flex-basis=&#34;391px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-5.png&#34;
+	width=&#34;1060&#34;
+	height=&#34;448&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-5_hu2b3adb6ddfe0d6fc1fedba0651cd05e8_101024_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-5_hu2b3adb6ddfe0d6fc1fedba0651cd05e8_101024_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;trove timeout error&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;236&#34;
+		data-flex-basis=&#34;567px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;우리의 목적은 간단하게 API를 테스트하는 것이기 때문에 대규모에 적합한 데이터베이스 시스템이 아니여도 괜찮습니다. 그러므로 &lt;strong&gt;간단하게 Nova 인스턴스 내에 Mysql 서버를 설치하는 방법&lt;/strong&gt;을 선택했습니다.&lt;/p&gt;
+&lt;h2 id=&#34;프로비저닝provisioning&#34;&gt;프로비저닝(Provisioning)
+&lt;/h2&gt;&lt;blockquote&gt;
+&lt;p&gt;프로비저닝(Provisioning) 이란 의미는 영어 직역한 그대로 &amp;ldquo;제공하는것&amp;rdquo; 이다. 
+어떤 종류의 서비스든 &lt;strong&gt;사용자의 요구에 맞게 시스템 자체를 제공 하는 것&lt;/strong&gt;을 프로비저닝이라고 하며 제공해줄 수 있는 것은 인프라 자원이나 서비스, 또는 장비가 될 수도 있다.&lt;/p&gt;
+&lt;p&gt;출처 - &lt;a class=&#34;link&#34; href=&#34;https://jins-dev.tistory.com/entry/%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%8B%9DProvisioning-%EC%9D%B4%EB%9E%80&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;Jins&amp;rsquo; Dev Inside - 프로비저닝이란?&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;앞으로는 인프라를 생성, 환경을 설정 과정을 프로비저닝이라는 용어로 칭하겠습니다.&lt;/p&gt;
+&lt;h4 id=&#34;리소스-생성&#34;&gt;리소스 생성
+&lt;/h4&gt;&lt;p&gt;저희는 크게 2가지의 Nova 인스턴스가 필요합니다.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Docker, Jenkins 서버가 설치되어 있는 인스턴스 -&amp;gt; &lt;strong&gt;Nova 인스턴스&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;Block Storage(Cinder)와 연결되어 있으며 MySQL Server가 설치된 인스턴스 -&amp;gt; Block &lt;strong&gt;Storage(Cinder)가 연결된 Nova 인스턴스&lt;/strong&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image.png&#34;
+	width=&#34;1140&#34;
+	height=&#34;460&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image_hueddf90ed18bf43cd37d2789863552bb2_42831_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image_hueddf90ed18bf43cd37d2789863552bb2_42831_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;전체 구성도&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;247&#34;
+		data-flex-basis=&#34;594px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;Openstack에서는 Nova 인스턴스를 생성할 때 Volume(Block Storage)을 추가할 수 있습니다. 쉽게 AWS의 EBS라고 생각하시면 됩니다.&lt;br&gt;
+앞서 말했듯이 Trove 서비스 설치를 실패하게 되면서 대안책으로 Nova에 MySQL 서버를 설치하는 방안을 선택하게 되었습니다. Volume이 연결된 Nova Instance를 활용하여 &lt;strong&gt;데이터베이스의 데이터가 Block Storage에 영구적으로 저장할 수 있게 구성&lt;/strong&gt;했습니다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-hcl&#34; data-lang=&#34;hcl&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Block Storage Volume for MySQL Instance
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;resource&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;openstack_blockstorage_volume_v3&amp;#34; &amp;#34;db_volume&amp;#34;&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;  name&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;${var.project_name}-db-volume&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;  size&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;var&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;volume_size&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;}&lt;span class=&#34;c1&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Nova Instance with Volume (MySQL Server)
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;resource&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;openstack_compute_instance_v2&amp;#34; &amp;#34;db_instance&amp;#34;&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;  name&lt;/span&gt;            &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;${var.project_name}-db-instance&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;  image_name&lt;/span&gt;      &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;var&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;image&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;  flavor_name&lt;/span&gt;     &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;var&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;flavor&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;  key_pair&lt;/span&gt;        &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;openstack_compute_keypair_v2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;keypair&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;name&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  &lt;span class=&#34;k&#34;&gt;network&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;    port&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;openstack_networking_port_v2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;db_port&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;id&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  }
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;  metadata&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;    ssh_user&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;ubuntu&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;  }
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;}&lt;span class=&#34;c1&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# Attach Volume to MySQL Instance
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;resource&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;openstack_compute_volume_attach_v2&amp;#34; &amp;#34;db_volume_attach&amp;#34;&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;  instance_id&lt;/span&gt; &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;openstack_compute_instance_v2&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;db_instance&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;id&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;n&#34;&gt;  volume_id&lt;/span&gt;   &lt;span class=&#34;o&#34;&gt;=&lt;/span&gt; &lt;span class=&#34;k&#34;&gt;openstack_blockstorage_volume_v3&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;db_volume&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;.&lt;/span&gt;&lt;span class=&#34;k&#34;&gt;id&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;위의 코드를 포함한 2개의 Nova Instance를 생성하면 아래와 같은 네트워크 토폴로지를 확인할 수 있습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-6.png&#34;
+	width=&#34;534&#34;
+	height=&#34;534&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-6_hu71265e6c6db0d7c152517088013f08dc_25484_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-6_hu71265e6c6db0d7c152517088013f08dc_25484_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;네트워크 토폴로지&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;100&#34;
+		data-flex-basis=&#34;240px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;본래라면 관리 네트워크와 외부 네트워크가 분리되어야 하지만 통합되어 있는 관계로 모두 floating ip를 할당하게 되었습니다.&lt;br&gt;
+만약에 네트워크가 역할에 따라 분명하게 분리되어 있다면 web-instance는 외부 네트워크로 구성하고 db-instance는 관리 네트워크 ip를 할당받아야 할 것입니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-7.png&#34;
+	width=&#34;720&#34;
+	height=&#34;243&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-7_hue3981f5648109e1c09fbdf5a5fca5237_23034_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-7_hue3981f5648109e1c09fbdf5a5fca5237_23034_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;Nova Instance 목록&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;296&#34;
+		data-flex-basis=&#34;711px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;데이터 베이스 서버를 설치할 &lt;code&gt;OpsAthlan-03-db-instance&lt;/code&gt; 인스턴스를 확인해 보겠습니다. 해당 정보에 들어가보면 &lt;code&gt;OpsAthlan-03-db-volume&lt;/code&gt; &lt;strong&gt;volume이 인스턴스의 /dev/vdb 경로로 마운팅&lt;/strong&gt;되었음을 확인했습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-8.png&#34;
+	width=&#34;465&#34;
+	height=&#34;559&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-8_huf851c707c0ea91a99ce864fb42ca6cdc_40091_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-8_huf851c707c0ea91a99ce864fb42ca6cdc_40091_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;Nova에 Attach된 Volume 정보&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;83&#34;
+		data-flex-basis=&#34;199px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h4 id=&#34;mysql-서버-설치&#34;&gt;MySQL 서버 설치
+&lt;/h4&gt;&lt;p&gt;처음에는 Ansible를 활용하여 한번에 MySQL 서버를 설치할 예정이었습니다. 그러나 저장 경로 수정 작업이 요구되면서 자동화는 힘들다고 판단했습니다.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;상당히 작업이 번거로운 관계로 &lt;a class=&#34;link&#34; href=&#34;https://jongsky.tistory.com/81&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;JONGSKY님의 블로그(시간의 농도) - MySQL 저장경로 변경하기(feat. ubuntu)&lt;/a&gt; 로 대체하겠습니다.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;위의 방법을 모두 따라하면 mysql 서버 설치가 완료됩니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-9.png&#34;
+	width=&#34;739&#34;
+	height=&#34;202&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-9_hu853f29d301108573d6247adedcfa9856_41699_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-9_hu853f29d301108573d6247adedcfa9856_41699_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;mysql server 정상 실행 상태&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;365&#34;
+		data-flex-basis=&#34;878px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;web-instance&lt;/code&gt; 에 mysql client를 설치하여 테스트를 수행해 보겠습니다. mysql 서버에 계정을 만든 후 테스트를 해보면 연결할 수 없다는 오류를 볼 수 있습니다. &lt;strong&gt;&lt;code&gt;db-instance&lt;/code&gt; security group에 mysql 서버 포트인 3306 규칙을 추가해도 똑같은 오류가 발생&lt;/strong&gt;됩니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-10.png&#34;
+	width=&#34;803&#34;
+	height=&#34;67&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-10_hu7fc0e3eb4d5147c391bb7aacf80ff62b_19386_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-10_hu7fc0e3eb4d5147c391bb7aacf80ff62b_19386_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;Mysql 연결 오류&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;1198&#34;
+		data-flex-basis=&#34;2876px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;/etc/mysql/mysql.conf.d/mysqld.cnf&lt;/code&gt; mysql 설정 파일에 외부 통신을 허용해주면 정상적으로 연결할 수 있게 됩니다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-fallback&#34; data-lang=&#34;fallback&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;bind-address = 0.0.0.0
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;다음-이야기&#34;&gt;다음 이야기
+&lt;/h2&gt;&lt;p&gt;데이터베이스 서버를 구성했으니 jenkins를 통한 CI/CD를 구축해보겠습니다.&lt;/p&gt;
+&lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
+&lt;hr&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn:1&#34;&gt;
+&lt;p&gt;완전 관리형 서비스는 아닙니다!&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        </item>
+        <item>
         <title>클라우드 네트워크 - 클라우드와 VLAN</title>
         <link>http://localhost:1313/p/cloud-network-1/</link>
-        <pubDate>Sun, 27 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sun, 27 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/cloud-network-1/</guid>
         <description>&lt;h2 id=&#34;lan이란&#34;&gt;LAN이란
@@ -124,7 +478,7 @@ Openstack은 네트워크 구성 시 OVS를 사용합니다. Openstack에서도 
         <item>
         <title>Terraform - Workspace</title>
         <link>http://localhost:1313/p/terraform-workspace/</link>
-        <pubDate>Wed, 23 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 23 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/terraform-workspace/</guid>
         <description>&lt;h2 id=&#34;introduction&#34;&gt;Introduction
@@ -363,7 +717,7 @@ S3로 Multiple Backend를 설정하게 되면 &lt;code&gt;env:/&lt;/code&gt; 하
         <item>
         <title>모아리움 백엔드 - API 개발 시 마주한 문제들 </title>
         <link>http://localhost:1313/p/moarium-backend-1/</link>
-        <pubDate>Wed, 16 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 16 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/moarium-backend-1/</guid>
         <description>&lt;h2 id=&#34;resttemplate-vs-webclient&#34;&gt;RestTemplate vs WebClient
@@ -567,7 +921,7 @@ RestTemplate = Blocking, WebClient = Non Blokcing 방식이라고 한다. 물론
         <item>
         <title>글또할 결심</title>
         <link>http://localhost:1313/p/geultto-1/</link>
-        <pubDate>Sat, 12 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sat, 12 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/geultto-1/</guid>
         <description>&lt;p&gt;나는 소규모 작문 스터디를 통해 &lt;a class=&#34;link&#34; href=&#34;https://zzsza.notion.site/ac5b18a482fb4df497d4e8257ad4d516&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
@@ -635,7 +989,7 @@ OT에서 말했듯이 충분한 학습을 위해서는 내용을 글로 정리�
         <item>
         <title>왜 TodoPoint 프로젝트를 실패했는가?</title>
         <link>http://localhost:1313/p/todopoint-final-review/</link>
-        <pubDate>Wed, 09 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 09 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/todopoint-final-review/</guid>
         <description>&lt;h2 id=&#34;todopoint-프로젝트에-대한-소개&#34;&gt;TodoPoint 프로젝트에 대한 소개
@@ -853,7 +1207,7 @@ Go는 외부 라이브러리 저장소로 github를 주로 사용합니다. 공�
         <item>
         <title>서버 구축기 - 4. Kolla-ansible 설치 시 마주한 네트워크 문제</title>
         <link>http://localhost:1313/p/server-setup-4/</link>
-        <pubDate>Tue, 01 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Tue, 01 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/server-setup-4/</guid>
         <description>&lt;h2 id=&#34;devstack의-한계&#34;&gt;DevStack의 한계
@@ -1087,7 +1441,7 @@ network_interface는 Internal network에 해당되는 인터페이스를 지정�
         <item>
         <title>OpsAthlan 2 - 2. Advanced echo server 메트릭 분석</title>
         <link>http://localhost:1313/p/opsathlan-2-2/</link>
-        <pubDate>Sun, 29 Sep 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sun, 29 Sep 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/opsathlan-2-2/</guid>
         <description>&lt;h2 id=&#34;jvm의-메모리-사용-형태&#34;&gt;JVM의 메모리 사용 형태
@@ -1324,7 +1678,7 @@ JIT 컴파일러는 이렇게 번역된 기계어를 &lt;strong&gt;코드 캐�
         <item>
         <title>OpsAthlan 2 - 1. Advanced echo server 구축</title>
         <link>http://localhost:1313/p/opsathlan-2-1/</link>
-        <pubDate>Thu, 26 Sep 2024 00:00:00 +0000</pubDate>
+        <pubDate>Thu, 26 Sep 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/opsathlan-2-1/</guid>
         <description>&lt;h2 id=&#34;시나리오&#34;&gt;시나리오
@@ -1811,7 +2165,7 @@ docker-compose를 통해 컨테이너를 배포했습니다.&lt;/p&gt;
         <item>
         <title>OpsAthlan 1 - Simple echo server</title>
         <link>http://localhost:1313/p/opsathlan-1/</link>
-        <pubDate>Thu, 19 Sep 2024 00:00:00 +0000</pubDate>
+        <pubDate>Thu, 19 Sep 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/opsathlan-1/</guid>
         <description>&lt;h2 id=&#34;시나리오&#34;&gt;시나리오
@@ -2407,7 +2761,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
         <item>
         <title>GoNetWorker - 1. GoNetWorker 소개와 초기 기능</title>
         <link>http://localhost:1313/p/gonetworker-1/</link>
-        <pubDate>Sun, 15 Sep 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sun, 15 Sep 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/gonetworker-1/</guid>
         <description>&lt;p&gt;개인적으로 운영 모니터링을 공부하고 싶었다. 문제는 클라이언트가 없다는 것이었다.
@@ -2600,7 +2954,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
         <item>
         <title>Openstack - Kubespray를 활용한 Kubernetes 설치 시 Ansible 오류</title>
         <link>http://localhost:1313/p/openstack-kubernetes-installation-2/</link>
-        <pubDate>Sat, 17 Aug 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sat, 17 Aug 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/openstack-kubernetes-installation-2/</guid>
         <description>&lt;p&gt;Kubernetes 설치는 &lt;a class=&#34;link&#34; href=&#34;https://velog.io/@jaehan/Openstack-%EA%B8%B0%EB%B0%98-Kubernets-%EA%B5%AC%EC%B6%95-with-Kubespray&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
@@ -2953,7 +3307,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
         <item>
         <title>Openstack - Kubespray를 활용한 Kubernetes 설치 시 Terraform 오류</title>
         <link>http://localhost:1313/p/openstack-kubernetes-installation-1/</link>
-        <pubDate>Thu, 01 Aug 2024 00:00:00 +0000</pubDate>
+        <pubDate>Thu, 01 Aug 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/openstack-kubernetes-installation-1/</guid>
         <description>&lt;h2 id=&#34;openstack-설치&#34;&gt;Openstack 설치
@@ -3202,7 +3556,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
         <item>
         <title>서버 구축기 - 3. 쿠버네티스에서 대시보드 접속하기 그리고 운영의 문제점</title>
         <link>http://localhost:1313/p/server-access-dashboard-and-management-problems/</link>
-        <pubDate>Tue, 16 Jul 2024 00:00:00 +0000</pubDate>
+        <pubDate>Tue, 16 Jul 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/server-access-dashboard-and-management-problems/</guid>
         <description>&lt;h2 id=&#34;서버-상태&#34;&gt;서버 상태
@@ -3444,7 +3798,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
         <item>
         <title>서버 구축기 - 2. Multipass를 활용한 NFS 구성</title>
         <link>http://localhost:1313/p/server-setup-nfs-in-multipass-instance/</link>
-        <pubDate>Sun, 14 Jul 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sun, 14 Jul 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/server-setup-nfs-in-multipass-instance/</guid>
         <description>&lt;h2 id=&#34;들어가며&#34;&gt;들어가며
@@ -3661,7 +4015,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
         <item>
         <title>서버 구축기 - 1. 쿠버네티스 멀티 노드 환경 구성하기</title>
         <link>http://localhost:1313/p/server-setup-multinode-kubernetes/</link>
-        <pubDate>Fri, 12 Jul 2024 00:00:00 +0000</pubDate>
+        <pubDate>Fri, 12 Jul 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/server-setup-multinode-kubernetes/</guid>
         <description>&lt;p&gt;사이드 프로젝트를 직접 운영하기 위해 서버를 구축하기로 결심했다. 그래서 기존에 있는 Windows 데스크톱을 ubuntu 20.04 서버 환경으로 세팅했다.&lt;/p&gt;
@@ -3779,7 +4133,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
         <item>
         <title>그 많은 서버 디스크 용량을 누가 잡아 먹었는가?</title>
         <link>http://localhost:1313/p/server-management-disk-1/</link>
-        <pubDate>Tue, 28 May 2024 00:00:00 +0000</pubDate>
+        <pubDate>Tue, 28 May 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/server-management-disk-1/</guid>
         <description>&lt;p&gt;Multipass를 구동하려고 하는 중 디스크 용량이 꽉찼다는 메세지를 얻게 되었다.&lt;/p&gt;
@@ -3915,7 +4269,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
         <item>
         <title>About</title>
         <link>http://localhost:1313/about/</link>
-        <pubDate>Sun, 26 May 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sun, 26 May 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/about/</guid>
         <description>&lt;h3 id=&#34;interest&#34;&gt;Interest
@@ -3954,7 +4308,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
         <item>
         <title>Entgo - Ent ORM</title>
         <link>http://localhost:1313/p/entgo-1/</link>
-        <pubDate>Wed, 22 May 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 22 May 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/entgo-1/</guid>
         <description>&lt;h2 id=&#34;orm-선택&#34;&gt;ORM 선택
@@ -4246,7 +4600,7 @@ ent 공식 문서에 의하면 edge.To를 사용하고 있으면 설정한 Edge�
         <item>
         <title>Todopoint 서버코드 개선기 -  1. 공동 에러 처리하기</title>
         <link>http://localhost:1313/p/go-code-refactor-error-1/</link>
-        <pubDate>Sat, 11 May 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sat, 11 May 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/go-code-refactor-error-1/</guid>
         <description>&lt;p&gt;Go를 활용하여 직접 2~3개의 서비스를 만들고 나니, 구현할때 지나쳤던 에러들이 큰 눈덩이로 변해서 덮쳐왔다.
@@ -4899,7 +5253,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
         <item>
         <title>AWS - EKS란 무엇인가</title>
         <link>http://localhost:1313/p/what-is-eks/</link>
-        <pubDate>Wed, 01 May 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 01 May 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/what-is-eks/</guid>
         <description>&lt;h2 id=&#34;eks&#34;&gt;EKS
@@ -4997,7 +5351,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
         <item>
         <title>AWS - IAM 그리고 Profile</title>
         <link>http://localhost:1313/p/iam-and-profile/</link>
-        <pubDate>Tue, 16 Apr 2024 00:00:00 +0000</pubDate>
+        <pubDate>Tue, 16 Apr 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/iam-and-profile/</guid>
         <description>&lt;h2 id=&#34;introduction&#34;&gt;Introduction
@@ -5044,7 +5398,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
         <item>
         <title>Gin 예외처리 - 2. 커스텀 예외처리</title>
         <link>http://localhost:1313/p/gin-error-handling-2/</link>
-        <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 10 Apr 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/gin-error-handling-2/</guid>
         <description>&lt;p&gt;이전에는 Gin이 어떻게 예외 처리를 하는지 언급했다. 이제부터 직접 구현하고자 한다.&lt;/p&gt;
@@ -5360,7 +5714,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
         <item>
         <title>Gin 예외처리 - 1. Go Error</title>
         <link>http://localhost:1313/p/gin-error-handling-1/</link>
-        <pubDate>Wed, 03 Apr 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 03 Apr 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/gin-error-handling-1/</guid>
         <description>&lt;h2 id=&#34;go와-예외처리&#34;&gt;Go와 예외처리
@@ -5582,7 +5936,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
         <item>
         <title>TodoPoint - 쿠버네티스 환경에서 DB는 어떻게 구성하지?</title>
         <link>http://localhost:1313/p/todopoint-db-design/</link>
-        <pubDate>Wed, 13 Mar 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 13 Mar 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/todopoint-db-design/</guid>
         <description>&lt;h1 id=&#34;도커와-데이터베이스&#34;&gt;도커와 데이터베이스
@@ -5621,7 +5975,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
         <item>
         <title>Go-DB에 마그이션하기</title>
         <link>http://localhost:1313/p/go-db-migration/</link>
-        <pubDate>Sat, 09 Mar 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sat, 09 Mar 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/go-db-migration/</guid>
         <description>&lt;p&gt;Java 진영에서 자주 사용되는 ORM은 JPA이다. 하지만 Go에서는 대표적인 ORM은 없는듯하다. 그런탓에 이런저런 라이브러리가 많은데, 상황에 맞게 라이브러리를 쓰세요 식의 Go스러움을 많이 볼 수 있다.&lt;/p&gt;
@@ -5657,7 +6011,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
         <item>
         <title>Spring - Spring Boot 간략하게 알아보기</title>
         <link>http://localhost:1313/p/basic-spring-1/</link>
-        <pubDate>Sat, 03 Feb 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sat, 03 Feb 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/basic-spring-1/</guid>
         <description>&lt;h2 id=&#34;스프링-부트&#34;&gt;스프링 부트
@@ -6069,7 +6423,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
         <item>
         <title>Terraform - Backend</title>
         <link>http://localhost:1313/p/terraform-backend/</link>
-        <pubDate>Mon, 29 Jan 2024 00:00:00 +0000</pubDate>
+        <pubDate>Mon, 29 Jan 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/terraform-backend/</guid>
         <description>&lt;h2 id=&#34;backend&#34;&gt;backend
@@ -6260,7 +6614,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
         <item>
         <title>Terraform - 기본 문법 익히기</title>
         <link>http://localhost:1313/p/basic-terraform-1/</link>
-        <pubDate>Thu, 25 Jan 2024 00:00:00 +0000</pubDate>
+        <pubDate>Thu, 25 Jan 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/basic-terraform-1/</guid>
         <description>&lt;h2 id=&#34;terraform-이란&#34;&gt;Terraform 이란
@@ -6518,7 +6872,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
         <item>
         <title>Archives</title>
         <link>http://localhost:1313/archives/</link>
-        <pubDate>Tue, 28 May 2019 00:00:00 +0000</pubDate>
+        <pubDate>Tue, 28 May 2019 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/archives/</guid>
         <description></description>
