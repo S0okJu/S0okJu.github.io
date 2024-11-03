@@ -6,7 +6,15 @@
         <description>Recent content in Categories on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Sun, 27 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/categories/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Sun, 03 Nov 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/categories/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>Notice</title>
+        <link>http://localhost:1313/categories/notice/</link>
+        <pubDate>Sun, 03 Nov 2024 00:00:00 +0000</pubDate>
+        
+        <guid>http://localhost:1313/categories/notice/</guid>
+        <description></description>
+        </item>
+        <item>
         <title>Cloud</title>
         <link>http://localhost:1313/categories/cloud/</link>
         <pubDate>Sun, 27 Oct 2024 00:00:00 +0000</pubDate>
