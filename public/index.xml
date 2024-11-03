@@ -6,60 +6,7 @@
         <description>Recent content on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Sun, 03 Nov 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
-        <title>블로그 이전</title>
-        <link>http://localhost:1313/p/notice/</link>
-        <pubDate>Sun, 03 Nov 2024 00:00:00 +0000</pubDate>
-        
-        <guid>http://localhost:1313/p/notice/</guid>
-        <description>&lt;p&gt;블로그 이전&lt;/p&gt;
-&lt;h2 id=&#34;github-블로그의-단점&#34;&gt;GitHub 블로그의 단점
-&lt;/h2&gt;&lt;p&gt;깃허브 블로그를 사용하다 보니 글쓰기 이외에도 신경써야 할 부분이 많았습니다.&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;글이 많을수록 폴더 관리가 어렵다.&lt;/li&gt;
-&lt;li&gt;가독성이 좋은 테마를 찾지 못했다.&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;특히 2번 문제를 해결하기 위해 jekyll, hugo를 써봤지만 마음에 드는 테마를 찾지 못했습니다. 조건에 충족하기 위해서는 직접 만드는 방법이 있지만 시간이 많이 소요될 것이라고 생각했습니다.&lt;/p&gt;
-&lt;h2 id=&#34;medium으로-정착&#34;&gt;Medium으로 정착
-&lt;/h2&gt;&lt;p&gt;선택지로는 tistory, velog, Medium이 있다.&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;tistory
-&lt;ul&gt;
-&lt;li&gt;가장 대중적인 블로그&lt;/li&gt;
-&lt;li&gt;Github 블로그 이전에 티스토리를 사용했는데 마음에 드는 테마를 찾지 못했습니다.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;velog
-&lt;ul&gt;
-&lt;li&gt;심플한 UI&lt;/li&gt;
-&lt;li&gt;제한된 커스텀 기능&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;li&gt;Medium
-&lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;유료&lt;/strong&gt;&lt;/li&gt;
-&lt;li&gt;제한된 커스텀 기능&lt;/li&gt;
-&lt;/ul&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;나는 그 중 Medium을 선택하게 되었습니다. 블로그가 가독성이 좋을 뿐더러 태그에 맞춰서 페이지를 분리할 수 있다. 비록 md 포맷을 사용할 수 없지만 기본적인 기능을 제공합니다. 차라리 여러가지 기능이 있는 것보다는 필요한 것만 있는 것이 글을 작성하는데 도움이 될 것이라고 생각했습니다.&lt;br&gt;
-유료라는 것도 고민사유가 되었습니다. Medium은 외국에서 활발한 블로그 플랫폼인만큼 유료 사용 시 양질의 글을 읽을 수 있었습니다. 이러한 접근성이 또다른 장점이라고 생각하여 추가적인 결제를 하고 블로그를 사용하기로 결정했습니다.&lt;/p&gt;
-&lt;h2 id=&#34;글-이전&#34;&gt;글 이전
-&lt;/h2&gt;&lt;p&gt;프로젝트 관련된 글은 계속 작성할 예정이기 때문에 프로젝트 글은 하나씩 옮길 예정입니다.&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;OpsAthlan&lt;/li&gt;
-&lt;li&gt;Openstack&lt;/li&gt;
-&lt;li&gt;Todopoint&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&#34;medium-홈페이지&#34;&gt;Medium 홈페이지
-&lt;/h2&gt;&lt;ul&gt;
-&lt;li&gt;앞으로 글은 미디엄에서 작성할 예정입니다.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://medium.com/s0okju-tech&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
-    &gt;https://medium.com/s0okju-tech&lt;/a&gt;&lt;/p&gt;
-</description>
-        </item>
-        <item>
+        <lastBuildDate>Sun, 27 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
         <title>클라우드 네트워크 - 클라우드와 VLAN</title>
         <link>http://localhost:1313/p/cloud-network-1/</link>
         <pubDate>Sun, 27 Oct 2024 00:00:00 +0000</pubDate>
