@@ -14,7 +14,7 @@ categories:
 
 데이터베이스를 설치하고 읽기와 쓰기를 탐색해보자
 
-#### 구성도
+### 구성도
 
 1. Jenkins를 활용한 컨테이너 자동 빌드 및 docker-compose 배포
 2. Nova에 Mysql 서버 설치 및 volume에 데이터 저장
@@ -25,7 +25,7 @@ categories:
 
 초기 설계에서는 RDS와 유사하다고 생각한[^1] 서비스인 Trove를 활용해서 구성할 예정이었습니다. 그런데 따로 네트워크를 구축하고 설치해보면서 다양한 오류사항을 마주했습니다. 원인은 대략적으로 찾았으나 구체적인 해결 방안을 찾지 못해서 **Nova 인스턴스에 mysql 서버를 사용하는 방식으로 전환**했습니다.
 
-#### 오류사항
+### 오류사항
 
 우선 Trove가 무엇인지 알아봅시다. [공식문서](https://wiki.openstack.org/wiki/Trove)에 의하면 trove는 다른 퍼블릭 클라우드의 데이터베이스 서비스과 유사한 기능을 가지고 있습니다. 안정성을 위한 대부분의 기능을 제공합니다.
 
@@ -89,7 +89,7 @@ trove - api 에서 taskmanager로 작업을 수행할때 message bus 부분에�
 
 앞으로는 인프라를 생성, 환경을 설정 과정을 프로비저닝이라는 용어로 칭하겠습니다.
 
-#### 리소스 생성
+### 리소스 생성
 
 저희는 크게 2가지의 Nova 인스턴스가 필요합니다.
 
@@ -144,7 +144,7 @@ resource "openstack_compute_volume_attach_v2" "db_volume_attach" {
 
 ![Nova에 Attach된 Volume 정보](image-8.png)
 
-#### MySQL 서버 설치
+### MySQL 서버 설치
 
 처음에는 Ansible를 활용하여 한번에 MySQL 서버를 설치할 예정이었습니다. 그러나 저장 경로 수정 작업이 요구되면서 자동화는 힘들다고 판단했습니다.
 
