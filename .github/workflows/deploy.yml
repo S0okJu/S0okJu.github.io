@@ -20,11 +20,6 @@ jobs:
               with:
                   fetch-depth: 0
             
-            - name: Set Timezone to KST
-              run: |
-                  sudo ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime
-                  date  # Print current date and time for confirmation
-
             - name: Cache Hugo resources
               uses: actions/cache@v4
               env:
