@@ -3,27 +3,36 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>http://localhost:1313/</loc>
-    <lastmod>2024-11-04T00:00:00+09:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/ansible/</loc>
-    <lastmod>2024-11-04T00:00:00+09:00</lastmod>
+    <lastmod>2024-11-25T00:00:00+09:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/</loc>
-    <lastmod>2024-11-04T00:00:00+09:00</lastmod>
+    <lastmod>2024-11-25T00:00:00+09:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/categories/hexactf/</loc>
+    <lastmod>2024-11-25T00:00:00+09:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/hexactf-1/</loc>
+    <lastmod>2024-11-25T00:00:00+09:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/kubernetes/</loc>
+    <lastmod>2024-11-25T00:00:00+09:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/openstack/</loc>
+    <lastmod>2024-11-25T00:00:00+09:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/post/</loc>
+    <lastmod>2024-11-25T00:00:00+09:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/</loc>
+    <lastmod>2024-11-25T00:00:00+09:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/ansible/</loc>
     <lastmod>2024-11-04T00:00:00+09:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/opsathlan/</loc>
     <lastmod>2024-11-04T00:00:00+09:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/p/opsathlan-3-1/</loc>
-    <lastmod>2024-11-04T00:00:00+09:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/post/</loc>
-    <lastmod>2024-11-04T00:00:00+09:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/</loc>
     <lastmod>2024-11-04T00:00:00+09:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/terraform/</loc>
@@ -82,9 +91,6 @@
   </url><url>
     <loc>http://localhost:1313/p/todopoint-final-review/</loc>
     <lastmod>2024-10-09T00:00:00+09:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/kubernetes/</loc>
-    <lastmod>2024-10-01T00:00:00+09:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/ops/</loc>
     <lastmod>2024-10-01T00:00:00+09:00</lastmod>

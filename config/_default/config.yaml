@@ -49,7 +49,7 @@ params:
 
     sidebar:
         emoji: 👾
-        subtitle: Hello World!
+        subtitle: Hello, World!
         avatar:
             enabled: true
             local: true

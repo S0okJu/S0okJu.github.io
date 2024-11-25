@@ -6,7 +6,119 @@
         <description>Recent content on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Mon, 04 Nov 2024 00:00:00 +0900</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Mon, 25 Nov 2024 00:00:00 +0900</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>HexaCTF - 1. 인프라 플랫폼 선정과 서버 이전 시 마주한 문제 </title>
+        <link>http://localhost:1313/p/hexactf-1/</link>
+        <pubDate>Mon, 25 Nov 2024 00:00:00 +0900</pubDate>
+        
+        <guid>http://localhost:1313/p/hexactf-1/</guid>
+        <description>&lt;h2 id=&#34;ctf-프로젝트&#34;&gt;CTF 프로젝트
+&lt;/h2&gt;&lt;p&gt;CTF란 해킹 대회로 참가자가 의도적으로 취약한 프로그램이나 웹사이트에 숨겨진 플래그를 찾는 게임&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;입니다. 대표적인 CTF 사이트로는 &lt;a class=&#34;link&#34; href=&#34;https://dreamhack.io/&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;드림핵&lt;/a&gt;이 있습니다.
+현재 해킹 동아리 소속으로 주변에 CTF에 활발하게 참가하는 친구들이 많이 있습니다. 저 또한 CTF는 아니지만 문제 제작에 관심이 많습니다. 해킹이라는 관심사를 가진 인원이 모여 CTF에 대한 아이디어를 나누게 되었고, 이후 직접 사이트를 구축하고 대회를 개최하기로 결정했습니다.&lt;/p&gt;
+&lt;h2 id=&#34;ctf-제작-필수-요소---컨테이너&#34;&gt;CTF 제작 필수 요소 - 컨테이너
+&lt;/h2&gt;&lt;p&gt;CTF 문제 중에는 호스팅된 취약한 웹사이트가 필요할 수 있고, 취약한 운영체제 환경이 필요할 수 있습니다. 각각 하나의 환경을 구성해서 사용자에게 배포할 수 있습니다. 이럴경우 다른 사용자의 문제 풀이를 알 수 있고 다른 사용자가 발빠르게 문제를 해결하면 다른 사용자는 문제를 풀 수 없게 됩니다. 그렇다면 해킹 대회의 의미가 없어질 것입니다. 문제 환경의 분리가 필요하다고 판단했고 경량화된 실행 환경인 컨테이너를 사용하기로 결정했습니다.&lt;/p&gt;
+&lt;h2 id=&#34;쿠버네티스&#34;&gt;쿠버네티스
+&lt;/h2&gt;&lt;p&gt;쿠버네티스는 러닝 커브가 있는 플랫폼입니다. 저 또한 쿠버네티스의 기본 개념만 알지 온전히 사용해본 경험은 없었습니다. 하지만 &lt;strong&gt;컨테이너를 관리한다는 측면에서 쿠버네티스만큼 좋은 플랫폼이 없어서 선택하게 되었습니다.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Python Docker SDK에서 서비스를 개발하고 있을때 제가 고민했던 것이 있었습니다.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;30분 후에는 컨테이너를 중단시켜야 하는데 어떻게 해야하지?&lt;/li&gt;
+&lt;li&gt;2개 이상의 컨테이너가 필요한 경우에는 어떻게 논리적으로 분리해서 관리하고 모니터링하지?&lt;/li&gt;
+&lt;li&gt;Health Check 어떻게 하지?&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;모든 고민의 해결방안은 &lt;strong&gt;직접 구현&lt;/strong&gt;해야 한다는 것이었습니다. 직접 구현하는 것보다는 증명된 플랫폼을 활용하는 것이 적절하다고 판단했고 쿠버네티스를 선택하게 되었습니다.&lt;/p&gt;
+&lt;h2 id=&#34;운영-플랫폼-선정---openstack&#34;&gt;운영 플랫폼 선정 - Openstack
+&lt;/h2&gt;&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.redhat.com/ko/resources/openstack-platform-datasheet&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;OpenStack이란&lt;/a&gt;이란 풀링된 가상 리소스를 사용하여 &lt;a class=&#34;link&#34; href=&#34;https://www.redhat.com/ko/topics/cloud-computing/what-is-private-cloud&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;프라이빗&lt;/a&gt; 및 &lt;a class=&#34;link&#34; href=&#34;https://www.redhat.com/ko/topics/cloud-computing/what-is-public-cloud&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;퍼블릭&lt;/a&gt; 클라우드를 구축하고 관리하는 오픈소스 플랫폼를 뜻합니다.&lt;sup id=&#34;fnref:2&#34;&gt;&lt;a href=&#34;#fn:2&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;2&lt;/a&gt;&lt;/sup&gt;
+이번 프로젝트에서 인프라 담당을 맡게 되면서 홈서버를 가지고 CTF를 운영하게 되었습니다.
+저는 홈서버에 Openstack를 구축하고 활용한 경험이 있습니다. Openstack를 사용하면서 가장 편리했던 부분은 &lt;strong&gt;IaC를 통해 인프라를 쉽게 관리할 수 있다는 점&lt;/strong&gt;이었습니다. 또한 다양한 스토리지 종류가 있으며 역할에 따라 활용할 수 있다는 것도 큰 매력이었습니다.
+운영 난이도는 높지만 클라우드만이 가질 수 있는 장점을 활용하고 싶어 Openstack을 선택하게 되었습니다.&lt;/p&gt;
+&lt;h2 id=&#34;서버-구축---제한된-환경에서-느낀-것&#34;&gt;서버 구축 - 제한된 환경에서 느낀 것
+&lt;/h2&gt;&lt;p&gt;집에 있는 홈서버를 다른 장소로 이전하게 되었습니다. 이후 Openstack 서버를 현재 환경에 맞게 설정해야 했습니다. 작업에는 네트워크 설정이 큰 비중을 차지했습니다. 설정 과정에서 느낀점을 적어보고자 합니다.&lt;/p&gt;
+&lt;h3 id=&#34;nat-gateway-의-필요성&#34;&gt;NAT Gateway 의 필요성
+&lt;/h3&gt;&lt;p&gt;Public Cloud에서 Private Subnet 내에 있는 인스턴스가 인터넷과 접속하기 위해서는 NAT Gateway가 필요합니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/hexactf-1/image.png&#34;
+	width=&#34;581&#34;
+	height=&#34;510&#34;
+	srcset=&#34;http://localhost:1313/p/hexactf-1/image_hu10464448554146583759.png 480w, http://localhost:1313/p/hexactf-1/image_hu17619646771974209576.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;출처 - https://docs.aws.amazon.com/ko_kr/vpc/latest/userguide/nat-gateway-scenarios.html&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;113&#34;
+		data-flex-basis=&#34;273px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;위의 상황과 유사하게 서버의 사설 네트워크 대역에 접근해야 할 일이 있었습니다. 예로 172.19.0.2에 접근하고 싶은데 같은 네트워크 대역에 있지 않으므로 접근할 수 없습니다. 그러나 &lt;code&gt;enp2s0&lt;/code&gt; 네트워크 인터페이스를 NAT로 사용하면 172.19.0.2에 접근할 수 있게 됩도다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/hexactf-1/image-1.png&#34;
+	width=&#34;969&#34;
+	height=&#34;755&#34;
+	srcset=&#34;http://localhost:1313/p/hexactf-1/image-1_hu14836861143146763152.png 480w, http://localhost:1313/p/hexactf-1/image-1_hu15440325309018061590.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;구성도&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;128&#34;
+		data-flex-basis=&#34;308px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;서버에 enp2s0가 NAT이며 사설 네트워크인 enp2s0.191에 트래픽을 허용해주는 방화벽 규칙을 추가합니다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# enp2s0 인터페이스를 통해 나가는 모든 트래픽의 소스에 NAT 수행 &lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo iptables -t nat -A POSTROUTING -o enp2s0 -j MASQUERADE
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# enp2s0에 들어와 br-ex로 나가는 ICMP 트래픽을 허용한다.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo iptables -A FORWARD -i enp2s0 -o enp2s0.191 -p icmp -j ACCEPT
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# br-ex로 들어와서 enp2s0로 나가는 ICMP 트래픽을 허용한다.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;sudo iptables -A FORWARD -i enp2s0.191 -o enp2s0 -p icmp -j ACCEPT
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Private Subnet 내에 있는 리소스가 외부 인터넷과 통신할 수 있도록 NAT Gateway가 필요합니다.
+이는 온프로미스 환경에서도 해당됩니다. 온프로미스 환경에서 사설 네트워크에 접근하기 위해서는 NAT 기능이 필요하며 이는 &lt;strong&gt;공용(Public) 네트워크 인터페이스로 구성&lt;/strong&gt;되어 있어야 합니다. 그래야 외부와 연결하여 통신할 수 있게 됩니다.
+Public Cloud에서 NAT Gateway를 Public Subnet에 배치하는 이유도 온프로미스와 동일할 것입니다.&lt;/p&gt;
+&lt;p&gt;현재 프로젝트에서는 NAT를 활용하지 않습니다. vlan을 외부 네트워크 인터페이스로 활용하고 싶었으나 실패했습니다. 결국 enp2s0를 Public IP 할당에 사용되는 외부 네트워크 인터페이스(&lt;strong&gt;br-ex&lt;/strong&gt;)로 사용할 것입니다.&lt;/p&gt;
+&lt;h3 id=&#34;ip-부족&#34;&gt;IP 부족
+&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;새로운 장소에서 가장 큰 고민거리는 IP Pool 설정&lt;/strong&gt;이었습니다. Openstack은 Floating IP Pool 내에서 외부에 노출할 IP를 할당받게 됩니다. 실제 운영을 위한 IP, 개발을 위한 IP 등 생각보다 IP를 할당받아야 하는 경우가 많습니다.
+현재 환경에서는 다양한 서버의 IP가 불규칙적으로 할당되어 있습니다. 또한 많은 사람이 인터넷을 활용하는 공간이기에 무분별하게 IP를 할당할 수 없었습니다.&lt;/p&gt;
+&lt;p&gt;꼭 필요한 IP 개수에서 일시적으로 할당받을 것을 고려해 10개를 할당했습니다.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;쿠버네티스 : Master, node 2개&lt;/li&gt;
+&lt;li&gt;개발 관련 : Jenkins&lt;/li&gt;
+&lt;li&gt;기타(일시적) : MySQL 관리용 등등..&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;마치며&#34;&gt;마치며
+&lt;/h2&gt;&lt;p&gt;지금까지 프로젝트가 왜 이러한 플랫폼을 선택했는지 설명했습니다. 또한 서버를 다른 곳에 이전하게 되면서 생긴 경험을 보여드렸습니다.
+다음편에는 전체적인 구성도와 함께 찾아오겠습니다.&lt;/p&gt;
+&lt;div class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
+&lt;hr&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn:1&#34;&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://en.wikipedia.org/wiki/Capture_the_flag_%28cybersecurity%29&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://en.wikipedia.org/wiki/Capture_the_flag_(cybersecurity)&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li id=&#34;fn:2&#34;&gt;
+&lt;p&gt;&lt;a class=&#34;link&#34; href=&#34;https://www.redhat.com/ko/topics/openstack&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;https://www.redhat.com/ko/topics/openstack&lt;/a&gt;&amp;#160;&lt;a href=&#34;#fnref:2&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/div&gt;
+</description>
+        </item>
+        <item>
         <title>OpsAthlan 3-1. Hello MySQL</title>
         <link>http://localhost:1313/p/opsathlan-3-1/</link>
         <pubDate>Mon, 04 Nov 2024 00:00:00 +0900</pubDate>
@@ -22,7 +134,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image.png&#34;
 	width=&#34;1140&#34;
 	height=&#34;460&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image_hueddf90ed18bf43cd37d2789863552bb2_42831_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image_hueddf90ed18bf43cd37d2789863552bb2_42831_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image_hu8839972070874193289.png 480w, http://localhost:1313/p/opsathlan-3-1/image_hu6347034317579214841.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;전체 구성도&#34;
@@ -48,7 +160,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-1.png&#34;
 	width=&#34;569&#34;
 	height=&#34;126&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-1_hufbe4aefa0eb558bde03b5172a90b220a_29003_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-1_hufbe4aefa0eb558bde03b5172a90b220a_29003_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-1_hu10415197273162540367.png 480w, http://localhost:1313/p/opsathlan-3-1/image-1_hu9790727274016210285.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;trove 서비스 관련 컨테이너&#34;
@@ -86,7 +198,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-2.png&#34;
 	width=&#34;538&#34;
 	height=&#34;103&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-2_hu114020747d4eda385546dc915587845d_12001_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-2_hu114020747d4eda385546dc915587845d_12001_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-2_hu4528437976170847463.png 480w, http://localhost:1313/p/opsathlan-3-1/image-2_hu15136200318985701073.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;datastore 확인&#34;
@@ -126,7 +238,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-3.png&#34;
 	width=&#34;1529&#34;
 	height=&#34;171&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-3_hu4e0ea2295b582830b959937a8edfa4df_34817_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-3_hu4e0ea2295b582830b959937a8edfa4df_34817_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-3_hu10171910915849750386.png 480w, http://localhost:1313/p/opsathlan-3-1/image-3_hu18042841632103592142.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;trove 생성 에러&#34;
@@ -141,7 +253,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-4.png&#34;
 	width=&#34;300&#34;
 	height=&#34;184&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-4_hu822d45c9e412396f6eb282b2bf32cf1d_37109_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-4_hu822d45c9e412396f6eb282b2bf32cf1d_37109_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-4_hu15970348430049557479.png 480w, http://localhost:1313/p/opsathlan-3-1/image-4_hu11322891686180289888.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://www.odbms.org/2016/02/10-things-you-should-know-about-openstack-trove-the-open-source-database-as-a-service/&#34;
@@ -155,7 +267,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-5.png&#34;
 	width=&#34;1060&#34;
 	height=&#34;448&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-5_hu2b3adb6ddfe0d6fc1fedba0651cd05e8_101024_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-5_hu2b3adb6ddfe0d6fc1fedba0651cd05e8_101024_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-5_hu4441897102823379864.png 480w, http://localhost:1313/p/opsathlan-3-1/image-5_hu7661926581089097728.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;trove timeout error&#34;
@@ -184,7 +296,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image.png&#34;
 	width=&#34;1140&#34;
 	height=&#34;460&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image_hueddf90ed18bf43cd37d2789863552bb2_42831_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image_hueddf90ed18bf43cd37d2789863552bb2_42831_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image_hu8839972070874193289.png 480w, http://localhost:1313/p/opsathlan-3-1/image_hu6347034317579214841.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;전체 구성도&#34;
@@ -261,7 +373,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-6.png&#34;
 	width=&#34;534&#34;
 	height=&#34;534&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-6_hu71265e6c6db0d7c152517088013f08dc_25484_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-6_hu71265e6c6db0d7c152517088013f08dc_25484_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-6_hu10318609144043095095.png 480w, http://localhost:1313/p/opsathlan-3-1/image-6_hu10699064222980475678.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;네트워크 토폴로지&#34;
@@ -277,7 +389,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-7.png&#34;
 	width=&#34;720&#34;
 	height=&#34;243&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-7_hue3981f5648109e1c09fbdf5a5fca5237_23034_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-7_hue3981f5648109e1c09fbdf5a5fca5237_23034_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-7_hu15098432358233808049.png 480w, http://localhost:1313/p/opsathlan-3-1/image-7_hu12709347582471945289.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Nova Instance 목록&#34;
@@ -292,7 +404,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-8.png&#34;
 	width=&#34;465&#34;
 	height=&#34;559&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-8_huf851c707c0ea91a99ce864fb42ca6cdc_40091_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-8_huf851c707c0ea91a99ce864fb42ca6cdc_40091_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-8_hu560831702507702910.png 480w, http://localhost:1313/p/opsathlan-3-1/image-8_hu5716744347552961298.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Nova에 Attach된 Volume 정보&#34;
@@ -313,7 +425,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-9.png&#34;
 	width=&#34;739&#34;
 	height=&#34;202&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-9_hu853f29d301108573d6247adedcfa9856_41699_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-9_hu853f29d301108573d6247adedcfa9856_41699_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-9_hu6961702027686291070.png 480w, http://localhost:1313/p/opsathlan-3-1/image-9_hu2949784053934646296.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;mysql server 정상 실행 상태&#34;
@@ -328,7 +440,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-3-1/image-10.png&#34;
 	width=&#34;803&#34;
 	height=&#34;67&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-10_hu7fc0e3eb4d5147c391bb7aacf80ff62b_19386_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-3-1/image-10_hu7fc0e3eb4d5147c391bb7aacf80ff62b_19386_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-3-1/image-10_hu15655963347387914022.png 480w, http://localhost:1313/p/opsathlan-3-1/image-10_hu5537167036167637786.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Mysql 연결 오류&#34;
@@ -380,7 +492,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/cloud-network-1/image.png&#34;
 	width=&#34;441&#34;
 	height=&#34;291&#34;
-	srcset=&#34;http://localhost:1313/p/cloud-network-1/image_hu8d466b21a43677aa8c0ea17a09355f88_13896_480x0_resize_box_3.png 480w, http://localhost:1313/p/cloud-network-1/image_hu8d466b21a43677aa8c0ea17a09355f88_13896_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/cloud-network-1/image_hu1346089025598690054.png 480w, http://localhost:1313/p/cloud-network-1/image_hu17351485829450624520.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;홈 서버 구성도&#34;
@@ -397,7 +509,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/cloud-network-1/image-1.png&#34;
 	width=&#34;645&#34;
 	height=&#34;363&#34;
-	srcset=&#34;http://localhost:1313/p/cloud-network-1/image-1_hua31fdabbf1ee7548690b1594fb019eb8_28126_480x0_resize_box_3.png 480w, http://localhost:1313/p/cloud-network-1/image-1_hua31fdabbf1ee7548690b1594fb019eb8_28126_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/cloud-network-1/image-1_hu3598444186685825528.png 480w, http://localhost:1313/p/cloud-network-1/image-1_hu9737714994722713692.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://yoursmaddy.medium.com/vlans-segmenting-networks-for-better-performance-and-security-306d5d6b47a&#34;
@@ -420,7 +532,7 @@ L3 스위치가 L2 스위치 + 라우터의 특징을 가지고 있으며, VLAN�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/cloud-network-1/image-2.png&#34;
 	width=&#34;1108&#34;
 	height=&#34;516&#34;
-	srcset=&#34;http://localhost:1313/p/cloud-network-1/image-2_hu95cda8b251a1eb1ea1865a64fcff5ee7_55773_480x0_resize_box_3.png 480w, http://localhost:1313/p/cloud-network-1/image-2_hu95cda8b251a1eb1ea1865a64fcff5ee7_55773_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/cloud-network-1/image-2_hu5331773739781930185.png 480w, http://localhost:1313/p/cloud-network-1/image-2_hu16186710523250216290.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://www.shapeblue.com/a-beginners-guide-to-cloudstack-networking/&#34;
@@ -440,7 +552,7 @@ Openstack은 네트워크 구성 시 OVS를 사용합니다. Openstack에서도 
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/cloud-network-1/image-3.png&#34;
 	width=&#34;1194&#34;
 	height=&#34;534&#34;
-	srcset=&#34;http://localhost:1313/p/cloud-network-1/image-3_hue35cf1d2fb24e7e5563c30a55f8b72c9_84156_480x0_resize_box_3.png 480w, http://localhost:1313/p/cloud-network-1/image-3_hue35cf1d2fb24e7e5563c30a55f8b72c9_84156_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/cloud-network-1/image-3_hu5117383877451119063.png 480w, http://localhost:1313/p/cloud-network-1/image-3_hu17551530141315003884.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://platform9.com/blog/getting-started-openstack-neutron/&#34;
@@ -813,7 +925,7 @@ RestTemplate = Blocking, WebClient = Non Blokcing 방식이라고 한다. 물론
 &lt;/div&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/moarium-backend-1/image.png&#34;
 	width=&#34;726&#34;
 	height=&#34;53&#34;
-	srcset=&#34;http://localhost:1313/p/moarium-backend-1/image_hud5640c5bacc36b5cc26e7fbcdcf532b7_13910_480x0_resize_box_3.png 480w, http://localhost:1313/p/moarium-backend-1/image_hud5640c5bacc36b5cc26e7fbcdcf532b7_13910_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/moarium-backend-1/image_hu10547976596969781962.png 480w, http://localhost:1313/p/moarium-backend-1/image_hu1854405435323948618.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;에러 메세지&#34;
@@ -940,7 +1052,7 @@ RestTemplate = Blocking, WebClient = Non Blokcing 방식이라고 한다. 물론
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/geultto-1/image.png&#34;
 	width=&#34;528&#34;
 	height=&#34;187&#34;
-	srcset=&#34;http://localhost:1313/p/geultto-1/image_hu7281972badcdf8a7b19948caf9b7602b_22845_480x0_resize_box_3.png 480w, http://localhost:1313/p/geultto-1/image_hu7281972badcdf8a7b19948caf9b7602b_22845_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/geultto-1/image_hu1652416837070558845.png 480w, http://localhost:1313/p/geultto-1/image_hu5826449624400142172.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;필기 노트&#34;
@@ -955,7 +1067,7 @@ RestTemplate = Blocking, WebClient = Non Blokcing 방식이라고 한다. 물론
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/geultto-1/image-1.png&#34;
 	width=&#34;873&#34;
 	height=&#34;753&#34;
-	srcset=&#34;http://localhost:1313/p/geultto-1/image-1_hueadd728945011de1b861670bbf6d780e_71041_480x0_resize_box_3.png 480w, http://localhost:1313/p/geultto-1/image-1_hueadd728945011de1b861670bbf6d780e_71041_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/geultto-1/image-1_hu2007830958328442452.png 480w, http://localhost:1313/p/geultto-1/image-1_hu7023166869902190708.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;옵시디언 그래프&#34;
@@ -997,7 +1109,7 @@ OT에서 말했듯이 충분한 학습을 위해서는 내용을 글로 정리�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/todopoint-final-review/image.png&#34;
 	width=&#34;986&#34;
 	height=&#34;876&#34;
-	srcset=&#34;http://localhost:1313/p/todopoint-final-review/image_hu6c8844752ece837c142bd3d9bf243c88_53988_480x0_resize_box_3.png 480w, http://localhost:1313/p/todopoint-final-review/image_hu6c8844752ece837c142bd3d9bf243c88_53988_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/todopoint-final-review/image_hu13186140440509974875.png 480w, http://localhost:1313/p/todopoint-final-review/image_hu1891924287277266395.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;초기에 기획한 구성도&#34;
@@ -1075,7 +1187,7 @@ Go는 독특한 문법 체계를 가지고 있어 다른 언어에 비해 응용
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/todopoint-final-review/image-1.png&#34;
 	width=&#34;924&#34;
 	height=&#34;584&#34;
-	srcset=&#34;http://localhost:1313/p/todopoint-final-review/image-1_hu749e8c9f6eb70bb0f0a8c8201f611392_38430_480x0_resize_box_3.png 480w, http://localhost:1313/p/todopoint-final-review/image-1_hu749e8c9f6eb70bb0f0a8c8201f611392_38430_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/todopoint-final-review/image-1_hu12811250395620581806.png 480w, http://localhost:1313/p/todopoint-final-review/image-1_hu10126210423897698024.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;버전이 2개인 서비스&#34;
@@ -1223,7 +1335,7 @@ Go는 외부 라이브러리 저장소로 github를 주로 사용합니다. 공�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-4/image.png&#34;
 	width=&#34;1083&#34;
 	height=&#34;609&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-4/image_hu20a70213f3aa4a9b631586079c93276d_121539_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-4/image_hu20a70213f3aa4a9b631586079c93276d_121539_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-4/image_hu6281986499923772551.png 480w, http://localhost:1313/p/server-setup-4/image_hu17404451910012511713.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://docs.openstack.org/contributors/ko_KR/common/introduction.html&#34;
@@ -1241,7 +1353,7 @@ Go는 외부 라이브러리 저장소로 github를 주로 사용합니다. 공�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-4/image-1.png&#34;
 	width=&#34;983&#34;
 	height=&#34;925&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-4/image-1_huc5f26c22d9ec151d232879b6d746e634_104074_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-4/image-1_huc5f26c22d9ec151d232879b6d746e634_104074_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-4/image-1_hu7892018536490297472.png 480w, http://localhost:1313/p/server-setup-4/image-1_hu5755813560970344651.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://velog.io/@larshavin/Kolla-Ansible%EC%9D%84-%ED%99%9C%EC%9A%A9%ED%95%9C-OpenStack-%EC%84%A4%EC%B9%98-1&#34;
@@ -1279,7 +1391,7 @@ Go는 외부 라이브러리 저장소로 github를 주로 사용합니다. 공�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-4/image-2.png&#34;
 	width=&#34;626&#34;
 	height=&#34;686&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-4/image-2_hu1d6b7e0188edd07bda4449dabdcb24bf_124194_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-4/image-2_hu1d6b7e0188edd07bda4449dabdcb24bf_124194_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-4/image-2_hu4232316961094443982.png 480w, http://localhost:1313/p/server-setup-4/image-2_hu13564817206507154081.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://docs.oracle.com/cd/E36784_01/html/E54155/archover.html&#34;
@@ -1340,7 +1452,7 @@ network_interface는 Internal network에 해당되는 인터페이스를 지정�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-4/image-3.png&#34;
 	width=&#34;504&#34;
 	height=&#34;423&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-4/image-3_hu702458bf104d910326320780da82dfe5_22709_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-4/image-3_hu702458bf104d910326320780da82dfe5_22709_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-4/image-3_hu13983546864251427236.png 480w, http://localhost:1313/p/server-setup-4/image-3_hu4321421939863526325.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;네트워크 토폴로지&#34;
@@ -1356,7 +1468,7 @@ network_interface는 Internal network에 해당되는 인터페이스를 지정�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-4/image-4.png&#34;
 	width=&#34;615&#34;
 	height=&#34;510&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-4/image-4_hub8f3ef26ec0aa2d8a6e80b00c64ce541_31168_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-4/image-4_hub8f3ef26ec0aa2d8a6e80b00c64ce541_31168_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-4/image-4_hu13221316638916593638.png 480w, http://localhost:1313/p/server-setup-4/image-4_hu16394758169030640411.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;네트워크 구성도&#34;
@@ -1455,7 +1567,7 @@ network_interface는 Internal network에 해당되는 인터페이스를 지정�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image.png&#34;
 	width=&#34;1280&#34;
 	height=&#34;658&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image_hufebb5c3b53f481a360dba7f498d5854c_74292_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image_hufebb5c3b53f481a360dba7f498d5854c_74292_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image_hu17137007185295859528.png 480w, http://localhost:1313/p/opsathlan-2-2/image_hu16220424698731232167.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://swmobenz.tistory.com/37&#34;
@@ -1470,7 +1582,7 @@ network_interface는 Internal network에 해당되는 인터페이스를 지정�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-1.png&#34;
 	width=&#34;1132&#34;
 	height=&#34;298&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-1_huf30075ee0146fd35b96d340bc7ef57c3_38487_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-1_huf30075ee0146fd35b96d340bc7ef57c3_38487_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-1_hu10908424606683754404.png 480w, http://localhost:1313/p/opsathlan-2-2/image-1_hu4937573240029493458.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;그라파나에서 확인한 JVM Memory&#34;
@@ -1495,7 +1607,7 @@ JVM이 시스템을 통해 미리 메모리를 할당하여 사용 시 가지고
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-2.png&#34;
 	width=&#34;393&#34;
 	height=&#34;278&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-2_hu906c4252c24b6f858e7238bddf85bc3e_17166_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-2_hu906c4252c24b6f858e7238bddf85bc3e_17166_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-2_hu3739438328806858467.png 480w, http://localhost:1313/p/opsathlan-2-2/image-2_hu2158101082316816296.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;JVM 메모리 사용량&#34;
@@ -1514,7 +1626,7 @@ JVM이 시스템을 통해 미리 메모리를 할당하여 사용 시 가지고
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-3.png&#34;
 	width=&#34;844&#34;
 	height=&#34;250&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-3_hu59e79084fcab3eb49d5f007681934d47_53216_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-3_hu59e79084fcab3eb49d5f007681934d47_53216_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-3_hu13641374250937015675.png 480w, http://localhost:1313/p/opsathlan-2-2/image-3_hu1575401254724482488.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 : https://www.samsungsds.com/kr/insights/1232761_4627.html&#34;
@@ -1554,7 +1666,7 @@ JVM이 시스템을 통해 미리 메모리를 할당하여 사용 시 가지고
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-4.png&#34;
 	width=&#34;793&#34;
 	height=&#34;464&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-4_hub7ba453322332850ad2757dbb6a5a562_32147_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-4_hub7ba453322332850ad2757dbb6a5a562_32147_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-4_hu13856778067335710945.png 480w, http://localhost:1313/p/opsathlan-2-2/image-4_hu2162670129833221820.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;JVM Heap Memory 사용량&#34;
@@ -1570,7 +1682,7 @@ JVM이 시스템을 통해 미리 메모리를 할당하여 사용 시 가지고
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-5.png&#34;
 	width=&#34;475&#34;
 	height=&#34;278&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-5_huf47884a0827739a08725a9b25861c3a5_18977_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-5_huf47884a0827739a08725a9b25861c3a5_18977_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-5_hu5401583801384194378.png 480w, http://localhost:1313/p/opsathlan-2-2/image-5_hu9354498869452860333.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;JVM Non-Heap Memory 사용량&#34;
@@ -1606,7 +1718,7 @@ JIT 컴파일러는 이렇게 번역된 기계어를 &lt;strong&gt;코드 캐�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-6.png&#34;
 	width=&#34;1888&#34;
 	height=&#34;303&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-6_hu0fe1cc675d9df5833154d6ca38e0b1a6_51838_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-6_hu0fe1cc675d9df5833154d6ca38e0b1a6_51838_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-6_hu9697928109398902318.png 480w, http://localhost:1313/p/opsathlan-2-2/image-6_hu13775024245728683528.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;JVM Memory Pool(non-heap) 지표&#34;
@@ -1623,7 +1735,7 @@ JIT 컴파일러는 이렇게 번역된 기계어를 &lt;strong&gt;코드 캐�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-2/image-7.png&#34;
 	width=&#34;1600&#34;
 	height=&#34;922&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-7_hu51679a37e3d3766fd66c854fc5a3793a_571287_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-2/image-7_hu51679a37e3d3766fd66c854fc5a3793a_571287_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-2/image-7_hu4042786570281165567.png 480w, http://localhost:1313/p/opsathlan-2-2/image-7_hu349388056793302220.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://cloud.theodo.com/en/blog/jvm-oom&#34;
@@ -1695,7 +1807,7 @@ docker-compose를 통해 컨테이너를 배포했습니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-1/image.png&#34;
 	width=&#34;810&#34;
 	height=&#34;750&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-1/image_hu5bbbba51a1375731d8c0aeed847e2904_31551_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-1/image_hu5bbbba51a1375731d8c0aeed847e2904_31551_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-1/image_hu12328348664123321354.png 480w, http://localhost:1313/p/opsathlan-2-1/image_hu17717745985325275902.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;사진 - OpsAthlan 2 구성도&#34;
@@ -2010,7 +2122,7 @@ docker-compose를 통해 컨테이너를 배포했습니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-1/image-1.png&#34;
 	width=&#34;1042&#34;
 	height=&#34;745&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-1/image-1_hu7abcf588525d2006d579454ec10e80e9_364114_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-1/image-1_hu7abcf588525d2006d579454ec10e80e9_364114_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-1/image-1_hu14788327422024716885.png 480w, http://localhost:1313/p/opsathlan-2-1/image-1_hu8842426283194618521.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://www.geeksforgeeks.org/prometheus-monitoring/&#34;
@@ -2090,7 +2202,7 @@ docker-compose를 통해 컨테이너를 배포했습니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-1/image-2.png&#34;
 	width=&#34;1447&#34;
 	height=&#34;245&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-1/image-2_hude6ae6de7b67ce130ac13e6333ac4a13_55792_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-1/image-2_hude6ae6de7b67ce130ac13e6333ac4a13_55792_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-1/image-2_hu8113471659535806411.png 480w, http://localhost:1313/p/opsathlan-2-1/image-2_hu16006704477507434989.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;사진 - 프로메테우스 UI에서 확인한 Target&#34;
@@ -2120,7 +2232,7 @@ docker-compose를 통해 컨테이너를 배포했습니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-1/image-3.png&#34;
 	width=&#34;1204&#34;
 	height=&#34;670&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-1/image-3_hu98866b088663c4d6774e3229decf820a_85395_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-1/image-3_hu98866b088663c4d6774e3229decf820a_85395_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-1/image-3_hu11174096070289850435.png 480w, http://localhost:1313/p/opsathlan-2-1/image-3_hu14858234098574167908.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;사진 - 컨테이너 메모리 사용량 시각화&#34;
@@ -2138,7 +2250,7 @@ docker-compose를 통해 컨테이너를 배포했습니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-2-1/image-4.png&#34;
 	width=&#34;794&#34;
 	height=&#34;270&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-2-1/image-4_hu6bedcf8b6cafaaab3a1a1413618b7354_28696_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-2-1/image-4_hu6bedcf8b6cafaaab3a1a1413618b7354_28696_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-2-1/image-4_hu12654308625765720708.png 480w, http://localhost:1313/p/opsathlan-2-1/image-4_hu11965415445671921365.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;사진 - 그라파나에서 확인한 그래프(일부)&#34;
@@ -2187,7 +2299,7 @@ docker-compose를 통해 컨테이너를 배포했습니다.&lt;/p&gt;
 &lt;/h2&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-1/image.png&#34;
 	width=&#34;1110&#34;
 	height=&#34;750&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-1/image_hu4366fc3158328ef8c4572dd644f280f7_81311_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-1/image_hu4366fc3158328ef8c4572dd644f280f7_81311_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-1/image_hu14762987096181792521.png 480w, http://localhost:1313/p/opsathlan-1/image_hu18320141257170937429.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;구성도&#34;
@@ -2670,7 +2782,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-1/image-1.png&#34;
 	width=&#34;1121&#34;
 	height=&#34;383&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-1/image-1_hu2a7d296d6116cc5ca6febd0de67072f3_41146_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-1/image-1_hu2a7d296d6116cc5ca6febd0de67072f3_41146_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-1/image-1_hu17233539446044340175.png 480w, http://localhost:1313/p/opsathlan-1/image-1_hu15492907668946311809.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;cAdvisor 접속&#34;
@@ -2683,7 +2795,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &gt; &lt;img src=&#34;http://localhost:1313/p/opsathlan-1/image-2.png&#34;
 	width=&#34;945&#34;
 	height=&#34;277&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-1/image-2_hud0796692cc3af3e0162cb2c251d16bc1_40649_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-1/image-2_hud0796692cc3af3e0162cb2c251d16bc1_40649_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-1/image-2_hu12196910689812903337.png 480w, http://localhost:1313/p/opsathlan-1/image-2_hu12612396427406138621.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;cAdvisor에서 확인한 컨테이너 목록&#34;
@@ -2698,7 +2810,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-1/image-3.png&#34;
 	width=&#34;1096&#34;
 	height=&#34;389&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-1/image-3_hu4d6b64a7199602fc50e17c10de081cb4_44277_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-1/image-3_hu4d6b64a7199602fc50e17c10de081cb4_44277_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-1/image-3_hu11513109730994844133.png 480w, http://localhost:1313/p/opsathlan-1/image-3_hu14892486148299863558.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;cAdvisor에서 확인한 메트릭&#34;
@@ -2722,7 +2834,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-1/image-4.png&#34;
 	width=&#34;665&#34;
 	height=&#34;330&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-1/image-4_hub5934669d6703375c9e056db88ae0c8d_27619_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-1/image-4_hub5934669d6703375c9e056db88ae0c8d_27619_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-1/image-4_hu296061120735338974.png 480w, http://localhost:1313/p/opsathlan-1/image-4_hu9681598494445371367.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Springboot application bytes per second&#34;
@@ -2742,7 +2854,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/opsathlan-1/image-5.png&#34;
 	width=&#34;685&#34;
 	height=&#34;394&#34;
-	srcset=&#34;http://localhost:1313/p/opsathlan-1/image-5_hu2edc27c15b30aa43aae5e2ce15671100_27533_480x0_resize_box_3.png 480w, http://localhost:1313/p/opsathlan-1/image-5_hu2edc27c15b30aa43aae5e2ce15671100_27533_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/opsathlan-1/image-5_hu14895577820262148279.png 480w, http://localhost:1313/p/opsathlan-1/image-5_hu8570481994504803877.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Springboot application의 메모리 사용량&#34;
@@ -2879,7 +2991,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/gonetworker-1/image-2.png&#34;
 	width=&#34;597&#34;
 	height=&#34;228&#34;
-	srcset=&#34;http://localhost:1313/p/gonetworker-1/image-2_huf4ec08e4d050cb5cfa7b1bba0b149cc8_18304_480x0_resize_box_3.png 480w, http://localhost:1313/p/gonetworker-1/image-2_huf4ec08e4d050cb5cfa7b1bba0b149cc8_18304_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/gonetworker-1/image-2_hu11962175864221074126.png 480w, http://localhost:1313/p/gonetworker-1/image-2_hu9914905335054229857.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;구조도&#34;
@@ -2903,7 +3015,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/gonetworker-1/image.png&#34;
 	width=&#34;446&#34;
 	height=&#34;180&#34;
-	srcset=&#34;http://localhost:1313/p/gonetworker-1/image_hu84f78753f3fac1dbb0d34bfcd4b11be1_20720_480x0_resize_box_3.png 480w, http://localhost:1313/p/gonetworker-1/image_hu84f78753f3fac1dbb0d34bfcd4b11be1_20720_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/gonetworker-1/image_hu7009463788775269401.png 480w, http://localhost:1313/p/gonetworker-1/image_hu9293748275908566763.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;GoNetWorker 실행 로그&#34;
@@ -2918,7 +3030,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/gonetworker-1/image-1.png&#34;
 	width=&#34;446&#34;
 	height=&#34;180&#34;
-	srcset=&#34;http://localhost:1313/p/gonetworker-1/image-1_hu84f78753f3fac1dbb0d34bfcd4b11be1_20720_480x0_resize_box_3.png 480w, http://localhost:1313/p/gonetworker-1/image-1_hu84f78753f3fac1dbb0d34bfcd4b11be1_20720_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/gonetworker-1/image-1_hu7009463788775269401.png 480w, http://localhost:1313/p/gonetworker-1/image-1_hu9293748275908566763.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Server 로그&#34;
@@ -2985,7 +3097,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img1.png&#34;
 	width=&#34;608&#34;
 	height=&#34;123&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img1_hu5e189bffa2903f964d1ec255aed5c478_21933_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img1_hu5e189bffa2903f964d1ec255aed5c478_21933_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img1_hu4758531342135746087.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img1_hu18028352303563241942.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;publickey가 제대로 복사되지 않은 경우 instance log&#34;
@@ -3000,7 +3112,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img2.png&#34;
 	width=&#34;1135&#34;
 	height=&#34;149&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img2_hueb4a2278ad06d78850de68629c3498be_38628_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img2_hueb4a2278ad06d78850de68629c3498be_38628_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img2_hu17931454363939670103.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img2_hu11759902572458053645.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;publickey가 제대로 변경된 모습&#34;
@@ -3018,7 +3130,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img3.png&#34;
 	width=&#34;831&#34;
 	height=&#34;784&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img3_huddaed96501701af2a72c49a8edebcfa2_115901_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img3_huddaed96501701af2a72c49a8edebcfa2_115901_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img3_hu17806257454344620510.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img3_hu12260926215604726165.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Ansible ping 성공&#34;
@@ -3133,7 +3245,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img7.png&#34;
 	width=&#34;610&#34;
 	height=&#34;92&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img7_hu24a1683acc6f33e9840867bfd9729474_23185_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img7_hu24a1683acc6f33e9840867bfd9729474_23185_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img7_hu10470244405540726725.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img7_hu12211404007100571060.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;stack login 성공&#34;
@@ -3147,7 +3259,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img8.png&#34;
 	width=&#34;723&#34;
 	height=&#34;67&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img8_hu5fdf33c77f01eb41f42b9c072c86c2cc_20230_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img8_hu5fdf33c77f01eb41f42b9c072c86c2cc_20230_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img8_hu7155961518869793814.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img8_hu3663118609567118447.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;ssh-agent 프로세스 확인&#34;
@@ -3202,7 +3314,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img4.png&#34;
 	width=&#34;945&#34;
 	height=&#34;89&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img4_hu63706d7369c4b170a724b35011b2d70f_24121_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img4_hu63706d7369c4b170a724b35011b2d70f_24121_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img4_hu14791507789255162482.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img4_hu17658926328053728254.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;resolv.conf 심볼릭 링크&#34;
@@ -3221,7 +3333,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img5.png&#34;
 	width=&#34;809&#34;
 	height=&#34;609&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img5_hua706cb8e78df85ab1b456d0c58171c6b_50408_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img5_hua706cb8e78df85ab1b456d0c58171c6b_50408_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img5_hu16936197825592757140.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img5_hu8815827593228135667.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;kubernetes 네트워크 토폴로지&#34;
@@ -3261,7 +3373,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img6.png&#34;
 	width=&#34;522&#34;
 	height=&#34;322&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img6_hu5fb6ac3cff366986319dbafb4d09c3d1_44123_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img6_hu5fb6ac3cff366986319dbafb4d09c3d1_44123_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img6_hu15219951955343804185.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img6_hu17687434228084671215.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;dns nameserver 성공&#34;
@@ -3277,7 +3389,7 @@ container 창에 들어가 springboot application을 확인합니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img9.png&#34;
 	width=&#34;1036&#34;
 	height=&#34;237&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img9_hu9314893c936785d88ea403279adca66b_54075_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img9_hu9314893c936785d88ea403279adca66b_54075_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-2/img9_hu7883906071781436747.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-2/img9_hu9099882195059677338.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -3341,7 +3453,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img1.png&#34;
 	width=&#34;423&#34;
 	height=&#34;236&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img1_hu2485b8498761322fb83e2ace7e1071bb_15474_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img1_hu2485b8498761322fb83e2ace7e1071bb_15474_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img1_hu8436946750979996299.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img1_hu306546544194277109.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;horizon에서 확인한 이미지&#34;
@@ -3389,7 +3501,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img2.png&#34;
 	width=&#34;890&#34;
 	height=&#34;330&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img2_hufb2680e2153ecf73f5f1d4b75c0a9946_45774_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img2_hufb2680e2153ecf73f5f1d4b75c0a9946_45774_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img2_hu8112429072468131913.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img2_hu4805894429976019059.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;kubernetes 설치 시 발생하는 오류&#34;
@@ -3404,7 +3516,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img4.png&#34;
 	width=&#34;536&#34;
 	height=&#34;172&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img4_hu990f20998c7cdcd4d3e7b7144fc1fa52_23353_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img4_hu990f20998c7cdcd4d3e7b7144fc1fa52_23353_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img4_hu16157272428307913724.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img4_hu4644667792578589037.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;~/kubespray/contrib/terraform/openstack/version.tf&#34;
@@ -3444,7 +3556,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img3.png&#34;
 	width=&#34;937&#34;
 	height=&#34;174&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img3_huc6bea5c713829057f20d3962913b18e7_33792_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img3_huc6bea5c713829057f20d3962913b18e7_33792_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img3_hu632953552256688832.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img3_hu14362972865709894107.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Invalid DomainID 오류&#34;
@@ -3462,7 +3574,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img5.png&#34;
 	width=&#34;266&#34;
 	height=&#34;290&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img5_huf5abc3ef9b50032debddb4250465b672_14106_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img5_huf5abc3ef9b50032debddb4250465b672_14106_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img5_hu17918533465447343406.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img5_hu12890130444991611744.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;horizon에서 다운로드 가능한 OpenStack RC 파일&#34;
@@ -3508,7 +3620,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img6.png&#34;
 	width=&#34;304&#34;
 	height=&#34;85&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img6_hueeb804da5226453820177963321f9c57_14713_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img6_hueeb804da5226453820177963321f9c57_14713_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img6_hu127809221224869792.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img6_hu6884040885533441460.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;환경 변수 확인&#34;
@@ -3523,7 +3635,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img7.png&#34;
 	width=&#34;648&#34;
 	height=&#34;100&#34;
-	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img7_hu7326d02c32d59728d371aabe4120dfaa_9603_480x0_resize_box_3.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img7_hu7326d02c32d59728d371aabe4120dfaa_9603_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/openstack-kubernetes-installation-1/img7_hu3244639628797934306.png 480w, http://localhost:1313/p/openstack-kubernetes-installation-1/img7_hu9562458381420294757.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;배포 완료&#34;
@@ -3565,7 +3677,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img1.png&#34;
 	width=&#34;524&#34;
 	height=&#34;230&#34;
-	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img1_hu3b9fa1d614f239c39936c910769789a7_33909_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img1_hu3b9fa1d614f239c39936c910769789a7_33909_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img1_hu12688226233018032363.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img1_hu6323527272890626441.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;multipass instance list&#34;
@@ -3589,7 +3701,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img2.png&#34;
 	width=&#34;655&#34;
 	height=&#34;364&#34;
-	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img2_hu80191caefbfade579344eb384cdf45ae_21579_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img2_hu80191caefbfade579344eb384cdf45ae_21579_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img2_hu13972670278597569804.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img2_hu13718863001304102915.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;server 구성도1&#34;
@@ -3606,7 +3718,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img3.png&#34;
 	width=&#34;719&#34;
 	height=&#34;364&#34;
-	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img3_hu527297b4e941814ed1c7d8627e17e2cc_26664_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img3_hu527297b4e941814ed1c7d8627e17e2cc_26664_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img3_hu13131394400430745688.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img3_hu1411433780971369042.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;server 구성도2&#34;
@@ -3630,7 +3742,7 @@ Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&
 &lt;/div&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img4.png&#34;
 	width=&#34;473&#34;
 	height=&#34;168&#34;
-	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img4_huccb2d64dcd9ee0897b1704d1da0df03c_25348_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img4_huccb2d64dcd9ee0897b1704d1da0df03c_25348_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img4_hu17685933620777379879.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img4_hu7008821394765134166.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;kubectl describe node1&#34;
@@ -3704,7 +3816,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img5.png&#34;
 	width=&#34;679&#34;
 	height=&#34;47&#34;
-	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img5_huc237422c3a942dacc900fccfd4819d76_15820_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img5_huc237422c3a942dacc900fccfd4819d76_15820_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img5_hu4912721532143004595.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img5_hu17436029454154598293.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;grafana pod&#34;
@@ -3719,7 +3831,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img6.png&#34;
 	width=&#34;1012&#34;
 	height=&#34;84&#34;
-	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img6_hu10ab776f53576f6109d91344094916f0_17332_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img6_hu10ab776f53576f6109d91344094916f0_17332_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img6_hu16764316693557962279.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img6_hu1965827156665099887.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;grafana pod nodeSelector 확인&#34;
@@ -3750,7 +3862,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img7.png&#34;
 	width=&#34;1008&#34;
 	height=&#34;738&#34;
-	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img7_hua9350061aa49ba3ae41e27ec646a1e5d_570497_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img7_hua9350061aa49ba3ae41e27ec646a1e5d_570497_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-access-dashboard-and-management-problems/img7_hu16625260008989558482.png 480w, http://localhost:1313/p/server-access-dashboard-and-management-problems/img7_hu2241485727042100523.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;grafana dashboard 접속하기&#34;
@@ -3825,7 +3937,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img1.png&#34;
 	width=&#34;1153&#34;
 	height=&#34;917&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img1_hu1e3e28fb84ce4edd796f713f5fedf5b3_111298_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img1_hu1e3e28fb84ce4edd796f713f5fedf5b3_111298_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img1_hu16286894966665618699.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img1_hu17594900925134202182.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;서버 구성도&#34;
@@ -3846,7 +3958,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img2.png&#34;
 	width=&#34;673&#34;
 	height=&#34;98&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img2_hu37a892cc2b77b26a6e7efde2db4bf33e_27385_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img2_hu37a892cc2b77b26a6e7efde2db4bf33e_27385_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img2_hu11153403180635365000.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img2_hu13732341501959064796.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;파티션 정보&#34;
@@ -3864,7 +3976,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img3.png&#34;
 	width=&#34;577&#34;
 	height=&#34;212&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img3_huf451f82611933230bebf929a138b7250_53224_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img3_huf451f82611933230bebf929a138b7250_53224_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img3_hu599222999315249386.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img3_hu18099707395523012433.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;ext4 포맷이 완전히 안된 경우&#34;
@@ -3890,7 +4002,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;/div&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img4.png&#34;
 	width=&#34;431&#34;
 	height=&#34;235&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img4_hu42bdacf91740c6235dfc96aa01ba6181_28141_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img4_hu42bdacf91740c6235dfc96aa01ba6181_28141_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img4_hu16078942516056939428.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img4_hu3049001154135582274.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;nfs multipass 정보&#34;
@@ -3921,7 +4033,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img6.png&#34;
 	width=&#34;415&#34;
 	height=&#34;47&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img6_hua25351a870f97f232b6acd5cdbceb596_8193_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img6_hua25351a870f97f232b6acd5cdbceb596_8193_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img6_hu11071982071042275958.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img6_hu1671741715049924638.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;multipass driver 확인&#34;
@@ -3936,7 +4048,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img7.png&#34;
 	width=&#34;627&#34;
 	height=&#34;161&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img7_hu0462c05af9c7ef817d4d6ce1c18de1b5_39838_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img7_hu0462c05af9c7ef817d4d6ce1c18de1b5_39838_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img7_hu6581694237443217431.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img7_hu1465347387549676843.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Network Interface 확인&#34;
@@ -3971,7 +4083,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img8.png&#34;
 	width=&#34;533&#34;
 	height=&#34;68&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img8_hu31fc685ff1ffcda1451f1b1fb853beb4_15926_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img8_hu31fc685ff1ffcda1451f1b1fb853beb4_15926_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img8_hu17757074462387084973.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img8_hu11332033105598699334.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Show mount 정보&#34;
@@ -3990,7 +4102,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img9.png&#34;
 	width=&#34;958&#34;
 	height=&#34;154&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img9_hu2a36d6b36efa78aa967f1201eb936900_39317_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img9_hu2a36d6b36efa78aa967f1201eb936900_39317_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img9_hu15465165158187663991.png 480w, http://localhost:1313/p/server-setup-nfs-in-multipass-instance/img9_hu5977130276752259966.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;DAS에 저장된 데이터 확인&#34;
@@ -4043,7 +4155,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img1.png&#34;
 	width=&#34;1920&#34;
 	height=&#34;521&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img1_hu38e8cfd265c925a3d7ed360056e55a03_463017_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-multinode-kubernetes/img1_hu38e8cfd265c925a3d7ed360056e55a03_463017_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img1_hu9434627258708254698.png 480w, http://localhost:1313/p/server-setup-multinode-kubernetes/img1_hu15136155436973865340.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://itnext.io/benchmark-results-of-kubernetes-network-plugins-cni-over-10gbit-s-network-updated-august-2020-6e1b757b9e49&#34;
@@ -4060,7 +4172,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img2.png&#34;
 	width=&#34;705&#34;
 	height=&#34;192&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img2_hu43a00d9557429e2d8a8e95d534f264d0_37047_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-multinode-kubernetes/img2_hu43a00d9557429e2d8a8e95d534f264d0_37047_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img2_hu7461364534430948954.png 480w, http://localhost:1313/p/server-setup-multinode-kubernetes/img2_hu1072079348600548737.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Multipass Instance IP&#34;
@@ -4074,7 +4186,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img3.png&#34;
 	width=&#34;1213&#34;
 	height=&#34;960&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img3_hu9653f2c370ff22b5b2ba3df64314a5ad_110642_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-multinode-kubernetes/img3_hu9653f2c370ff22b5b2ba3df64314a5ad_110642_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img3_hu13672412589673510336.png 480w, http://localhost:1313/p/server-setup-multinode-kubernetes/img3_hu16918992997885760049.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;쿠버네티스 구성도&#34;
@@ -4089,7 +4201,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img4.png&#34;
 	width=&#34;856&#34;
 	height=&#34;643&#34;
-	srcset=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img4_hu8e7679c58d59427912c6eec2300b3a0d_107767_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-setup-multinode-kubernetes/img4_hu8e7679c58d59427912c6eec2300b3a0d_107767_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-setup-multinode-kubernetes/img4_hu10148201750460987392.png 480w, http://localhost:1313/p/server-setup-multinode-kubernetes/img4_hu2067092380989503783.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;nginx 파드 생성 결과&#34;
@@ -4149,7 +4261,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-management-disk-1/img1.png&#34;
 	width=&#34;752&#34;
 	height=&#34;206&#34;
-	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img1_huf9109ac56f521e9bddb532a4a65a95ea_48063_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-management-disk-1/img1_huf9109ac56f521e9bddb532a4a65a95ea_48063_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img1_hu4358305747655751775.png 480w, http://localhost:1313/p/server-management-disk-1/img1_hu12255105040570970478.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;df -h 결과&#34;
@@ -4164,7 +4276,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-management-disk-1/img2.png&#34;
 	width=&#34;690&#34;
 	height=&#34;115&#34;
-	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img2_hub9d56ceace1a92c7e5c7aaa004579546_27130_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-management-disk-1/img2_hub9d56ceace1a92c7e5c7aaa004579546_27130_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img2_hu1761293802765121170.png 480w, http://localhost:1313/p/server-management-disk-1/img2_hu2651603895067297581.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;lsblk 결과&#34;
@@ -4198,7 +4310,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-management-disk-1/img3.png&#34;
 	width=&#34;640&#34;
 	height=&#34;466&#34;
-	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img3_hu88a71d965693f068016a8f9a3ebd14d7_67397_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-management-disk-1/img3_hu88a71d965693f068016a8f9a3ebd14d7_67397_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img3_hu5352305729332303773.png 480w, http://localhost:1313/p/server-management-disk-1/img3_hu12214128087844497450.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;vgdisplay 결과&#34;
@@ -4213,7 +4325,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-management-disk-1/img4.png&#34;
 	width=&#34;406&#34;
 	height=&#34;50&#34;
-	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img4_hu72b9b81b76a4cd920826ee267cb6b717_7229_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-management-disk-1/img4_hu72b9b81b76a4cd920826ee267cb6b717_7229_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img4_hu2348372353684853661.png 480w, http://localhost:1313/p/server-management-disk-1/img4_hu6674265677153158211.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;lvdisplay 결과&#34;
@@ -4228,7 +4340,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-management-disk-1/img5.png&#34;
 	width=&#34;720&#34;
 	height=&#34;671&#34;
-	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img5_hufe7e44441d27029c48b3a31d76be990a_188274_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-management-disk-1/img5_hufe7e44441d27029c48b3a31d76be990a_188274_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img5_hu506144144195363494.png 480w, http://localhost:1313/p/server-management-disk-1/img5_hu15074392179611611757.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://medium.com/@yhakimi/lvm-how-to-create-and-extend-a-logical-volume-in-linux-9744f27eacfe&#34;
@@ -4243,7 +4355,7 @@ kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-management-disk-1/img6.png&#34;
 	width=&#34;305&#34;
 	height=&#34;375&#34;
-	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img6_hu41efb97fdbd6675c4b4bbacceb6acbd4_14579_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-management-disk-1/img6_hu41efb97fdbd6675c4b4bbacceb6acbd4_14579_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/server-management-disk-1/img6_hu3259120281413379806.png 480w, http://localhost:1313/p/server-management-disk-1/img6_hu3209157150400567175.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;VG, LV 관계도&#34;
@@ -4415,7 +4527,7 @@ ent 공식 문서에 의하면 edge.To를 사용하고 있으면 설정한 Edge�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/entgo-1/img1.png&#34;
 	width=&#34;474&#34;
 	height=&#34;138&#34;
-	srcset=&#34;http://localhost:1313/p/entgo-1/img1_hu798fb2584b3199476b1a71f89ce1e0d4_13569_480x0_resize_box_3.png 480w, http://localhost:1313/p/entgo-1/img1_hu798fb2584b3199476b1a71f89ce1e0d4_13569_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/entgo-1/img1_hu1979994708511472876.png 480w, http://localhost:1313/p/entgo-1/img1_hu7853446638884962800.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -4541,7 +4653,7 @@ ent 공식 문서에 의하면 edge.To를 사용하고 있으면 설정한 Edge�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/entgo-1/img2.png&#34;
 	width=&#34;1012&#34;
 	height=&#34;254&#34;
-	srcset=&#34;http://localhost:1313/p/entgo-1/img2_huc30db4609febd34d8d470f3ce29d95a3_45097_480x0_resize_box_3.png 480w, http://localhost:1313/p/entgo-1/img2_huc30db4609febd34d8d470f3ce29d95a3_45097_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/entgo-1/img2_hu2709563176019758498.png 480w, http://localhost:1313/p/entgo-1/img2_hu1973805247732052792.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -4554,7 +4666,7 @@ ent 공식 문서에 의하면 edge.To를 사용하고 있으면 설정한 Edge�
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/entgo-1/img3.png&#34;
 	width=&#34;372&#34;
 	height=&#34;200&#34;
-	srcset=&#34;http://localhost:1313/p/entgo-1/img3_hu1efe2e2f923221ee03d879dd15579d22_15113_480x0_resize_box_3.png 480w, http://localhost:1313/p/entgo-1/img3_hu1efe2e2f923221ee03d879dd15579d22_15113_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/entgo-1/img3_hu8289960711306117976.png 480w, http://localhost:1313/p/entgo-1/img3_hu13381449982502672690.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -5288,7 +5400,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
 &lt;img src=&#34;http://localhost:1313/p/what-is-eks/image1.png&#34;
 	width=&#34;1402&#34;
 	height=&#34;882&#34;
-	srcset=&#34;http://localhost:1313/p/what-is-eks/image1_hud26c6825bf1696847a88aed5cead2cf2_78054_480x0_resize_box_3.png 480w, http://localhost:1313/p/what-is-eks/image1_hud26c6825bf1696847a88aed5cead2cf2_78054_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/what-is-eks/image1_hu9865107203521681606.png 480w, http://localhost:1313/p/what-is-eks/image1_hu8282878434912451480.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://kubernetes.io/docs/concepts/architecture/&#34;
@@ -5312,7 +5424,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
 &lt;/h2&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/what-is-eks/image2.png&#34;
 	width=&#34;684&#34;
 	height=&#34;235&#34;
-	srcset=&#34;http://localhost:1313/p/what-is-eks/image2_hu4de5fa41cdeae7d7cdc353ab8d531e7b_40346_480x0_resize_box_3.png 480w, http://localhost:1313/p/what-is-eks/image2_hu4de5fa41cdeae7d7cdc353ab8d531e7b_40346_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/what-is-eks/image2_hu14504090499705716568.png 480w, http://localhost:1313/p/what-is-eks/image2_hu8407817082554187440.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처- https://nearhome.tistory.com/128&#34;
@@ -5530,7 +5642,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
 &lt;img src=&#34;http://localhost:1313/p/gin-error-handling-2/image.png&#34;
 	width=&#34;1365&#34;
 	height=&#34;538&#34;
-	srcset=&#34;http://localhost:1313/p/gin-error-handling-2/image_hu87a5be59412819b478622b8c105aebb4_58565_480x0_resize_box_3.png 480w, http://localhost:1313/p/gin-error-handling-2/image_hu87a5be59412819b478622b8c105aebb4_58565_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/gin-error-handling-2/image_hu2187163634688892380.png 480w, http://localhost:1313/p/gin-error-handling-2/image_hu4391662667096093906.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -5824,7 +5936,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/gin-error-handling-1/img1.png&#34;
 	width=&#34;551&#34;
 	height=&#34;317&#34;
-	srcset=&#34;http://localhost:1313/p/gin-error-handling-1/img1_hu1e91b9fd504688263ee7382b8d7bb9c9_16630_480x0_resize_box_3.png 480w, http://localhost:1313/p/gin-error-handling-1/img1_hu1e91b9fd504688263ee7382b8d7bb9c9_16630_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/gin-error-handling-1/img1_hu7361807817120932448.png 480w, http://localhost:1313/p/gin-error-handling-1/img1_hu1676088839423243947.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -5954,7 +6066,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
 &lt;img src=&#34;http://localhost:1313/p/todopoint-db-design/img1.png&#34;
 	width=&#34;916&#34;
 	height=&#34;884&#34;
-	srcset=&#34;http://localhost:1313/p/todopoint-db-design/img1_hu7bbc8987fa0980683788efcea34a7281_101365_480x0_resize_box_3.png 480w, http://localhost:1313/p/todopoint-db-design/img1_hu7bbc8987fa0980683788efcea34a7281_101365_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/todopoint-db-design/img1_hu5143896541017209607.png 480w, http://localhost:1313/p/todopoint-db-design/img1_hu7296588791112915779.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - https://nangman14.tistory.com/79&#34;
@@ -6111,7 +6223,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
 &lt;/h2&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/basic-spring-1/spring_layered_arch.png&#34;
 	width=&#34;1280&#34;
 	height=&#34;854&#34;
-	srcset=&#34;http://localhost:1313/p/basic-spring-1/spring_layered_arch_hua90c112b8554ed9917303608f955fcf0_379415_480x0_resize_box_3.png 480w, http://localhost:1313/p/basic-spring-1/spring_layered_arch_hua90c112b8554ed9917303608f955fcf0_379415_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/basic-spring-1/spring_layered_arch_hu9429696108598489652.png 480w, http://localhost:1313/p/basic-spring-1/spring_layered_arch_hu321650804355008881.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처-https://devlog-wjdrbs96.tistory.com/209&#34;
@@ -6255,7 +6367,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/basic-spring-1/dto.png&#34;
 	width=&#34;1280&#34;
 	height=&#34;299&#34;
-	srcset=&#34;http://localhost:1313/p/basic-spring-1/dto_huf7451f7ce8fd1792f0c445f7b81c96bd_56177_480x0_resize_box_3.png 480w, http://localhost:1313/p/basic-spring-1/dto_huf7451f7ce8fd1792f0c445f7b81c96bd_56177_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/basic-spring-1/dto_hu7031278554960056191.png 480w, http://localhost:1313/p/basic-spring-1/dto_hu4485137895459497654.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처-https://loosie.tistory.com/296&#34;
@@ -6337,7 +6449,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
 &lt;/h2&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/basic-spring-1/spring_database.png&#34;
 	width=&#34;1992&#34;
 	height=&#34;1312&#34;
-	srcset=&#34;http://localhost:1313/p/basic-spring-1/spring_database_hu2edbc7357d4ee7c9fc52f49e10329601_113225_480x0_resize_box_3.png 480w, http://localhost:1313/p/basic-spring-1/spring_database_hu2edbc7357d4ee7c9fc52f49e10329601_113225_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/basic-spring-1/spring_database_hu2750262592927299865.png 480w, http://localhost:1313/p/basic-spring-1/spring_database_hu10049145414792805877.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처-https://velog.io/@murphytklee/Spring-ORM-JPA-Hibernate-JDBC-%EC%B4%9D%EC%A0%95%EB%A6%AC/&#34;
@@ -6393,7 +6505,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/basic-spring-1/persistenceContext.png&#34;
 	width=&#34;705&#34;
 	height=&#34;441&#34;
-	srcset=&#34;http://localhost:1313/p/basic-spring-1/persistenceContext_hu697189a283d343dc38abc26057411229_68936_480x0_resize_box_3.png 480w, http://localhost:1313/p/basic-spring-1/persistenceContext_hu697189a283d343dc38abc26057411229_68936_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/basic-spring-1/persistenceContext_hu1941818389389842220.png 480w, http://localhost:1313/p/basic-spring-1/persistenceContext_hu8166744446909822863.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처-https://iyoungman.github.io/jpa/EntityManagerFactory-EntityManager-PersistenceContext/&#34;
@@ -6526,7 +6638,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
 &lt;/div&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/terraform-backend/image.png&#34;
 	width=&#34;377&#34;
 	height=&#34;230&#34;
-	srcset=&#34;http://localhost:1313/p/terraform-backend/image_hu93dec080fad76aeb9ffac19d9123bf2c_12251_480x0_resize_box_3.png 480w, http://localhost:1313/p/terraform-backend/image_hu93dec080fad76aeb9ffac19d9123bf2c_12251_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/terraform-backend/image_hu17516497260473220645.png 480w, http://localhost:1313/p/terraform-backend/image_hu913497552267859462.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;S3 List&#34;
@@ -6576,7 +6688,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/terraform-backend/image-1.png&#34;
 	width=&#34;338&#34;
 	height=&#34;201&#34;
-	srcset=&#34;http://localhost:1313/p/terraform-backend/image-1_huea60df078dd0653f5cb83d357dfd0f96_6894_480x0_resize_box_3.png 480w, http://localhost:1313/p/terraform-backend/image-1_huea60df078dd0653f5cb83d357dfd0f96_6894_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/terraform-backend/image-1_hu16517130332538882984.png 480w, http://localhost:1313/p/terraform-backend/image-1_hu18134713769632029199.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;tfstate&#34;
@@ -6591,7 +6703,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/terraform-backend/image-2.png&#34;
 	width=&#34;332&#34;
 	height=&#34;117&#34;
-	srcset=&#34;http://localhost:1313/p/terraform-backend/image-2_hub2ae6a57302d7e16729b4223ce5bda35_3763_480x0_resize_box_3.png 480w, http://localhost:1313/p/terraform-backend/image-2_hub2ae6a57302d7e16729b4223ce5bda35_3763_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/terraform-backend/image-2_hu17594133908567571843.png 480w, http://localhost:1313/p/terraform-backend/image-2_hu14143949819501707983.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;Local tfstate 파일&#34;
@@ -6652,7 +6764,7 @@ gin은 자체적인 Context를 가지고 있으며, context를 중단시킬 수 
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/basic-terraform-1/20240128_aws.png&#34;
 	width=&#34;361&#34;
 	height=&#34;331&#34;
-	srcset=&#34;http://localhost:1313/p/basic-terraform-1/20240128_aws_hu52aa062c382d57ea68359cdd55eaacf3_18592_480x0_resize_box_3.png 480w, http://localhost:1313/p/basic-terraform-1/20240128_aws_hu52aa062c382d57ea68359cdd55eaacf3_18592_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/basic-terraform-1/20240128_aws_hu13700044031481774170.png 480w, http://localhost:1313/p/basic-terraform-1/20240128_aws_hu11175959190268745839.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;출처 - 저자&#34;
