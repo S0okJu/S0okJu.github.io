@@ -6,10 +6,10 @@
         <description>Recent content in Gin on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Wed, 09 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/gin/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Wed, 09 Oct 2024 00:00:00 +0900</lastBuildDate><atom:link href="http://localhost:1313/tags/gin/index.xml" rel="self" type="application/rss+xml" /><item>
         <title>왜 TodoPoint 프로젝트를 실패했는가?</title>
         <link>http://localhost:1313/p/todopoint-final-review/</link>
-        <pubDate>Wed, 09 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 09 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/todopoint-final-review/</guid>
         <description>&lt;h2 id=&#34;todopoint-프로젝트에-대한-소개&#34;&gt;TodoPoint 프로젝트에 대한 소개
@@ -17,7 +17,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/todopoint-final-review/image.png&#34;
 	width=&#34;986&#34;
 	height=&#34;876&#34;
-	srcset=&#34;http://localhost:1313/p/todopoint-final-review/image_hu13186140440509974875.png 480w, http://localhost:1313/p/todopoint-final-review/image_hu1891924287277266395.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/todopoint-final-review/image_hu6c8844752ece837c142bd3d9bf243c88_53988_480x0_resize_box_3.png 480w, http://localhost:1313/p/todopoint-final-review/image_hu6c8844752ece837c142bd3d9bf243c88_53988_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;초기에 기획한 구성도&#34;
@@ -95,7 +95,7 @@ Go는 독특한 문법 체계를 가지고 있어 다른 언어에 비해 응용
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/todopoint-final-review/image-1.png&#34;
 	width=&#34;924&#34;
 	height=&#34;584&#34;
-	srcset=&#34;http://localhost:1313/p/todopoint-final-review/image-1_hu12811250395620581806.png 480w, http://localhost:1313/p/todopoint-final-review/image-1_hu10126210423897698024.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/todopoint-final-review/image-1_hu749e8c9f6eb70bb0f0a8c8201f611392_38430_480x0_resize_box_3.png 480w, http://localhost:1313/p/todopoint-final-review/image-1_hu749e8c9f6eb70bb0f0a8c8201f611392_38430_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;버전이 2개인 서비스&#34;
@@ -227,7 +227,7 @@ Go는 외부 라이브러리 저장소로 github를 주로 사용합니다. 공�
         <item>
         <title>Todopoint 서버코드 개선기 -  1. 공동 에러 처리하기</title>
         <link>http://localhost:1313/p/go-code-refactor-error-1/</link>
-        <pubDate>Sat, 11 May 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sat, 11 May 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/go-code-refactor-error-1/</guid>
         <description>&lt;p&gt;Go를 활용하여 직접 2~3개의 서비스를 만들고 나니, 구현할때 지나쳤던 에러들이 큰 눈덩이로 변해서 덮쳐왔다.
@@ -880,7 +880,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
         <item>
         <title>Gin 예외처리 - 2. 커스텀 예외처리</title>
         <link>http://localhost:1313/p/gin-error-handling-2/</link>
-        <pubDate>Wed, 10 Apr 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 10 Apr 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/gin-error-handling-2/</guid>
         <description>&lt;p&gt;이전에는 Gin이 어떻게 예외 처리를 하는지 언급했다. 이제부터 직접 구현하고자 한다.&lt;/p&gt;
@@ -1012,7 +1012,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
 &lt;img src=&#34;http://localhost:1313/p/gin-error-handling-2/image.png&#34;
 	width=&#34;1365&#34;
 	height=&#34;538&#34;
-	srcset=&#34;http://localhost:1313/p/gin-error-handling-2/image_hu2187163634688892380.png 480w, http://localhost:1313/p/gin-error-handling-2/image_hu4391662667096093906.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/gin-error-handling-2/image_hu87a5be59412819b478622b8c105aebb4_58565_480x0_resize_box_3.png 480w, http://localhost:1313/p/gin-error-handling-2/image_hu87a5be59412819b478622b8c105aebb4_58565_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -1196,7 +1196,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
         <item>
         <title>Gin 예외처리 - 1. Go Error</title>
         <link>http://localhost:1313/p/gin-error-handling-1/</link>
-        <pubDate>Wed, 03 Apr 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 03 Apr 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/p/gin-error-handling-1/</guid>
         <description>&lt;h2 id=&#34;go와-예외처리&#34;&gt;Go와 예외처리
@@ -1306,7 +1306,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/gin-error-handling-1/img1.png&#34;
 	width=&#34;551&#34;
 	height=&#34;317&#34;
-	srcset=&#34;http://localhost:1313/p/gin-error-handling-1/img1_hu7361807817120932448.png 480w, http://localhost:1313/p/gin-error-handling-1/img1_hu1676088839423243947.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/gin-error-handling-1/img1_hu1e91b9fd504688263ee7382b8d7bb9c9_16630_480x0_resize_box_3.png 480w, http://localhost:1313/p/gin-error-handling-1/img1_hu1e91b9fd504688263ee7382b8d7bb9c9_16630_1024x0_resize_box_3.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	

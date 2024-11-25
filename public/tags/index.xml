@@ -6,10 +6,42 @@
         <description>Recent content in Tags on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Wed, 16 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Mon, 04 Nov 2024 00:00:00 +0900</lastBuildDate><atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>Ansible</title>
+        <link>http://localhost:1313/tags/ansible/</link>
+        <pubDate>Mon, 04 Nov 2024 00:00:00 +0900</pubDate>
+        
+        <guid>http://localhost:1313/tags/ansible/</guid>
+        <description></description>
+        </item>
+        <item>
+        <title>Openstack</title>
+        <link>http://localhost:1313/tags/openstack/</link>
+        <pubDate>Mon, 04 Nov 2024 00:00:00 +0900</pubDate>
+        
+        <guid>http://localhost:1313/tags/openstack/</guid>
+        <description></description>
+        </item>
+        <item>
+        <title>Terraform</title>
+        <link>http://localhost:1313/tags/terraform/</link>
+        <pubDate>Mon, 04 Nov 2024 00:00:00 +0900</pubDate>
+        
+        <guid>http://localhost:1313/tags/terraform/</guid>
+        <description></description>
+        </item>
+        <item>
+        <title>Network</title>
+        <link>http://localhost:1313/tags/network/</link>
+        <pubDate>Sun, 27 Oct 2024 00:00:00 +0900</pubDate>
+        
+        <guid>http://localhost:1313/tags/network/</guid>
+        <description></description>
+        </item>
+        <item>
         <title>SpringBoot</title>
         <link>http://localhost:1313/tags/springboot/</link>
-        <pubDate>Wed, 16 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 16 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/springboot/</guid>
         <description></description>
@@ -17,7 +49,7 @@
         <item>
         <title>Web</title>
         <link>http://localhost:1313/tags/web/</link>
-        <pubDate>Wed, 16 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 16 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/web/</guid>
         <description></description>
@@ -25,7 +57,7 @@
         <item>
         <title>Writing</title>
         <link>http://localhost:1313/tags/writing/</link>
-        <pubDate>Sat, 12 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sat, 12 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/writing/</guid>
         <description></description>
@@ -33,7 +65,7 @@
         <item>
         <title>Docker</title>
         <link>http://localhost:1313/tags/docker/</link>
-        <pubDate>Wed, 09 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 09 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/docker/</guid>
         <description></description>
@@ -41,7 +73,7 @@
         <item>
         <title>Gin</title>
         <link>http://localhost:1313/tags/gin/</link>
-        <pubDate>Wed, 09 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 09 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/gin/</guid>
         <description></description>
@@ -49,7 +81,7 @@
         <item>
         <title>Go</title>
         <link>http://localhost:1313/tags/go/</link>
-        <pubDate>Wed, 09 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 09 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/go/</guid>
         <description></description>
@@ -57,39 +89,15 @@
         <item>
         <title>Kubernetes</title>
         <link>http://localhost:1313/tags/kubernetes/</link>
-        <pubDate>Tue, 01 Oct 2024 00:00:00 +0000</pubDate>
+        <pubDate>Tue, 01 Oct 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/kubernetes/</guid>
         <description></description>
         </item>
         <item>
-        <title>Openstack</title>
-        <link>http://localhost:1313/tags/openstack/</link>
-        <pubDate>Tue, 01 Oct 2024 00:00:00 +0000</pubDate>
-        
-        <guid>http://localhost:1313/tags/openstack/</guid>
-        <description></description>
-        </item>
-        <item>
-        <title>Ansible</title>
-        <link>http://localhost:1313/tags/ansible/</link>
-        <pubDate>Sun, 29 Sep 2024 00:00:00 +0000</pubDate>
-        
-        <guid>http://localhost:1313/tags/ansible/</guid>
-        <description></description>
-        </item>
-        <item>
-        <title>Terraform</title>
-        <link>http://localhost:1313/tags/terraform/</link>
-        <pubDate>Sun, 29 Sep 2024 00:00:00 +0000</pubDate>
-        
-        <guid>http://localhost:1313/tags/terraform/</guid>
-        <description></description>
-        </item>
-        <item>
         <title>Multipass</title>
         <link>http://localhost:1313/tags/multipass/</link>
-        <pubDate>Sun, 14 Jul 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sun, 14 Jul 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/multipass/</guid>
         <description></description>
@@ -97,7 +105,7 @@
         <item>
         <title>Linux</title>
         <link>http://localhost:1313/tags/linux/</link>
-        <pubDate>Tue, 28 May 2024 00:00:00 +0000</pubDate>
+        <pubDate>Tue, 28 May 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/linux/</guid>
         <description></description>
@@ -105,7 +113,7 @@
         <item>
         <title>ORM</title>
         <link>http://localhost:1313/tags/orm/</link>
-        <pubDate>Wed, 22 May 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 22 May 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/orm/</guid>
         <description></description>
@@ -113,7 +121,7 @@
         <item>
         <title>AWS</title>
         <link>http://localhost:1313/tags/aws/</link>
-        <pubDate>Wed, 01 May 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 01 May 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/aws/</guid>
         <description></description>
@@ -121,7 +129,7 @@
         <item>
         <title>EKS</title>
         <link>http://localhost:1313/tags/eks/</link>
-        <pubDate>Wed, 01 May 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 01 May 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/eks/</guid>
         <description></description>
@@ -129,7 +137,7 @@
         <item>
         <title>DB</title>
         <link>http://localhost:1313/tags/db/</link>
-        <pubDate>Wed, 13 Mar 2024 00:00:00 +0000</pubDate>
+        <pubDate>Wed, 13 Mar 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/db/</guid>
         <description></description>
@@ -137,7 +145,7 @@
         <item>
         <title>Project</title>
         <link>http://localhost:1313/tags/project/</link>
-        <pubDate>Sat, 09 Mar 2024 00:00:00 +0000</pubDate>
+        <pubDate>Sat, 09 Mar 2024 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/tags/project/</guid>
         <description></description>
