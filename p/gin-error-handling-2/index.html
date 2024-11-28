@@ -1,0 +1,222 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="이전에는 Gin이 어떻게 예외 처리를 하는지 언급했다. 이제부터 직접 구현하고자 한다.\nError Wrapping 직접 제작한 에러 코드인 WebCode와 에러를 감싼 NetError를 만들었다.\n"><title>Gin 예외처리 - 2. 커스텀 예외처리</title>
+<link rel=canonical href=https://s0okju.github.io/p/gin-error-handling-2/><link rel=stylesheet href=/scss/style.min.663803bebe609202d5b39d848f2d7c2dc8b598a2d879efa079fa88893d29c49c.css><meta property='og:title' content="Gin 예외처리 - 2. 커스텀 예외처리"><meta property='og:description' content="이전에는 Gin이 어떻게 예외 처리를 하는지 언급했다. 이제부터 직접 구현하고자 한다.\nError Wrapping 직접 제작한 에러 코드인 WebCode와 에러를 감싼 NetError를 만들었다.\n"><meta property='og:url' content='https://s0okju.github.io/p/gin-error-handling-2/'><meta property='og:site_name' content='S0okJu.dev'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='Go'><meta property='article:tag' content='Gin'><meta property='article:tag' content='Web'><meta property='article:published_time' content='2024-04-10T00:00:00+09:00'><meta property='article:modified_time' content='2024-04-10T00:00:00+09:00'><meta name=twitter:title content="Gin 예외처리 - 2. 커스텀 예외처리"><meta name=twitter:description content="이전에는 Gin이 어떻게 예외 처리를 하는지 언급했다. 이제부터 직접 구현하고자 한다.\nError Wrapping 직접 제작한 에러 코드인 WebCode와 에러를 감싼 NetError를 만들었다.\n"><link rel="shortcut icon" href=/favicon.ico></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu7834220389116694494.png width=300 height=248 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>👾</span></figure><div class=site-meta><h1 class=site-name><a href=/>S0okJu.dev</a></h1><h2 class=site-description>Hello, World!</h2></div></header><ol class=menu-social><li><a href=https://github.com/S0okJu target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+<span>About</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>Links</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#error-wrapping>Error Wrapping</a></li><li><a href=#gin에서의-예외-처리>Gin에서의 예외 처리</a></li><li><a href=#프로젝트에-적용하기>프로젝트에 적용하기</a><ol><li><a href=#절차>절차</a></li><li><a href=#코드>코드</a><ol><li><a href=#service-layer>Service Layer</a></li><li><a href=#controller-layer>Controller Layer</a></li><li><a href=#middleware>Middleware</a></li></ol></li></ol></li><li><a href=#마무리>마무리</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/todopoint/>TodoPoint</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/gin-error-handling-2/>Gin 예외처리 - 2. 커스텀 예외처리</a></h2></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Apr 10, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>4 minute read</time></div></footer></div></header><section class=article-content><p>이전에는 Gin이 어떻게 예외 처리를 하는지 언급했다. 이제부터 직접 구현하고자 한다.</p><h2 id=error-wrapping>Error Wrapping</h2><p>직접 제작한 에러 코드인 WebCode와 에러를 감싼 <code>NetError</code>를 만들었다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>type</span> <span class=nx>NetError</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Code</span> <span class=nx>codes</span><span class=p>.</span><span class=nx>WebCode</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Err</span>  <span class=kt>error</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>프로젝트 구현할때 주로 gin 혹은 ent 라이브러리를 쓴다. 별도의 Error 구조체(NetError)를 정의함으로써 <code>Err</code>에 gin 혹은 ent 에러를 담겠다는 의미인 것이다.</p><h2 id=gin에서의-예외-처리>Gin에서의 예외 처리</h2><p><a class=link href=https://pkg.go.dev/github.com/gin-gonic/gin#Context.Error target=_blank rel=noopener>Gin Error() 함수</a>에 의하면 Gin의 Context에 Error를 담은 후에 Middleware에서 처리하는 것을 권장하고 있다.</p><blockquote><p>Error attaches an error to the current context. The error is pushed to a list of errors. <strong>It&rsquo;s a good idea to call Error for each error that occurred during the resolution of a request.</strong> A middleware can be used to collect all the errors and push them to a database together, print a log, or append it in the HTTP response. Error will panic if err is nil.</p></blockquote><p>라이브러리 코드를 보면 <code>Errors</code> 필드가 정의되어 있는데, errorMsg는 <code>[]*Error</code> 에러 리스트로 타입을 가지고 있다. 위의 설명대로 error의 리스트가 Context 내부에 구현되어 있는 것이다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// gin/context.go
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>type</span> <span class=nx>Context</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span>   <span class=nx>Errors</span> <span class=nx>errorMsgs</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// ..
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// gin/errors.go
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>type</span> <span class=nx>errorMsgs</span> <span class=p>[]</span><span class=o>*</span><span class=nx>Error</span>
+</span></span></code></pre></td></tr></table></div></div><p>즉, ctx.Error를 활용하여 입력받은 에러를 Gin의 에러로 감싼 후에 Context의 Errors 리스트에 넣게 된다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// gin/context.go
+</span></span></span><span class=line><span class=cl><span class=c1>// Error attaches an error to the current context. The error is pushed to a list of errors.// It&#39;s a good idea to call Error for each error that occurred during the resolution of a request.// A middleware can be used to collect all the errors and push them to a database together,
+</span></span></span><span class=line><span class=cl><span class=c1>// print a log, or append it in the HTTP response.
+</span></span></span><span class=line><span class=cl><span class=c1>// Error will panic if err is nil.
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>func</span> <span class=p>(</span><span class=nx>c</span> <span class=o>*</span><span class=nx>Context</span><span class=p>)</span> <span class=nf>Error</span><span class=p>(</span><span class=nx>err</span> <span class=kt>error</span><span class=p>)</span> <span class=o>*</span><span class=nx>Error</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=nx>err</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>       <span class=nb>panic</span><span class=p>(</span><span class=s>&#34;err is nil&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>var</span> <span class=nx>parsedError</span> <span class=o>*</span><span class=nx>Error</span>
+</span></span><span class=line><span class=cl>    <span class=nx>ok</span> <span class=o>:=</span> <span class=nx>errors</span><span class=p>.</span><span class=nf>As</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>parsedError</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>!</span><span class=nx>ok</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>       <span class=nx>parsedError</span> <span class=p>=</span> <span class=o>&amp;</span><span class=nx>Error</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>          <span class=nx>Err</span><span class=p>:</span>  <span class=nx>err</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=nx>Type</span><span class=p>:</span> <span class=nx>ErrorTypePrivate</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>       <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nx>c</span><span class=p>.</span><span class=nx>Errors</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>c</span><span class=p>.</span><span class=nx>Errors</span><span class=p>,</span> <span class=nx>parsedError</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=nx>parsedError</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>Context 내부에 있는 Error 리스트는 Middleware에서 처리하게 된다.</p><p>Gin에서는 <a class=link href=https://pkg.go.dev/github.com/gin-gonic/gin#HandlerFunc target=_blank rel=noopener>HandlerFunc</a>를 slice로 구현된 <a class=link href=https://pkg.go.dev/github.com/gin-gonic/gin#HandlersChain target=_blank rel=noopener>HandlerChain</a>이 있는데, 이는 Gin이 각가지의 Handler를 Chain내에 넣고 처리하는 것이다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>type</span> <span class=nx>HandlersChain</span> <span class=p>[]</span><span class=nx>HandlerFunc</span>
+</span></span></code></pre></td></tr></table></div></div><p>그럼 오류를 어떻게 발생시키면 될까? HandlerChain 내에 있는 대기 중인(Pending) Handler를 호출하지 않도록 하면된다. 즉, Context를 <a class=link href=https://pkg.go.dev/github.com/gin-gonic/gin#Context.Abort target=_blank rel=noopener>Abort</a>하면 되는 것이다. 그 이후에 처리할 Handler가 없어지면서 종료가 된다.</p><blockquote><p>Abort prevents pending handlers from being called. Note that this will not stop the current handler. Let&rsquo;s say you have an authorization middleware that validates that the current request is authorized. If the authorization fails (ex: the password does not match), <strong>call Abort to ensure the remaining handlers for this request are not called.</strong></p></blockquote><h2 id=프로젝트에-적용하기>프로젝트에 적용하기</h2><h3 id=절차>절차</h3><p>위의 내용을 가지고 실제로 적용해보자.
+프로젝트 구성은 3계층으로 커스텀 에러 감싸기는 서비스 로직에 수행하도록 했다.</p><ol><li>Service 계층에 Error Wrapping을 한다.</li><li>Controller에 context 내에 있는 에러 리스트에 예외를 넣는다.</li><li>Middleware에 Error Wrapping한 것을 Unwrapping 하면서 예외 타입을 학인한다.</li><li>커스텀 에러라면 WebCode에 따른 응답값을 반환한다.</li></ol><p>그림으로 표현하자면 아래와 같다.
+<img src=/p/gin-error-handling-2/image.png width=1365 height=538 srcset="/p/gin-error-handling-2/image_hu2187163634688892380.png 480w, /p/gin-error-handling-2/image_hu4391662667096093906.png 1024w" loading=lazy class=gallery-image data-flex-grow=253 data-flex-basis=608px></p><h3 id=코드>코드</h3><p>코드는 아래의 두 사이트를 참고했습니다.</p><ul><li><a class=link href=https://d2.naver.com/helloworld/2690202 target=_blank rel=noopener>Naver D2, Golang, 그대들은 어떻게 할 것인가 - 3. error 래핑</a></li><li><a class=link href=https://d2.naver.com/helloworld/6507662 target=_blank rel=noopener>Naver D2, Golang, 그대들은 어떻게 할 것인가 - 4. error 핸들링</a></li></ul><h4 id=service-layer>Service Layer</h4><p>Persistence Layer에서 얻은 에러 값을 직접 받은 후에 Service 계층에서 적절하게 NetError로 감싼다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// service
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=kd>func</span> <span class=p>(</span><span class=nx>s</span> <span class=o>*</span><span class=nx>MemberService</span><span class=p>)</span> <span class=nf>CreateMember</span><span class=p>(</span><span class=nx>ctx</span> <span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>req</span> <span class=nx>data</span><span class=p>.</span><span class=nx>RegisterReq</span><span class=p>)</span> <span class=p>(</span><span class=o>*</span><span class=nx>ent</span><span class=p>.</span><span class=nx>Member</span><span class=p>,</span> <span class=o>*</span><span class=nx>errorutils</span><span class=p>.</span><span class=nx>NetError</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Check member Exist
+</span></span></span><span class=line><span class=cl><span class=c1></span>	<span class=nx>existedMem</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>s</span><span class=p>.</span><span class=nx>Store</span><span class=p>.</span><span class=nf>GetMemberByEmail</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>.</span><span class=nx>Email</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span> <span class=kc>nil</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>errorutils</span><span class=p>.</span><span class=nx>NetError</span><span class=p>{</span><span class=nx>Code</span><span class=p>:</span> <span class=nx>codes</span><span class=p>.</span><span class=nx>MemberInternalServerError</span><span class=p>,</span> <span class=nx>Err</span><span class=p>:</span> <span class=nx>err</span><span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>ent</span><span class=p>.</span><span class=nf>IsNotFound</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>mem</span><span class=p>,</span> <span class=nx>err2</span> <span class=o>:=</span> <span class=nx>s</span><span class=p>.</span><span class=nx>Store</span><span class=p>.</span><span class=nf>Create</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err2</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=kc>nil</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>errorutils</span><span class=p>.</span><span class=nx>NetError</span><span class=p>{</span><span class=nx>Code</span><span class=p>:</span> <span class=nx>codes</span><span class=p>.</span><span class=nx>MemberCreationError</span><span class=p>,</span> <span class=nx>Err</span><span class=p>:</span> <span class=nx>err2</span><span class=p>}</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span> <span class=nx>mem</span><span class=p>,</span> <span class=kc>nil</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>existedMem</span><span class=p>,</span> <span class=kc>nil</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=controller-layer>Controller Layer</h4><p>Controller는 Service 계층에서 감싼 커스텀 에러를 받은 후에 Context의 에러 리스트에 넣는다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>controller</span> <span class=o>*</span><span class=nx>MemberController</span><span class=p>)</span> <span class=nf>RegisterMember</span><span class=p>(</span><span class=nx>ctx</span> <span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Context</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>req</span> <span class=o>:=</span> <span class=nx>data</span><span class=p>.</span><span class=nx>RegisterReq</span><span class=p>{}</span>
+</span></span><span class=line><span class=cl>	<span class=nx>err</span> <span class=o>:=</span> <span class=nx>ctx</span><span class=p>.</span><span class=nf>ShouldBindJSON</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>req</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>_</span> <span class=p>=</span> <span class=nx>ctx</span><span class=p>.</span><span class=nf>Error</span><span class=p>(</span><span class=nx>errorutils</span><span class=p>.</span><span class=nf>NewNetError</span><span class=p>(</span><span class=nx>codes</span><span class=p>.</span><span class=nx>MemberInvalidJson</span><span class=p>,</span> <span class=nx>err</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// Create member
+</span></span></span><span class=line><span class=cl><span class=c1></span>	<span class=nx>mem</span><span class=p>,</span> <span class=nx>err2</span> <span class=o>:=</span> <span class=nx>controller</span><span class=p>.</span><span class=nx>service</span><span class=p>.</span><span class=nf>CreateMember</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err2</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// Service 계층에서 받은 에러를 Context 내 에러 리스트에 넣는다.
+</span></span></span><span class=line><span class=cl><span class=c1></span>		<span class=nx>_</span> <span class=p>=</span> <span class=nx>ctx</span><span class=p>.</span><span class=nf>Error</span><span class=p>(</span><span class=nx>err2</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>mid</span> <span class=o>:=</span> <span class=nx>data</span><span class=p>.</span><span class=nx>MemberId</span><span class=p>{</span><span class=nx>MemberId</span><span class=p>:</span> <span class=nx>mem</span><span class=p>.</span><span class=nx>ID</span><span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=nx>response</span><span class=p>.</span><span class=nf>SuccessWith</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>codes</span><span class=p>.</span><span class=nx>MemberCreationSuccess</span><span class=p>,</span> <span class=nx>mid</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=middleware>Middleware</h4><p>에러 응답값을 반환할 HandlerFunc를 구현한다.</p><ol><li><a class=link href=https://pkg.go.dev/github.com/gin-gonic/gin#Context.Next target=_blank rel=noopener>Next</a>를 활용하여 대기 중인 핸들러를 실행시킨다.</li><li><a class=link href=https://pkg.go.dev/errors#example-As target=_blank rel=noopener>errors.As</a>를 활용하여 Context 에러 리스트에 있는 에러가 커스텀 에러인지 확인한다. 정확히 말하자면 에러를 unwrapping하면서 커스텀 에러인지 확인한 후에 있다면 <code>netError</code>에 넣게 된다.</li><li>WebCode를 활용하여 응답값을 얻은 후 <a class=link href=https://pkg.go.dev/github.com/gin-gonic/gin#Context.AbortWithStatusJSON target=_blank rel=noopener>AbortWithStatusJson</a> 를 활용하여 Response json을 전송한다.</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>func</span> <span class=nf>ErrorHandler</span><span class=p>()</span> <span class=nx>gin</span><span class=p>.</span><span class=nx>HandlerFunc</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=kd>func</span><span class=p>(</span><span class=nx>ctx</span> <span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Context</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// Pending 중인 핸들러 실행
+</span></span></span><span class=line><span class=cl><span class=c1></span>       <span class=nx>ctx</span><span class=p>.</span><span class=nf>Next</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>       <span class=c1>// JSON이 두번 쓰이는 것을 대비해서 Body 확인
+</span></span></span><span class=line><span class=cl><span class=c1></span>       <span class=nx>isBodyWritten</span> <span class=o>:=</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>Writer</span><span class=p>.</span><span class=nf>Written</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>       <span class=nx>err</span> <span class=o>:=</span> <span class=nx>ctx</span><span class=p>.</span><span class=nx>Errors</span><span class=p>.</span><span class=nf>Last</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>       <span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	       <span class=c1>// 커스텀 에러인지 확인
+</span></span></span><span class=line><span class=cl><span class=c1></span>          <span class=kd>var</span> <span class=nx>netErr</span> <span class=o>*</span><span class=nx>errorutils</span><span class=p>.</span><span class=nx>NetError</span>
+</span></span><span class=line><span class=cl>          <span class=k>if</span> <span class=nx>errors</span><span class=p>.</span><span class=nf>As</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>netErr</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>             <span class=nx>code</span> <span class=o>:=</span> <span class=nx>netErr</span><span class=p>.</span><span class=nf>GetCode</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>             <span class=nx>statusCode</span> <span class=o>:=</span> <span class=nx>codes</span><span class=p>.</span><span class=nf>GetStatus</span><span class=p>(</span><span class=nx>code</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>             <span class=nx>res</span> <span class=o>:=</span> <span class=nx>response</span><span class=p>.</span><span class=nf>NewErrorResponse</span><span class=p>(</span><span class=nx>code</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>             <span class=k>if</span> <span class=p>!</span><span class=nx>isBodyWritten</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=nx>ctx</span><span class=p>.</span><span class=nf>AbortWithStatusJSON</span><span class=p>(</span><span class=nb>int</span><span class=p>(</span><span class=nx>statusCode</span><span class=p>),</span> <span class=nx>res</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>             <span class=p>}</span>
+</span></span><span class=line><span class=cl>          <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>             <span class=nx>res</span> <span class=o>:=</span> <span class=nx>response</span><span class=p>.</span><span class=nf>NewErrorResponse</span><span class=p>(</span><span class=nx>codes</span><span class=p>.</span><span class=nx>GlobalInternalServerError</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>             <span class=k>if</span> <span class=p>!</span><span class=nx>isBodyWritten</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=nx>ctx</span><span class=p>.</span><span class=nf>AbortWithStatusJSON</span><span class=p>(</span><span class=nx>http</span><span class=p>.</span><span class=nx>StatusInternalServerError</span><span class=p>,</span> <span class=nx>res</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>             <span class=p>}</span>
+</span></span><span class=line><span class=cl>          <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>       <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=마무리>마무리</h2><p>Go의 예외 매커니즘은 다른 언어와 달라서 틀을 잡는데 많은 시간을 사용했다. 공식 문서나 다른 사람들의 예제 코드를 분석하면서, Go 스러움이 무엇인지 자츰 배워간다는 느낌이다. 그러나 코드양이 많아지면서 오히려 코드가 복잡해지는 것 같기도 하다.</p></section><footer class=article-footer><section class=article-tags><a href=/tags/go/>Go</a>
+<a href=/tags/gin/>Gin</a>
+<a href=/tags/web/>Web</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/p/go-code-refactor-error-1/><div class=article-details><h2 class=article-title>Todopoint 서버코드 개선기 - 1. 공동 에러 처리하기</h2></div></a></article><article><a href=/p/gin-error-handling-1/><div class=article-details><h2 class=article-title>Gin 예외처리 - 1. Go Error</h2></div></a></article><article><a href=/p/todopoint-final-review/><div class=article-details><h2 class=article-title>왜 TodoPoint 프로젝트를 실패했는가?</h2></div></a></article><article><a href=/p/entgo-1/><div class=article-details><h2 class=article-title>Entgo - Ent ORM</h2></div></a></article><article><a href=/p/go-db-migration/><div class=article-details><h2 class=article-title>Go-DB에 마그이션하기</h2></div></a></article></div></div></aside><footer class=site-footer><section class=copyright>&copy;
+2024 S0okJu.dev</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.29.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>
