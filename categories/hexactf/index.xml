@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>HexaCTF on S0okJu.dev</title><link>https://s0okju.github.io/categories/hexactf/</link><description>Recent content in HexaCTF on S0okJu.dev</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Fri, 29 Nov 2024 00:00:00 +0900</lastBuildDate><atom:link href="https://s0okju.github.io/categories/hexactf/index.xml" rel="self" type="application/rss+xml"/><item><title>HexaCTF - 2. Openstack Terraform을 활용한 NFS 서버 설치 및 활용</title><link>https://s0okju.github.io/p/hexactf-2/</link><pubDate>Fri, 29 Nov 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/hexactf-2/</guid><description>&lt;h2 id="전체-아키텍쳐-구성도">전체 아키텍쳐 구성도
+&lt;/h2>&lt;p>저희 프로젝트는 크게 3개의 서브넷을 가지게 됩니다.&lt;/p>
+&lt;ul>
+&lt;li>Kubernetes Subnet
+&lt;ul>
+&lt;li>Kubernetes Master, Worker nodes&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Storage Subnet
+&lt;ul>
+&lt;li>NFS Server&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>DevOps Subnet
+&lt;ul>
+&lt;li>Jenkins Server&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image.png"
+width="1064"
+height="763"
+srcset="https://s0okju.github.io/p/hexactf-2/image_hu12542809680751871239.png 480w, https://s0okju.github.io/p/hexactf-2/image_hu6013308072300095.png 1024w"
+loading="lazy"
+alt="전체 네트워크 토폴로지"
+class="gallery-image"
+data-flex-grow="139"
+data-flex-basis="334px"
+>&lt;/p>
+&lt;h2 id="nfs-아키텍쳐-구성">NFS 아키텍쳐 구성
+&lt;/h2>&lt;h3 id="왜-필요할까">왜 필요할까?
+&lt;/h3>&lt;h4 id="상태값-저장">상태값 저장
+&lt;/h4>&lt;p>저희 프로젝트는 쿠버네티스 환경에서 수행하게 됩니다. 그 과정에서 데이터베이스와 같이 상태를 저장해야 하는 애플리케이션이 필요하게 됩니다. 관리자는 PV로 스토리지를 정의하고 상태 저장이 필요한 애플리케이션의 PVC를 활용하여 데이터를 영구적으로 저장하게 됩니다.
+PV는 로컬 디스크에 저장하거나 NFS와 같은 통신이 필요한 스토리지 시스템으로 정의할 수 있습니다. 로컬 디스크에 저장한다는 것은 Worker node의 디스크에 저장한다는 말과 같습니다. 그러므로 데이터 저장소를 외부와 분리하고자 NFS를 사용하게 되었습니다.&lt;/p>
+&lt;h4 id="dynamic-provisioning">Dynamic Provisioning
+&lt;/h4>&lt;p>NFS를 선택한 핵심적인 이유입니다. 애플리케이션이 스토리지 사용을 위해 PVC를 요청하게 되면 요구사항에 맞는 PV에 바인딩하게 됩니다. 모든 작업마다 그에 상응하는 PV-PVC 쌍을 만들어야 한다는 것과 같습니다. 불편함을 해소하기 위해서 PVC 요청에 대한 PV를 생성하는 과정을 자동화는 Dynamic Provisioning을 활용하게 되었습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-1.png"
+width="834"
+height="509"
+srcset="https://s0okju.github.io/p/hexactf-2/image-1_hu14657666969386383326.png 480w, https://s0okju.github.io/p/hexactf-2/image-1_hu14349315458887069022.png 1024w"
+loading="lazy"
+alt="출처 - https://www.unixarena.com/2022/04/kubernetes-storage-dynamic-nfs-client-provisioner.html/"
+class="gallery-image"
+data-flex-grow="163"
+data-flex-basis="393px"
+>&lt;/p>
+&lt;h3 id="nfs-in-nova-vs-manila">NFS in Nova vs Manila
+&lt;/h3>&lt;p>데이터베이스를 구축하는 방법으로 EC2 Instance에서 DB 엔진을 직접 설치하듯이 NFS로 직접 인스턴스에 직접 설치할 수 있는 방법이 있습니다.
+Openstack에는 NFS를 직접 설치할 수 있도록 &lt;a class="link" href="https://docs.openstack.org/manila/latest/" target="_blank" rel="noopener"
+>Manila&lt;/a>라는 파일 공유 서비스를 제공해줍니다.&lt;/p>
+&lt;p>공식문서에 의하면 NFS는 아래와 같은 기능을 목표로 삼습니다.&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>&lt;/p>
+&lt;ul>
+&lt;li>Component based architecture: Quickly add new behaviors&lt;/li>
+&lt;li>Highly available: Scale to very serious workloads&lt;/li>
+&lt;li>Fault-Tolerant: Isolated processes avoid cascading failures&lt;/li>
+&lt;li>Recoverable: Failures should be easy to diagnose, debug, and rectify&lt;/li>
+&lt;li>Open Standards: Be a reference implementation for a community-driven api&lt;/li>
+&lt;/ul>
+&lt;p>그 이외에도 통합적인 대시보드, 모니터링, 로깅 도구를 활용할 수 있다는 것이 큰 장점입니다.
+그럼에도 Manila가 아닌 &lt;strong>Nova에 NFS를 설치하는 방안&lt;/strong>을 선택했습니다.
+선택한 가장 큰 이유는 &lt;strong>어렵다&lt;/strong>는 것입니다. 프로젝트 이전에 &lt;a class="link" href="https://medium.com/s0okju-tech/opsathlan-scenario-3-1-hello-mysql-28965a7bc466" target="_blank" rel="noopener"
+>데이터베이스 시스템인 trove를 설치한 경험이 있었습니다. &lt;/a> 원인을 찾았지만 해결하지 못한 경험이 있었습니다. 클라우드에 적합한 시스템이라 네트워크, 인증 등 고려사항이 많다고 느꼈습니다. 소규모에 쉬운 방법으로 하나의 인스턴스에서 nfs-server에 설치하는 방식을 선택했습니다.&lt;/p>
+&lt;h3 id="nfs-설치하기">NFS 설치하기
+&lt;/h3>&lt;p>설치하기 이전에 NFS 요구사항에 대해 생각해보겠습니다.&lt;/p>
+&lt;h4 id="nfs-네트워크-요구사항">NFS 네트워크 요구사항
+&lt;/h4>&lt;ul>
+&lt;li>쿠버네티스 서브넷과 통신해야 한다.&lt;/li>
+&lt;li>nfs server를 설치하기 위해 외부와 통신해야 한다.&lt;/li>
+&lt;/ul>
+&lt;p>위의 요구사항에 맞게 storage subnet은 public, kubernetes subnet의 router로 연결했습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-2.png"
+width="789"
+height="750"
+srcset="https://s0okju.github.io/p/hexactf-2/image-2_hu1552863429733123232.png 480w, https://s0okju.github.io/p/hexactf-2/image-2_hu5558781714501023839.png 1024w"
+loading="lazy"
+alt="네트워크 토폴로지"
+class="gallery-image"
+data-flex-grow="105"
+data-flex-basis="252px"
+>&lt;/p>
+&lt;h3 id="terraform-으로-구성하기">Terraform 으로 구성하기
+&lt;/h3>&lt;h4 id="네트워크">네트워크
+&lt;/h4>&lt;p>storage라는 prefix를 가진 network와 subnet를 만들어줍니다. 그리고 라우터를 정의하여 서로 다른 네트워크를 연결합니다.
+Openstack의 Neutron의 경우에는 크게 가상 라우터와 서브넷의 연결 관계로 구성됩니다. 이는 실제 물리적인 네트워크 환경처럼 라우터 인터페이스에 네트워크 케이블을 꽂는 형식과 유사합니다. 그래서 Neutron 내부에서는 서브넷이 할당된 네트워크에 논리 포트를 만들고 이를 라우터에 연결하게 됩니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Get the existing public network
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">data&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_network_v2&amp;#34; &amp;#34;public_network&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">public_network_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Get the existing public router
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">data&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_router_v2&amp;#34; &amp;#34;public_router&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">public_router_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create the storage network
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_network_v2&amp;#34; &amp;#34;storage_network&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_network_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create the storage subnet
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_subnet_v2&amp;#34; &amp;#34;storage_subnet&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_subnet_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> network_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_network_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_network&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> cidr&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_subnet_cidr&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> ip_version&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="m">4&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> dns_nameservers&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">dns_nameservers&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Connect the storage subnet to the public router
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_router_interface_v2&amp;#34; &amp;#34;storage_router_interface&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> router_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">data&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">openstack_networking_router_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">public_router&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> subnet_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_subnet_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_subnet&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>서브넷을 라우터에 연결하기 위해서는 &lt;a class="link" href="https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest/docs" target="_blank" rel="noopener"
+>openstack_networking_router_interface_v2&lt;/a>함수를 사용하게 됩니다. 서브넷을 연결할 때 &lt;code>subnet_id&lt;/code>를 사용할 수 있고 &lt;code>port_id&lt;/code>를 사용할 수 있습니다.&lt;/p>
+&lt;p>subnet_id를 사용하게 되면 자동으로 해당 CIDR의 x.x.x.1 의 주소의 포트로 연결됩니다. 그러나 하나의 서브넷이 2개 이상일 경우 subnet_id를 두 번이상 사용하게 된다면 사용중인 port IP라는 에러 메세지를 확인할 수 있습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Subnet_id를 사용하는 방법
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_router_interface_v2&amp;#34; &amp;#34;storage_router_interface&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> router_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">data&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">openstack_networking_router_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">public_router&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> subnet_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_subnet_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_subnet&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>그럴 경우 &lt;a class="link" href="https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest/docs/resources/networking_port_v2" target="_blank" rel="noopener"
+>openstack_networking_port_v2&lt;/a> 에서 사용할 port_ip를 지정해서 사용할 수 있습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Port를 사용하는 방법
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_port_v2&amp;#34; &amp;#34;storage_kubernetes_router_port&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;kubernetes-storage-port&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> network_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_network_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_network&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> admin_state_up&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;true&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">fixed_ip&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> subnet_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_subnet_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_subnet&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> ip_address&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;10.0.50.20&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_router_interface_v2&amp;#34; &amp;#34;storage_kubernetes_interface&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> router_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_router_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">kubernetes_router&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> port_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_port_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_kubernetes_router_port&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="컴퓨팅-자원">컴퓨팅 자원
+&lt;/h4>&lt;p>NFS 서버와 관련된 인스턴스를 제작해보겠습니다.
+NFS 서버는 2049, 111 포트를 활용합니다. NFS 서버는 쿠버네티스 서브넷과 주로 통신하므로 Kubernetes subnet인 10.0.10.0/24에서 요청하는 2049, 111 TCP, UDP 네트워크를 모두 허락해줍니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create the NFS security group
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_secgroup_v2&amp;#34; &amp;#34;nfs_secgroup&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;${var.storage_instance_name}-nfs-secgroup&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> description&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;Security group for NFS access&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_secgroup_rule_v2&amp;#34; &amp;#34;nfs_ingress&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> direction&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;ingress&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> ethertype&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;IPv4&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> protocol&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;tcp&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> port_range_min&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="m">2049&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> port_range_max&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="m">2049&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> remote_ip_prefix&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;10.0.10.0/24&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> security_group_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_secgroup_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">nfs_secgroup&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># ... secgroup 일부 생략
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create a port in the storage network for the instance
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_port_v2&amp;#34; &amp;#34;storage_port&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;${var.storage_instance_name}-port&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> network_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_network_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_network&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> security_group_ids&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">[&lt;/span>&lt;span class="k">openstack_networking_secgroup_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">nfs_secgroup&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">fixed_ip&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> subnet_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_subnet_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_subnet&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create a floating IP for the storage instance
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_floatingip_v2&amp;#34; &amp;#34;storage_fip&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> pool&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">public_network_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Associate the floating IP with the storage instance&amp;#39;s port
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_floatingip_associate_v2&amp;#34; &amp;#34;storage_fip_assoc&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> floating_ip&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_floatingip_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_fip&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">address&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> port_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_port_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_port&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>그리고 50GB 블록 스토리지(Cinder)를 NFS 인스턴스에 붙여서 생성합니다. 인스턴스를 만들때 이전에 정의한 보안 그룹도 지정해줍니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_blockstorage_volume_v3&amp;#34; &amp;#34;nfs-volume&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;bfs-volume&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> size&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="m">50&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create the storage instance
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_compute_instance_v2&amp;#34; &amp;#34;storage_instance&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_instance_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> flavor_name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_flavor_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> image_name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_image_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> key_pair&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_compute_keypair_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">nfs_keypair&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> security_groups&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">[&lt;/span>&lt;span class="k">openstack_networking_secgroup_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">nfs_secgroup&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">name&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">network&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> port&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_port_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_port&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> metadata&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> ssh_user&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;ubuntu&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_compute_volume_attach_v2&amp;#34; &amp;#34;nfs-volume-attached&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> instance_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_compute_instance_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_instance&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> volume_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_blockstorage_volume_v3&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">nfs&lt;/span>&lt;span class="err">-&lt;/span>&lt;span class="k">volume&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>NFS는 Private Network 환경에만 사용합니다. 그러나 nfs 설정 시 외부와의 접근이 필요하므로 floating ip를 할당했습니다.&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="nfs-서버-설정">NFS 서버 설정
+&lt;/h2>&lt;h3 id="환경-설정">환경 설정
+&lt;/h3>&lt;p>NFS 서버는 50GB 블록 스토리지와 연결된 인스턴스로 이뤄져 있습니다. Horizon에서 인스턴스의 정보를 보면 부착된 볼륨을 확인할 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-3.png"
+width="483"
+height="97"
+srcset="https://s0okju.github.io/p/hexactf-2/image-3_hu7375099964733042039.png 480w, https://s0okju.github.io/p/hexactf-2/image-3_hu13690746125160860903.png 1024w"
+loading="lazy"
+alt="Horizon에서 확인한 Volume"
+class="gallery-image"
+data-flex-grow="497"
+data-flex-basis="1195px"
+>&lt;/p>
+&lt;p>ssh에 접속해보면 마운팅된 볼륨을 확인할 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-4.png"
+width="402"
+height="173"
+srcset="https://s0okju.github.io/p/hexactf-2/image-4_hu15116752249649479915.png 480w, https://s0okju.github.io/p/hexactf-2/image-4_hu12973816333178961326.png 1024w"
+loading="lazy"
+alt="디스크 정보"
+class="gallery-image"
+data-flex-grow="232"
+data-flex-basis="557px"
+>&lt;/p>
+&lt;p>추후 쿠버네티스에서 사용될 모든 데이터는 볼륨 스토리지에 저장할 것입니다. 그러므로 볼륨을 ext4 형태로 포맷하여 &lt;code>/mnt/data&lt;/code> 경로에 마운팅합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-5.png"
+width="401"
+height="239"
+srcset="https://s0okju.github.io/p/hexactf-2/image-5_hu7470035024190301467.png 480w, https://s0okju.github.io/p/hexactf-2/image-5_hu5614292593659826944.png 1024w"
+loading="lazy"
+alt="Mounting 이후"
+class="gallery-image"
+data-flex-grow="167"
+data-flex-basis="402px"
+>&lt;/p>
+&lt;p>&lt;code>nfs-server&lt;/code> 라이브러리를 설치한 후 &lt;code>/etc/exports&lt;/code> 파일을 수정합니다. 쿠버네티스 서브넷이 블록 스토리지에 있는 &lt;code>/mnt/data&lt;/code> 에 읽고 쓸 수 있도록 권한을 설정합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">/mnt/data 10.0.10.0/24(rw,sync,no_subtree_check)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>자세한 사항은 &lt;a class="link" href="https://dongle94.github.io/ubuntu/ubuntu-nfs-setting/" target="_blank" rel="noopener"
+>[Ubuntu] NFS 서버 및 클라이언트 구성 - Dongle’s 개발노트&lt;/a> 를 참고하시길 바랍니다.&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="테스트하기">테스트하기
+&lt;/h3>&lt;p>우선 쿠버네티스에서 NFS 서버 IP인 &lt;code>10.0.50.170&lt;/code>가 정상적으로 통신한지 확인합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-6.png"
+width="486"
+height="205"
+srcset="https://s0okju.github.io/p/hexactf-2/image-6_hu6369874713356821799.png 480w, https://s0okju.github.io/p/hexactf-2/image-6_hu14724030721163772636.png 1024w"
+loading="lazy"
+alt="Ping Test"
+class="gallery-image"
+data-flex-grow="237"
+data-flex-basis="568px"
+>&lt;/p>
+&lt;p>NFS 서버에 Hello World 문자열이 있는 &lt;code>test.txt&lt;/code> 파일을 정의합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-7.png"
+width="471"
+height="160"
+srcset="https://s0okju.github.io/p/hexactf-2/image-7_hu1179406066476057608.png 480w, https://s0okju.github.io/p/hexactf-2/image-7_hu7742205433782278174.png 1024w"
+loading="lazy"
+alt="nfs server에서 임시 파일 생성"
+class="gallery-image"
+data-flex-grow="294"
+data-flex-basis="706px"
+>&lt;/p>
+&lt;p>마운팅에서 확인해보면 데이터가 정상적으로 저장되었음을 확인할 수 있습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sudo mount 10.0.50.170:/mnt/server /mnt
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-8.png"
+width="430"
+height="141"
+srcset="https://s0okju.github.io/p/hexactf-2/image-8_hu1387400802137964371.png 480w, https://s0okju.github.io/p/hexactf-2/image-8_hu7406271599367136731.png 1024w"
+loading="lazy"
+alt="쿠버네티스 인스턴스에서 NFS 마운팅"
+class="gallery-image"
+data-flex-grow="304"
+data-flex-basis="731px"
+>&lt;/p>
+&lt;h2 id="활용하기---harbor-in-kubernetes">활용하기 - Harbor in Kubernetes
+&lt;/h2>&lt;p>Harbor를 설정하기 이전에 Dynamic provisioner를 설치합니다. &lt;a class="link" href="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner#with-helm" target="_blank" rel="noopener"
+>nfs-subdir-external-provisioner&lt;/a> 를 사용했으며 helm을 통해 쉽게 설치했습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --set nfs.server&lt;span class="o">=&lt;/span>10.0.50.170 &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --set nfs.path&lt;span class="o">=&lt;/span>/mnt/data
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>&lt;a class="link" href="https://jeongchul.tistory.com/728" target="_blank" rel="noopener"
+>Harbor Kubernetes Helm 설치 — Jeongchul Kim&lt;/a> 블로그를 참고하여 harbor를 설치했습니다.&lt;/p>
+&lt;/blockquote>
+&lt;p>values.ym의 &lt;code>persistence&lt;/code> 에서 nfs-subdir-external-provisioner에서 생성한 storageClass를 정의합니다. 그리고 실행되면 정상적으로 작동됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-9.png"
+width="891"
+height="124"
+srcset="https://s0okju.github.io/p/hexactf-2/image-9_hu8521234955208754315.png 480w, https://s0okju.github.io/p/hexactf-2/image-9_hu15249391023780786770.png 1024w"
+loading="lazy"
+alt="Harbor PVC 목록"
+class="gallery-image"
+data-flex-grow="718"
+data-flex-basis="1724px"
+>&lt;/p>
+&lt;p>만약에 설치하다가 아래와 같이 helper program이 필요하다는 에러 메세지를 볼 수 있습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">Output&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">mount&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="o">/&lt;/span>&lt;span class="k">var&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">lib&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">kubelet&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">pods&lt;/span>&lt;span class="o">/.../&lt;/span>&lt;span class="n">volumes&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">kubernetes&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">io&lt;/span>&lt;span class="o">~&lt;/span>&lt;span class="n">nfs&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">nfs&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">pv&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">test&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">bad&lt;/span> &lt;span class="n">option&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">for&lt;/span> &lt;span class="n">several&lt;/span> &lt;span class="n">filesystems&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">e&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">g&lt;/span>&lt;span class="o">.&lt;/span> &lt;span class="n">nfs&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">cifs&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="n">you&lt;/span> &lt;span class="n">might&lt;/span> &lt;span class="n">need&lt;/span> &lt;span class="n">a&lt;/span> &lt;span class="o">/&lt;/span>&lt;span class="n">sbin&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">mount&lt;/span>&lt;span class="o">.&amp;lt;&lt;/span>&lt;span class="n">type&lt;/span>&lt;span class="o">&amp;gt;&lt;/span> &lt;span class="n">helper&lt;/span> &lt;span class="n">program&lt;/span>&lt;span class="o">.&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>실제로 쿠버네티스에서 Mounting을 할때 &lt;code>mount&lt;/code> 명령어를 사용합니다. 이는 &lt;code>nfs-common&lt;/code> 패키지에 있는 명령어로 노드에 &lt;code>nfs-common&lt;/code> 를 직접 설치해야 합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-10.png"
+width="1774"
+height="218"
+srcset="https://s0okju.github.io/p/hexactf-2/image-10_hu3128600259985745366.png 480w, https://s0okju.github.io/p/hexactf-2/image-10_hu10783041544609587525.png 1024w"
+loading="lazy"
+alt="Mounting Error"
+class="gallery-image"
+data-flex-grow="813"
+data-flex-basis="1953px"
+>&lt;/p>
+&lt;h2 id="마치며">마치며
+&lt;/h2>&lt;p>지금까지 NFS를 구축하기 위해 Terraform으로 인프라 환경을 설정하고 인스턴스에 nfs 서버를 설정했습니다. 다음에는 Jenkins 인프라 환경을 구성하고 어떻게 Harbor Registry에 빌드한 도커 이미지를 Push하는지 작성하겠습니다.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://docs.openstack.org/manila/latest/" target="_blank" rel="noopener"
+>OpenStack Shared Filesystems (manila) documentation — manila 19.1.0.dev52 documentation&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>HexaCTF - 1. 인프라 플랫폼 선정과 서버 이전 시 마주한 문제</title><link>https://s0okju.github.io/p/hexactf-1/</link><pubDate>Mon, 25 Nov 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/hexactf-1/</guid><description>&lt;h2 id="ctf-프로젝트">CTF 프로젝트
+&lt;/h2>&lt;p>CTF란 해킹 대회로 참가자가 의도적으로 취약한 프로그램이나 웹사이트에 숨겨진 플래그를 찾는 게임&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>입니다. 대표적인 CTF 사이트로는 &lt;a class="link" href="https://dreamhack.io/" target="_blank" rel="noopener"
+>드림핵&lt;/a>이 있습니다.
+현재 해킹 동아리 소속으로 주변에 CTF에 활발하게 참가하는 친구들이 많이 있습니다. 저 또한 CTF는 아니지만 문제 제작에 관심이 많습니다. 해킹이라는 관심사를 가진 인원이 모여 CTF에 대한 아이디어를 나누게 되었고, 이후 직접 사이트를 구축하고 대회를 개최하기로 결정했습니다.&lt;/p>
+&lt;h2 id="ctf-제작-필수-요소---컨테이너">CTF 제작 필수 요소 - 컨테이너
+&lt;/h2>&lt;p>CTF 문제 중에는 호스팅된 취약한 웹사이트가 필요할 수 있고, 취약한 운영체제 환경이 필요할 수 있습니다. 각각 하나의 환경을 구성해서 사용자에게 배포할 수 있습니다. 이럴경우 다른 사용자의 문제 풀이를 알 수 있고 다른 사용자가 발빠르게 문제를 해결하면 다른 사용자는 문제를 풀 수 없게 됩니다. 그렇다면 해킹 대회의 의미가 없어질 것입니다. 문제 환경의 분리가 필요하다고 판단했고 경량화된 실행 환경인 컨테이너를 사용하기로 결정했습니다.&lt;/p>
+&lt;h2 id="쿠버네티스">쿠버네티스
+&lt;/h2>&lt;p>쿠버네티스는 러닝 커브가 있는 플랫폼입니다. 저 또한 쿠버네티스의 기본 개념만 알지 온전히 사용해본 경험은 없었습니다. 하지만 &lt;strong>컨테이너를 관리한다는 측면에서 쿠버네티스만큼 좋은 플랫폼이 없어서 선택하게 되었습니다.&lt;/strong>&lt;/p>
+&lt;p>Python Docker SDK에서 서비스를 개발하고 있을때 제가 고민했던 것이 있었습니다.&lt;/p>
+&lt;ol>
+&lt;li>30분 후에는 컨테이너를 중단시켜야 하는데 어떻게 해야하지?&lt;/li>
+&lt;li>2개 이상의 컨테이너가 필요한 경우에는 어떻게 논리적으로 분리해서 관리하고 모니터링하지?&lt;/li>
+&lt;li>Health Check 어떻게 하지?&lt;/li>
+&lt;/ol>
+&lt;p>모든 고민의 해결방안은 &lt;strong>직접 구현&lt;/strong>해야 한다는 것이었습니다. 직접 구현하는 것보다는 증명된 플랫폼을 활용하는 것이 적절하다고 판단했고 쿠버네티스를 선택하게 되었습니다.&lt;/p>
+&lt;h2 id="운영-플랫폼-선정---openstack">운영 플랫폼 선정 - Openstack
+&lt;/h2>&lt;p>&lt;a class="link" href="https://www.redhat.com/ko/resources/openstack-platform-datasheet" target="_blank" rel="noopener"
+>OpenStack이란&lt;/a>이란 풀링된 가상 리소스를 사용하여 &lt;a class="link" href="https://www.redhat.com/ko/topics/cloud-computing/what-is-private-cloud" target="_blank" rel="noopener"
+>프라이빗&lt;/a> 및 &lt;a class="link" href="https://www.redhat.com/ko/topics/cloud-computing/what-is-public-cloud" target="_blank" rel="noopener"
+>퍼블릭&lt;/a> 클라우드를 구축하고 관리하는 오픈소스 플랫폼를 뜻합니다.&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>
+이번 프로젝트에서 인프라 담당을 맡게 되면서 홈서버를 가지고 CTF를 운영하게 되었습니다.
+저는 홈서버에 Openstack를 구축하고 활용한 경험이 있습니다. Openstack를 사용하면서 가장 편리했던 부분은 &lt;strong>IaC를 통해 인프라를 쉽게 관리할 수 있다는 점&lt;/strong>이었습니다. 또한 다양한 스토리지 종류가 있으며 역할에 따라 활용할 수 있다는 것도 큰 매력이었습니다.
+운영 난이도는 높지만 클라우드만이 가질 수 있는 장점을 활용하고 싶어 Openstack을 선택하게 되었습니다.&lt;/p>
+&lt;h2 id="서버-구축---제한된-환경에서-느낀-것">서버 구축 - 제한된 환경에서 느낀 것
+&lt;/h2>&lt;p>집에 있는 홈서버를 다른 장소로 이전하게 되었습니다. 이후 Openstack 서버를 현재 환경에 맞게 설정해야 했습니다. 작업에는 네트워크 설정이 큰 비중을 차지했습니다. 설정 과정에서 느낀점을 적어보고자 합니다.&lt;/p>
+&lt;h3 id="nat-gateway-의-필요성">NAT Gateway 의 필요성
+&lt;/h3>&lt;p>Public Cloud에서 Private Subnet 내에 있는 인스턴스가 인터넷과 접속하기 위해서는 NAT Gateway가 필요합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-1/image.png"
+width="581"
+height="510"
+srcset="https://s0okju.github.io/p/hexactf-1/image_hu10464448554146583759.png 480w, https://s0okju.github.io/p/hexactf-1/image_hu17619646771974209576.png 1024w"
+loading="lazy"
+alt="출처 - https://docs.aws.amazon.com/ko_kr/vpc/latest/userguide/nat-gateway-scenarios.html"
+class="gallery-image"
+data-flex-grow="113"
+data-flex-basis="273px"
+>&lt;/p>
+&lt;p>위의 상황과 유사하게 서버의 사설 네트워크 대역에 접근해야 할 일이 있었습니다. 예로 172.19.0.2에 접근하고 싶은데 같은 네트워크 대역에 있지 않으므로 접근할 수 없습니다. 그러나 &lt;code>enp2s0&lt;/code> 네트워크 인터페이스를 NAT로 사용하면 172.19.0.2에 접근할 수 있게 됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-1/image-1.png"
+width="969"
+height="755"
+srcset="https://s0okju.github.io/p/hexactf-1/image-1_hu14836861143146763152.png 480w, https://s0okju.github.io/p/hexactf-1/image-1_hu15440325309018061590.png 1024w"
+loading="lazy"
+alt="구성도"
+class="gallery-image"
+data-flex-grow="128"
+data-flex-basis="308px"
+>&lt;/p>
+&lt;p>서버에 enp2s0가 NAT이며 사설 네트워크인 enp2s0.191에 트래픽을 허용해주는 방화벽 규칙을 추가합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># enp2s0 인터페이스를 통해 나가는 모든 트래픽의 소스에 NAT 수행 &lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo iptables -t nat -A POSTROUTING -o enp2s0 -j MASQUERADE
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># enp2s0에 들어와 br-ex로 나가는 ICMP 트래픽을 허용한다.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo iptables -A FORWARD -i enp2s0 -o enp2s0.191 -p icmp -j ACCEPT
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># br-ex로 들어와서 enp2s0로 나가는 ICMP 트래픽을 허용한다.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo iptables -A FORWARD -i enp2s0.191 -o enp2s0 -p icmp -j ACCEPT
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Private Subnet 내에 있는 리소스가 외부 인터넷과 통신할 수 있도록 NAT Gateway가 필요합니다.
+이는 온프로미스 환경에서도 해당됩니다. 온프로미스 환경에서 사설 네트워크에 접근하기 위해서는 NAT 기능이 필요하며 이는 &lt;strong>공용(Public) 네트워크 인터페이스로 구성&lt;/strong>되어 있어야 합니다. 그래야 외부와 연결하여 통신할 수 있게 됩니다.
+Public Cloud에서 NAT Gateway를 Public Subnet에 배치하는 이유도 온프로미스와 동일할 것입니다.&lt;/p>
+&lt;p>현재 프로젝트에서는 NAT를 활용하지 않습니다. vlan을 외부 네트워크 인터페이스로 활용하고 싶었으나 실패했습니다. 결국 enp2s0를 Public IP 할당에 사용되는 외부 네트워크 인터페이스(&lt;strong>br-ex&lt;/strong>)로 사용할 것입니다.&lt;/p>
+&lt;h3 id="ip-부족">IP 부족
+&lt;/h3>&lt;p>&lt;strong>새로운 장소에서 가장 큰 고민거리는 IP Pool 설정&lt;/strong>이었습니다. Openstack은 Floating IP Pool 내에서 외부에 노출할 IP를 할당받게 됩니다. 실제 운영을 위한 IP, 개발을 위한 IP 등 생각보다 IP를 할당받아야 하는 경우가 많습니다.
+현재 환경에서는 다양한 서버의 IP가 불규칙적으로 할당되어 있습니다. 또한 많은 사람이 인터넷을 활용하는 공간이기에 무분별하게 IP를 할당할 수 없었습니다.&lt;/p>
+&lt;p>꼭 필요한 IP 개수에서 일시적으로 할당받을 것을 고려해 10개를 할당했습니다.&lt;/p>
+&lt;ul>
+&lt;li>쿠버네티스 : Master, node 2개&lt;/li>
+&lt;li>개발 관련 : Jenkins&lt;/li>
+&lt;li>기타(일시적) : MySQL 관리용 등등..&lt;/li>
+&lt;/ul>
+&lt;h2 id="마치며">마치며
+&lt;/h2>&lt;p>지금까지 프로젝트가 왜 이러한 플랫폼을 선택했는지 설명했습니다. 또한 서버를 다른 곳에 이전하게 되면서 생긴 경험을 보여드렸습니다.
+다음편에는 전체적인 구성도와 함께 찾아오겠습니다.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://en.wikipedia.org/wiki/Capture_the_flag_%28cybersecurity%29" target="_blank" rel="noopener"
+>https://en.wikipedia.org/wiki/Capture_the_flag_(cybersecurity)&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a class="link" href="https://www.redhat.com/ko/topics/openstack" target="_blank" rel="noopener"
+>https://www.redhat.com/ko/topics/openstack&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item></channel></rss>
