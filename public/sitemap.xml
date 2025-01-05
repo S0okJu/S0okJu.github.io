@@ -3,15 +3,30 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>http://localhost:1313/</loc>
-    <lastmod>2024-12-23T00:00:00+09:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/p/2024-review/</loc>
-    <lastmod>2024-12-23T00:00:00+09:00</lastmod>
+    <lastmod>2025-01-05T00:00:00+09:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/categories/</loc>
-    <lastmod>2024-12-23T00:00:00+09:00</lastmod>
+    <lastmod>2025-01-05T00:00:00+09:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/categories/hexactf/</loc>
+    <lastmod>2025-01-05T00:00:00+09:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/hexactf-3/</loc>
+    <lastmod>2025-01-05T00:00:00+09:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/kubernetes/</loc>
+    <lastmod>2025-01-05T00:00:00+09:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/openstack/</loc>
+    <lastmod>2025-01-05T00:00:00+09:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/post/</loc>
+    <lastmod>2025-01-05T00:00:00+09:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/tags/</loc>
+    <lastmod>2025-01-05T00:00:00+09:00</lastmod>
+  </url><url>
+    <loc>http://localhost:1313/p/2024-review/</loc>
     <lastmod>2024-12-23T00:00:00+09:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/tags/review/</loc>
@@ -20,19 +35,7 @@
     <loc>http://localhost:1313/categories/review/</loc>
     <lastmod>2024-12-23T00:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/</loc>
-    <lastmod>2024-12-23T00:00:00+09:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/categories/hexactf/</loc>
-    <lastmod>2024-11-29T00:00:00+09:00</lastmod>
-  </url><url>
     <loc>http://localhost:1313/p/hexactf-2/</loc>
-    <lastmod>2024-11-29T00:00:00+09:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/kubernetes/</loc>
-    <lastmod>2024-11-29T00:00:00+09:00</lastmod>
-  </url><url>
-    <loc>http://localhost:1313/tags/openstack/</loc>
     <lastmod>2024-11-29T00:00:00+09:00</lastmod>
   </url><url>
     <loc>http://localhost:1313/p/hexactf-1/</loc>
