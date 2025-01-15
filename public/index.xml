@@ -6,7 +6,309 @@
         <description>Recent content on S0okJu.dev</description>
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
-        <lastBuildDate>Sun, 05 Jan 2025 00:00:00 +0900</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <lastBuildDate>Wed, 15 Jan 2025 00:00:00 +0900</lastBuildDate><atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" /><item>
+        <title>서버 이야기. Kolla-ansible 를 활용한 기본 Openstack 로깅 대시보드 구성</title>
+        <link>http://localhost:1313/p/server-story/</link>
+        <pubDate>Wed, 15 Jan 2025 00:00:00 +0900</pubDate>
+        
+        <guid>http://localhost:1313/p/server-story/</guid>
+        <description>&lt;p&gt;클라우드 로그 관리 사례를 보면서 문득 운영 중인 Openstack 서버에 로그가 얼마나 쌓였는지 궁금해졌습니다. 지금부터 그 과정을 알아가보는 시간을 가지겠습니다.&lt;/p&gt;
+&lt;h2 id=&#34;opensearch란&#34;&gt;Opensearch란?
+&lt;/h2&gt;&lt;p&gt;Elasticsearch 기반 오픈소스 검색 엔진 솔루션입니다. 검색 및 분석을 위한 강력한 도구를 제공하며 기존의 Elasticsearch의 기능을 사용할 수 있습니다.
+Elasticsearch가 제품의 라이센스를 변경하면서 Amazon이 기존 프로젝트를 fork하여 OpenSearch를 만들게 되었습니다. &lt;a class=&#34;link&#34; href=&#34;https://www.elastic.co/kr/elasticsearch/opensearch&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;Elasticsearch 측에서 OpenSearch와 Elasticsearch 비교한 글&lt;/a&gt;이 있으니 참고 바랍니다.&lt;/p&gt;
+&lt;h2 id=&#34;opensearch-설치&#34;&gt;Opensearch 설치
+&lt;/h2&gt;&lt;p&gt;Kolla-ansible은 Openstack를 구성하기 위한 다양한 배포 도구입니다. Ansible를 활용하여 컨테이너 형태로 컴포넌트를 설치합니다.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;자세한 사항은 &lt;a class=&#34;link&#34; href=&#34;https://docs.openstack.org/kolla-ansible/latest/reference/logging-and-monitoring/central-logging-guide.html&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;공식문서&lt;/a&gt;를 참고하길 바랍니다.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;기본적으로 중앙 로깅 도구로 Opensearch를 지원해줍니다. &lt;code&gt;globals.yaml&lt;/code&gt; 에 설정값을 수정하고 다시 배포하면 됩니다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;nt&#34;&gt;enable_central_logging&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;yes&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id=&#34;시각화&#34;&gt;시각화
+&lt;/h2&gt;&lt;blockquote&gt;
+&lt;p&gt;인터넷에서 OpenSearch 사용법과 관련된 글을 검색하면 생각보다 검색 결과가 적습니다. 하지만 OpenSearch 대신 Kibana로 검색하면 많은 내용을 확인할 수 있습니다.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;로그 데이터를 중심으로 두 개의 그래프를 시각화 할 것입니다.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Log Level 분포도&lt;/li&gt;
+&lt;li&gt;시간에 따른 로그 총 개수&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;log-level-분포도&#34;&gt;Log Level 분포도
+&lt;/h3&gt;&lt;p&gt;Log Level 분포도는 다른 의미로 각각의 Log Level의 총 개수를 하나의 그래프에 표현하는 것과 같습니다. 그러므로 Metrics의 집계 기준을&lt;code&gt;Count&lt;/code&gt;로 잡았습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-story/image.png&#34;
+	width=&#34;684&#34;
+	height=&#34;249&#34;
+	srcset=&#34;http://localhost:1313/p/server-story/image_hu320d483c2fc0c844f045f4c47f09f376_13552_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-story/image_hu320d483c2fc0c844f045f4c47f09f376_13552_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;Log Level Metrics&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;274&#34;
+		data-flex-basis=&#34;659px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;log_level.keyword&lt;/code&gt; 용어를 기준으로 그룹화해줍니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-story/image-1.png&#34;
+	width=&#34;676&#34;
+	height=&#34;559&#34;
+	srcset=&#34;http://localhost:1313/p/server-story/image-1_hud5db429e290729c8032626e28aa29646_36748_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-story/image-1_hud5db429e290729c8032626e28aa29646_36748_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;Log Level Buckets&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;120&#34;
+		data-flex-basis=&#34;290px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;아래와 같은 분포도를 확인할 수 있습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-story/image-2.png&#34;
+	width=&#34;1178&#34;
+	height=&#34;649&#34;
+	srcset=&#34;http://localhost:1313/p/server-story/image-2_hudf746c77eae4cb5af9145f4b355d2275_40427_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-story/image-2_hudf746c77eae4cb5af9145f4b355d2275_40427_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;Log Level별 분포도 결과&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;181&#34;
+		data-flex-basis=&#34;435px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h3 id=&#34;시간에-따른-로그-총-개수&#34;&gt;시간에 따른 로그 총 개수
+&lt;/h3&gt;&lt;p&gt;시간 순서대로 집계가 되어야 하면서 매일 생성되는 로그 총합과 누적 로그 총합이 구분되면서 보여야 합니다.
+Area Chart로 설정하여 시각화를 수행했습니다.
+크게 두 가지가 필요하므로 집계 기준을 Count, Cumulative Sum으로 설정했습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-story/image-3.png&#34;
+	width=&#34;587&#34;
+	height=&#34;511&#34;
+	srcset=&#34;http://localhost:1313/p/server-story/image-3_hu211082278e3a62e3538da02cbdedaef5_27044_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-story/image-3_hu211082278e3a62e3538da02cbdedaef5_27044_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;114&#34;
+		data-flex-basis=&#34;275px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;하루 단위로 데이터를 보여줄 수 있도록 Bucket를 설정했습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-story/image-4.png&#34;
+	width=&#34;595&#34;
+	height=&#34;478&#34;
+	srcset=&#34;http://localhost:1313/p/server-story/image-4_hud4c098a47f4d8b95f65a367317776fca_33645_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-story/image-4_hud4c098a47f4d8b95f65a367317776fca_33645_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;124&#34;
+		data-flex-basis=&#34;298px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;대략 2주치 로그의 누적 개수를 확인했습니다. 7,000,000개가 넘어가는 것을 보고 많이 놀랐습니다. 저장 공간에 불필요한 로그들이 쌓이는 것 같다는 생각이 들었고 관리 방안을 생각해야 했습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-story/image-5.png&#34;
+	width=&#34;1167&#34;
+	height=&#34;686&#34;
+	srcset=&#34;http://localhost:1313/p/server-story/image-5_hu5d18fab272e9b97d5452a546eb4436a9_45605_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-story/image-5_hu5d18fab272e9b97d5452a546eb4436a9_45605_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;누적 로그 합계 그래프&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;170&#34;
+		data-flex-basis=&#34;408px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;h2 id=&#34;로그-관리-방안&#34;&gt;로그 관리 방안
+&lt;/h2&gt;&lt;h3 id=&#34;방향성-잡기&#34;&gt;방향성 잡기
+&lt;/h3&gt;&lt;p&gt;로그는 서버의 로컬 저장소에 저장되기 때문에 저장 용량 관리 측면에서 중요합니다.&lt;/p&gt;
+&lt;p&gt;Kolla-ansble의 opensearch 로그 파일 경로&lt;code&gt;/var/log/kolla/opensearch&lt;/code&gt; 를 보면 시간별로 로그 파일이 압축되어 있습니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-story/image-6.png&#34;
+	width=&#34;755&#34;
+	height=&#34;275&#34;
+	srcset=&#34;http://localhost:1313/p/server-story/image-6_hub1de6f6b052409f9163bd2d5d2640310_77301_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-story/image-6_hub1de6f6b052409f9163bd2d5d2640310_77301_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;서버에서 확인한 Kolla-ansbile 컴포넌트 로그&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;274&#34;
+		data-flex-basis=&#34;658px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;2달치 압축된 로그의 총 용량을 보면 31MB로 상당히 적습니다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;du -ch *.gz &lt;span class=&#34;p&#34;&gt;|&lt;/span&gt; grep total
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;로그를 보니 Public Cloud의 로그 관리 사례가 생각났습니다.
+AWS 경우에는 Object Storage인 S3에 로그를 저장하여 Lifecycle를 관리하기도 합니다.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-story/image-7.png&#34;
+	width=&#34;800&#34;
+	height=&#34;323&#34;
+	srcset=&#34;http://localhost:1313/p/server-story/image-7_hu088facda25f34dda686dbfe0828b6936_71229_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-story/image-7_hu088facda25f34dda686dbfe0828b6936_71229_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;출처 - Logging strategies for security incident response | AWS Security Blog&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;247&#34;
+		data-flex-basis=&#34;594px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;Openstack도 swift라는 Object Storage가 있습니다. SSD로 구성된 로컬 저장소에 로그가 쌓이는 것을 원치 않기 때문에 HDD로 구성된 swift에 로그를 옮기고 싶었습니다.
+기본적인 구성으로는 swift에 전송할 수 없으며 추가적인 플러그인 사용을 고려해야 합니다. &lt;a class=&#34;link&#34; href=&#34;https://opensearch.org/docs/latest/install-and-configure/plugins/#available-plugins&#34;  target=&#34;_blank&#34; rel=&#34;noopener&#34;
+    &gt;그러나 현재까지 공식적으로 swift로 데이터를 전송하는 플러그인은 없는 것 같습니다. &lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;그렇다면 보유(retention) 정책을 확인하는 것으로 방향을 잡았습니다.&lt;/p&gt;
+&lt;h3 id=&#34;state-management-policies&#34;&gt;State management policies
+&lt;/h3&gt;&lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/server-story/image-8.png&#34;
+	width=&#34;923&#34;
+	height=&#34;318&#34;
+	srcset=&#34;http://localhost:1313/p/server-story/image-8_hue59aaa54fb793268160bbee217ba2253_28661_480x0_resize_box_3.png 480w, http://localhost:1313/p/server-story/image-8_hue59aaa54fb793268160bbee217ba2253_28661_1024x0_resize_box_3.png 1024w&#34;
+	loading=&#34;lazy&#34;
+	
+		alt=&#34;Opensearch에서 확인한 State management policies&#34;
+	
+	
+		class=&#34;gallery-image&#34; 
+		data-flex-grow=&#34;290&#34;
+		data-flex-basis=&#34;696px&#34;
+	
+&gt;&lt;/p&gt;
+&lt;p&gt;아래 보유 정책은 크게 3가지 상태가 있습니다.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;open&lt;/li&gt;
+&lt;li&gt;close&lt;/li&gt;
+&lt;li&gt;delete&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;이름만 다를 뿐이지 Hot-Warm-Cold 라고 보시면 됩니다.
+기본 설정을 보면 open 상태로 로그가 생성되다가 30일 후에 close 상태로 변화하고 60일 후에 delete 상태로 변화가 됩니다.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt; 1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 4
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 5
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 6
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 7
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 8
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt; 9
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;10
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;11
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;12
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;13
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;14
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;15
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;16
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;17
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;18
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;19
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;20
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;21
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;22
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;23
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;24
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;25
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;26
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;27
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;28
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;29
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;30
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;31
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;32
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;33
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;34
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;35
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;36
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;37
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;38
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;39
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;40
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;41
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;42
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;43
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;44
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;45
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;46
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;47
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre tabindex=&#34;0&#34; class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;{&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;policy&amp;#34;: &lt;/span&gt;{&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;c&#34;&gt;# ...&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;      &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;states&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;{&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;name&amp;#34;: &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;open&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;actions&amp;#34;: &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[],&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;transitions&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;{&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;state_name&amp;#34;: &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;close&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;conditions&amp;#34;: { &amp;#34;min_index_age&amp;#34;: &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;30d&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;{&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;name&amp;#34;: &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;close&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;actions&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;{&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;retry&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                    &lt;/span&gt;{&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;count&amp;#34;: 3, &amp;#34;backoff&amp;#34;: &amp;#34;exponential&amp;#34;, &amp;#34;delay&amp;#34;: &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;1m&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;close&amp;#34;: &lt;/span&gt;{}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;transitions&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;{&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;state_name&amp;#34;: &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;delete&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;conditions&amp;#34;: { &amp;#34;min_index_age&amp;#34;: &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;60d&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;{&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;name&amp;#34;: &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;delete&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;actions&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;{&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;retry&amp;#34;&lt;/span&gt;&lt;span class=&#34;p&#34;&gt;:&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                    &lt;/span&gt;{&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;count&amp;#34;: 3, &amp;#34;backoff&amp;#34;: &amp;#34;exponential&amp;#34;, &amp;#34;delay&amp;#34;: &lt;/span&gt;&lt;span class=&#34;s2&#34;&gt;&amp;#34;1m&amp;#34;&lt;/span&gt;&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                  &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;delete&amp;#34;: &lt;/span&gt;{}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;                &lt;/span&gt;}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;              &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;            &lt;/span&gt;&lt;span class=&#34;nt&#34;&gt;&amp;#34;transitions&amp;#34;: &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;[],&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;          &lt;/span&gt;}&lt;span class=&#34;p&#34;&gt;,&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;        &lt;/span&gt;&lt;span class=&#34;p&#34;&gt;],&lt;/span&gt;&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&#34;line&#34;&gt;&lt;span class=&#34;cl&#34;&gt;&lt;span class=&#34;w&#34;&gt;    &lt;/span&gt;}&lt;span class=&#34;w&#34;&gt; &lt;/span&gt;}&lt;span class=&#34;w&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;strong&gt;최종적으로 보유 정책을 수정하지 않았습니다.&lt;/strong&gt;
+로그는 성능 정보에 대한 집계나 디버깅할때 유용합니다. 이때 적절한 과거 데이터를 보관하는 것이 중요하다고 생각합니다. 생각보다 close 상태의 압축된 로그 크기가 작았기 때문에 더욱 줄일 필요는 없었다고 봅니다.&lt;/p&gt;
+&lt;h2 id=&#34;마무리&#34;&gt;마무리
+&lt;/h2&gt;&lt;p&gt;이 글은 취준생일때 작성한 글입니다. 실무에는 어떻게 다룰지는 모르겠습니다.
+언젠간 취업하고 나서 잘못된 부분을 확인하면 새로운 글로 찾아오겠습니다.&lt;/p&gt;
+</description>
+        </item>
+        <item>
         <title>HexaCTF - 3. Jenkins를 활용한 CI 환경 구성하기</title>
         <link>http://localhost:1313/p/hexactf-3/</link>
         <pubDate>Sun, 05 Jan 2025 00:00:00 +0900</pubDate>
