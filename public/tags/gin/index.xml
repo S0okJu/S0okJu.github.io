@@ -17,7 +17,7 @@
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/todopoint-final-review/image.png&#34;
 	width=&#34;986&#34;
 	height=&#34;876&#34;
-	srcset=&#34;http://localhost:1313/p/todopoint-final-review/image_hu6c8844752ece837c142bd3d9bf243c88_53988_480x0_resize_box_3.png 480w, http://localhost:1313/p/todopoint-final-review/image_hu6c8844752ece837c142bd3d9bf243c88_53988_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/todopoint-final-review/image_hu13186140440509974875.png 480w, http://localhost:1313/p/todopoint-final-review/image_hu1891924287277266395.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;초기에 기획한 구성도&#34;
@@ -95,7 +95,7 @@ Go는 독특한 문법 체계를 가지고 있어 다른 언어에 비해 응용
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/todopoint-final-review/image-1.png&#34;
 	width=&#34;924&#34;
 	height=&#34;584&#34;
-	srcset=&#34;http://localhost:1313/p/todopoint-final-review/image-1_hu749e8c9f6eb70bb0f0a8c8201f611392_38430_480x0_resize_box_3.png 480w, http://localhost:1313/p/todopoint-final-review/image-1_hu749e8c9f6eb70bb0f0a8c8201f611392_38430_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/todopoint-final-review/image-1_hu12811250395620581806.png 480w, http://localhost:1313/p/todopoint-final-review/image-1_hu10126210423897698024.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 		alt=&#34;버전이 2개인 서비스&#34;
@@ -1012,7 +1012,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
 &lt;img src=&#34;http://localhost:1313/p/gin-error-handling-2/image.png&#34;
 	width=&#34;1365&#34;
 	height=&#34;538&#34;
-	srcset=&#34;http://localhost:1313/p/gin-error-handling-2/image_hu87a5be59412819b478622b8c105aebb4_58565_480x0_resize_box_3.png 480w, http://localhost:1313/p/gin-error-handling-2/image_hu87a5be59412819b478622b8c105aebb4_58565_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/gin-error-handling-2/image_hu2187163634688892380.png 480w, http://localhost:1313/p/gin-error-handling-2/image_hu4391662667096093906.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	
@@ -1306,7 +1306,7 @@ Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 �
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/gin-error-handling-1/img1.png&#34;
 	width=&#34;551&#34;
 	height=&#34;317&#34;
-	srcset=&#34;http://localhost:1313/p/gin-error-handling-1/img1_hu1e91b9fd504688263ee7382b8d7bb9c9_16630_480x0_resize_box_3.png 480w, http://localhost:1313/p/gin-error-handling-1/img1_hu1e91b9fd504688263ee7382b8d7bb9c9_16630_1024x0_resize_box_3.png 1024w&#34;
+	srcset=&#34;http://localhost:1313/p/gin-error-handling-1/img1_hu7361807817120932448.png 480w, http://localhost:1313/p/gin-error-handling-1/img1_hu1676088839423243947.png 1024w&#34;
 	loading=&#34;lazy&#34;
 	
 	

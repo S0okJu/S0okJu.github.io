@@ -1,5 +1,5 @@
 ---
-title: "HexaCTF 4.  Challenge 초기 설계(1)"
+title: "HexaCTF 4. Docker를 활용한 Challenge 설계 및 한계점"
 date: 2025-01-16
 slug: hexactf-4
 categories:
@@ -8,6 +8,8 @@ tags:
   - Openstack
   - Kubernetes
 ---
+
+- 2025.01.18: 제목 수정
 
 ## CTF의 문제 특징
 
