@@ -1,0 +1,2160 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Terraform on S0okJu.dev</title><link>https://s0okju.github.io/tags/terraform/</link><description>Recent content in Terraform on S0okJu.dev</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Mon, 04 Nov 2024 00:00:00 +0900</lastBuildDate><atom:link href="https://s0okju.github.io/tags/terraform/index.xml" rel="self" type="application/rss+xml"/><item><title>OpsAthlan 3-1. Hello MySQL</title><link>https://s0okju.github.io/p/opsathlan-3-1/</link><pubDate>Mon, 04 Nov 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/opsathlan-3-1/</guid><description>&lt;h2 id="시나리오">시나리오
+&lt;/h2>&lt;p>데이터베이스를 설치하고 읽기와 쓰기를 탐색해보자&lt;/p>
+&lt;h3 id="구성도">구성도
+&lt;/h3>&lt;ol>
+&lt;li>Jenkins를 활용한 컨테이너 자동 빌드 및 docker-compose 배포&lt;/li>
+&lt;li>Nova에 Mysql 서버 설치 및 volume에 데이터 저장&lt;/li>
+&lt;/ol>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-3-1/image.png"
+width="1140"
+height="460"
+srcset="https://s0okju.github.io/p/opsathlan-3-1/image_hu_f31c09a612fdea3a.png 480w, https://s0okju.github.io/p/opsathlan-3-1/image_hu_89a4fa1a418eb7ba.png 1024w"
+loading="lazy"
+alt="전체 구성도"
+class="gallery-image"
+data-flex-grow="247"
+data-flex-basis="594px"
+>&lt;/p>
+&lt;h2 id="trove-설치-실패">Trove 설치 실패
+&lt;/h2>&lt;p>초기 설계에서는 RDS와 유사하다고 생각한&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> 서비스인 Trove를 활용해서 구성할 예정이었습니다. 그런데 따로 네트워크를 구축하고 설치해보면서 다양한 오류사항을 마주했습니다. 원인은 대략적으로 찾았으나 구체적인 해결 방안을 찾지 못해서 &lt;strong>Nova 인스턴스에 mysql 서버를 사용하는 방식으로 전환&lt;/strong>했습니다.&lt;/p>
+&lt;h3 id="오류사항">오류사항
+&lt;/h3>&lt;p>우선 Trove가 무엇인지 알아봅시다. &lt;a class="link" href="https://wiki.openstack.org/wiki/Trove" target="_blank" rel="noopener"
+>공식문서&lt;/a>에 의하면 trove는 다른 퍼블릭 클라우드의 데이터베이스 서비스과 유사한 기능을 가지고 있습니다. 안정성을 위한 대부분의 기능을 제공합니다.&lt;/p>
+&lt;blockquote>
+&lt;p>Trove is &lt;strong>Database as a Service&lt;/strong> for OpenStack. It&amp;rsquo;s designed to run entirely on &lt;a class="link" href="https://wiki.openstack.org/wiki/OpenStack" title="OpenStack"
+target="_blank" rel="noopener"
+>OpenStack&lt;/a>, with the goal of allowing users to quickly and easily utilize the features of a relational or non-relational database without the burden of handling complex administrative tasks.
+&amp;hellip; Initially, the service will focus on providing resource isolation at high performance while &lt;strong>automating complex administrative tasks including deployment, configuration, patching, backups, restores, and monitoring.&lt;/strong>&lt;/p>
+&lt;/blockquote>
+&lt;p>저는 Kolla-Ansible를 사용하고 있어 쉽게 리소스를 추가할 수 있습니다. &lt;code>globals.yml&lt;/code> 에서 trove 리소스 부분을 yes로 바꾸기만 하면 됩니다. 설정을 추가하고 재배포하면 총 3개의 trove 컨테이너가 생성됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-3-1/image-1.png"
+width="569"
+height="126"
+srcset="https://s0okju.github.io/p/opsathlan-3-1/image-1_hu_fcc5fc92feacc3f9.png 480w, https://s0okju.github.io/p/opsathlan-3-1/image-1_hu_ecfb01e6231c6060.png 1024w"
+loading="lazy"
+alt="trove 서비스 관련 컨테이너"
+class="gallery-image"
+data-flex-grow="451"
+data-flex-basis="1083px"
+>&lt;/p>
+&lt;p>Trove는 Nova 인스턴스 내에서 작동됩니다. 관련 이미지를 다운로드 받아서 glace에 업로드한 후 datastore version을 정의할때 사용합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Image 다운로드&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">wget https://tarballs.opendev.org/openstack/trove/images/trove-master-guest-ubuntu-jammy.qcow2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 이미지 Glance로 업로드&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">openstack image create Trove-Ubuntu --disk-format qcow2 --container-format bare --public --tag trove --tag mysql --file trove-master-guest-ubuntu-jammy.qcow2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># datastore version 정의&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">openstack datastore version create 5.7.29 mysql mysql &lt;span class="s2">&amp;#34;&amp;#34;&lt;/span> --image-tags trove,mysql --active --default --version-number 5.7.29
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>위의 명령어를 모두 수행한 후 아래의 명령어를 확인해보면 mysql에 해당되는 datastore를 확인할 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-3-1/image-2.png"
+width="538"
+height="103"
+srcset="https://s0okju.github.io/p/opsathlan-3-1/image-2_hu_6883ceb9aca8d146.png 480w, https://s0okju.github.io/p/opsathlan-3-1/image-2_hu_856bc01d71a3a345.png 1024w"
+loading="lazy"
+alt="datastore 확인"
+class="gallery-image"
+data-flex-grow="522"
+data-flex-basis="1253px"
+>&lt;/p>
+&lt;p>그리고 trove 관리 네트워크를 따로 만든 후에 데이터베이스를 생성했습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">openstack database instance create test_db &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --flavor m1.medium &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --size &lt;span class="m">10&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --nic net-id&lt;span class="o">={&lt;/span>custom trove manangement network id&lt;span class="o">}&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --database testdb &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --users tester:mypassword &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --datastore mysql &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --datastore-version 5.7.29 &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --allowed-cidr 0.0.0.0/0
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>명령어 수행 이후 빌드 시간이 길었습니다. Timeout 에러가 발생할 것이라고 예상했고, 생각한대로 오류가 발생했습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-3-1/image-3.png"
+width="1529"
+height="171"
+srcset="https://s0okju.github.io/p/opsathlan-3-1/image-3_hu_441c481c934e614b.png 480w, https://s0okju.github.io/p/opsathlan-3-1/image-3_hu_6d5d606e9be556a2.png 1024w"
+loading="lazy"
+alt="trove 생성 에러"
+class="gallery-image"
+data-flex-grow="894"
+data-flex-basis="2145px"
+>&lt;/p>
+&lt;p>trove - api 에서 taskmanager로 작업을 수행할때 message bus 부분에서 문제가 생긴 것 같습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-3-1/image-4.png"
+width="300"
+height="184"
+srcset="https://s0okju.github.io/p/opsathlan-3-1/image-4_hu_e9833adf3828b2b2.png 480w, https://s0okju.github.io/p/opsathlan-3-1/image-4_hu_20fe353ca2d78f1b.png 1024w"
+loading="lazy"
+alt="출처 - https://www.odbms.org/2016/02/10-things-you-should-know-about-openstack-trove-the-open-source-database-as-a-service/"
+class="gallery-image"
+data-flex-grow="163"
+data-flex-basis="391px"
+>&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-3-1/image-5.png"
+width="1060"
+height="448"
+srcset="https://s0okju.github.io/p/opsathlan-3-1/image-5_hu_dbec9d141b136f5c.png 480w, https://s0okju.github.io/p/opsathlan-3-1/image-5_hu_6f1fcae678aef8c5.png 1024w"
+loading="lazy"
+alt="trove timeout error"
+class="gallery-image"
+data-flex-grow="236"
+data-flex-basis="567px"
+>&lt;/p>
+&lt;p>우리의 목적은 간단하게 API를 테스트하는 것이기 때문에 대규모에 적합한 데이터베이스 시스템이 아니여도 괜찮습니다. 그러므로 &lt;strong>간단하게 Nova 인스턴스 내에 Mysql 서버를 설치하는 방법&lt;/strong>을 선택했습니다.&lt;/p>
+&lt;h2 id="프로비저닝provisioning">프로비저닝(Provisioning)
+&lt;/h2>&lt;blockquote>
+&lt;p>프로비저닝(Provisioning) 이란 의미는 영어 직역한 그대로 &amp;ldquo;제공하는것&amp;rdquo; 이다. 
+어떤 종류의 서비스든 &lt;strong>사용자의 요구에 맞게 시스템 자체를 제공 하는 것&lt;/strong>을 프로비저닝이라고 하며 제공해줄 수 있는 것은 인프라 자원이나 서비스, 또는 장비가 될 수도 있다.&lt;/p>
+&lt;p>출처 - &lt;a class="link" href="https://jins-dev.tistory.com/entry/%ED%94%84%EB%A1%9C%EB%B9%84%EC%A0%80%EB%8B%9DProvisioning-%EC%9D%B4%EB%9E%80" target="_blank" rel="noopener"
+>Jins&amp;rsquo; Dev Inside - 프로비저닝이란?&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>앞으로는 인프라를 생성, 환경을 설정 과정을 프로비저닝이라는 용어로 칭하겠습니다.&lt;/p>
+&lt;h3 id="리소스-생성">리소스 생성
+&lt;/h3>&lt;p>저희는 크게 2가지의 Nova 인스턴스가 필요합니다.&lt;/p>
+&lt;ol>
+&lt;li>Docker, Jenkins 서버가 설치되어 있는 인스턴스 -&amp;gt; &lt;strong>Nova 인스턴스&lt;/strong>&lt;/li>
+&lt;li>Block Storage(Cinder)와 연결되어 있으며 MySQL Server가 설치된 인스턴스 -&amp;gt; Block &lt;strong>Storage(Cinder)가 연결된 Nova 인스턴스&lt;/strong>&lt;/li>
+&lt;/ol>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-3-1/image.png"
+width="1140"
+height="460"
+srcset="https://s0okju.github.io/p/opsathlan-3-1/image_hu_f31c09a612fdea3a.png 480w, https://s0okju.github.io/p/opsathlan-3-1/image_hu_89a4fa1a418eb7ba.png 1024w"
+loading="lazy"
+alt="전체 구성도"
+class="gallery-image"
+data-flex-grow="247"
+data-flex-basis="594px"
+>&lt;/p>
+&lt;p>Openstack에서는 Nova 인스턴스를 생성할 때 Volume(Block Storage)을 추가할 수 있습니다. 쉽게 AWS의 EBS라고 생각하시면 됩니다.&lt;br>
+앞서 말했듯이 Trove 서비스 설치를 실패하게 되면서 대안책으로 Nova에 MySQL 서버를 설치하는 방안을 선택하게 되었습니다. Volume이 연결된 Nova Instance를 활용하여 &lt;strong>데이터베이스의 데이터가 Block Storage에 영구적으로 저장할 수 있게 구성&lt;/strong>했습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Block Storage Volume for MySQL Instance
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_blockstorage_volume_v3&amp;#34; &amp;#34;db_volume&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;${var.project_name}-db-volume&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> size&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">volume_size&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Nova Instance with Volume (MySQL Server)
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_compute_instance_v2&amp;#34; &amp;#34;db_instance&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;${var.project_name}-db-instance&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> image_name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">image&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> flavor_name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">flavor&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> key_pair&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_compute_keypair_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">keypair&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">network&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> port&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_port_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">db_port&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> metadata&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> ssh_user&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;ubuntu&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Attach Volume to MySQL Instance
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_compute_volume_attach_v2&amp;#34; &amp;#34;db_volume_attach&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> instance_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_compute_instance_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">db_instance&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> volume_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_blockstorage_volume_v3&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">db_volume&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>위의 코드를 포함한 2개의 Nova Instance를 생성하면 아래와 같은 네트워크 토폴로지를 확인할 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-3-1/image-6.png"
+width="534"
+height="534"
+srcset="https://s0okju.github.io/p/opsathlan-3-1/image-6_hu_94e427a8f5d9f424.png 480w, https://s0okju.github.io/p/opsathlan-3-1/image-6_hu_305549788cf8ba30.png 1024w"
+loading="lazy"
+alt="네트워크 토폴로지"
+class="gallery-image"
+data-flex-grow="100"
+data-flex-basis="240px"
+>&lt;/p>
+&lt;p>본래라면 관리 네트워크와 외부 네트워크가 분리되어야 하지만 통합되어 있는 관계로 모두 floating ip를 할당하게 되었습니다.&lt;br>
+만약에 네트워크가 역할에 따라 분명하게 분리되어 있다면 web-instance는 외부 네트워크로 구성하고 db-instance는 관리 네트워크 ip를 할당받아야 할 것입니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-3-1/image-7.png"
+width="720"
+height="243"
+srcset="https://s0okju.github.io/p/opsathlan-3-1/image-7_hu_bb6e2db3eb986ddf.png 480w, https://s0okju.github.io/p/opsathlan-3-1/image-7_hu_ef8807c6f11ded7f.png 1024w"
+loading="lazy"
+alt="Nova Instance 목록"
+class="gallery-image"
+data-flex-grow="296"
+data-flex-basis="711px"
+>&lt;/p>
+&lt;p>데이터 베이스 서버를 설치할 &lt;code>OpsAthlan-03-db-instance&lt;/code> 인스턴스를 확인해 보겠습니다. 해당 정보에 들어가보면 &lt;code>OpsAthlan-03-db-volume&lt;/code> &lt;strong>volume이 인스턴스의 /dev/vdb 경로로 마운팅&lt;/strong>되었음을 확인했습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-3-1/image-8.png"
+width="465"
+height="559"
+srcset="https://s0okju.github.io/p/opsathlan-3-1/image-8_hu_7dfdc3a64402eccd.png 480w, https://s0okju.github.io/p/opsathlan-3-1/image-8_hu_6fc84c3f2e651575.png 1024w"
+loading="lazy"
+alt="Nova에 Attach된 Volume 정보"
+class="gallery-image"
+data-flex-grow="83"
+data-flex-basis="199px"
+>&lt;/p>
+&lt;h3 id="mysql-서버-설치">MySQL 서버 설치
+&lt;/h3>&lt;p>처음에는 Ansible를 활용하여 한번에 MySQL 서버를 설치할 예정이었습니다. 그러나 저장 경로 수정 작업이 요구되면서 자동화는 힘들다고 판단했습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>상당히 작업이 번거로운 관계로 &lt;a class="link" href="https://jongsky.tistory.com/81" target="_blank" rel="noopener"
+>JONGSKY님의 블로그(시간의 농도) - MySQL 저장경로 변경하기(feat. ubuntu)&lt;/a> 로 대체하겠습니다.&lt;/p>
+&lt;/blockquote>
+&lt;p>위의 방법을 모두 따라하면 mysql 서버 설치가 완료됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-3-1/image-9.png"
+width="739"
+height="202"
+srcset="https://s0okju.github.io/p/opsathlan-3-1/image-9_hu_a57512bfc759a4cc.png 480w, https://s0okju.github.io/p/opsathlan-3-1/image-9_hu_1db43807fdf4bdcd.png 1024w"
+loading="lazy"
+alt="mysql server 정상 실행 상태"
+class="gallery-image"
+data-flex-grow="365"
+data-flex-basis="878px"
+>&lt;/p>
+&lt;p>&lt;code>web-instance&lt;/code> 에 mysql client를 설치하여 테스트를 수행해 보겠습니다. mysql 서버에 계정을 만든 후 테스트를 해보면 연결할 수 없다는 오류를 볼 수 있습니다. &lt;strong>&lt;code>db-instance&lt;/code> security group에 mysql 서버 포트인 3306 규칙을 추가해도 똑같은 오류가 발생&lt;/strong>됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-3-1/image-10.png"
+width="803"
+height="67"
+srcset="https://s0okju.github.io/p/opsathlan-3-1/image-10_hu_b0e69f8a16a00faf.png 480w, https://s0okju.github.io/p/opsathlan-3-1/image-10_hu_ae5c25dad2f3a6f4.png 1024w"
+loading="lazy"
+alt="Mysql 연결 오류"
+class="gallery-image"
+data-flex-grow="1198"
+data-flex-basis="2876px"
+>&lt;/p>
+&lt;p>&lt;code>/etc/mysql/mysql.conf.d/mysqld.cnf&lt;/code> mysql 설정 파일에 외부 통신을 허용해주면 정상적으로 연결할 수 있게 됩니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">bind-address = 0.0.0.0
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="다음-이야기">다음 이야기
+&lt;/h2>&lt;p>데이터베이스 서버를 구성했으니 jenkins를 통한 CI/CD를 구축해보겠습니다.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>완전 관리형 서비스는 아닙니다!&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>Terraform - Workspace</title><link>https://s0okju.github.io/p/terraform-workspace/</link><pubDate>Wed, 23 Oct 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/terraform-workspace/</guid><description>&lt;h2 id="introduction">Introduction
+&lt;/h2>&lt;p>하나의 프로젝트에는 하나의 상태 파일이 존재한다. 그러면 궁금증을 가지게 된다.&lt;/p>
+&lt;blockquote>
+&lt;p>Q. 만약에 개발, 운영 코드를 짠다고 한다면 어떻게 짤까?&lt;br>
+A. 공통의 기능이 포함된 root 모듈을 만든 후 운영, 개발 프로젝트를 만든다.&lt;/p>
+&lt;/blockquote>
+&lt;p>공통의 인프라 리소스가 포함된 모듈 생성할 것이다. 별도의 모듈을 생성하게 된다면 공통 모듈의 상태 관리 문제를 빼놓을 수 없을 것이다.&lt;/p>
+&lt;p>개발, 운영 코드를 하나의 프로젝트에 구현하게 되면 환경에 따라 다르게 실행되는 부분이 존재하게 된다. 결국 이를 해결하기 위한 조건문이 코드를 더 복잡하게 만들 수 있을 것이다.&lt;/p>
+&lt;p>운영, 개발 프로젝트를 분리하는 것도 문제이다. 개발이 완료된 후에는 운영에 옮겨야 하는데 개발자가 일리리 코드를 옮기는 것은 바람직하지 않을 것이다.(사람은 누구나 실수를 하게 된다.)
+Terraform은 이러한 문제를 해결하기 위해 &lt;a class="link" href="https://developer.hashicorp.com/terraform/language/state/workspaces" target="_blank" rel="noopener"
+>Workspace&lt;/a>라는 개념을 도입했다.&lt;/p>
+&lt;h2 id="workspace">Workspace
+&lt;/h2>&lt;p>Terraform은 위와 같은 문제점을 해결하기 위해 Workspace을 도입하게 되었다. Workspace는 하나의 프로젝트에 여러개의 상태파일을 관리할 수 있게 되었다. 간단하게 말해서 Workspace는 &lt;strong>상태 파일을 관리하는 그릇&lt;/strong>이라고 보면 된다.&lt;/p>
+&lt;blockquote>
+&lt;p>자세한 명령어는 &lt;a class="link" href="https://developer.hashicorp.com/terraform/cli/commands/workspace" target="_blank" rel="noopener"
+>공식 홈페이지&lt;/a>를 참고하길 바랍니다.&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="multiple-workspace-backend">Multiple Workspace Backend
+&lt;/h2>&lt;p>상태 파일을 관리하기 위해 Remote Backend를 사용한다. &lt;a class="link" href="https://developer.hashicorp.com/terraform/language/state/workspaces#backends-supporting-multiple-workspaces" target="_blank" rel="noopener"
+>공식 홈페이지&lt;/a>에 의하면 아래의 서비스만 multiple Backend를 지원해준다.&lt;/p>
+&lt;ul>
+&lt;li>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/azurerm" target="_blank" rel="noopener"
+>AzureRM&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/consul" target="_blank" rel="noopener"
+>Consul&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/cos" target="_blank" rel="noopener"
+>COS&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/gcs" target="_blank" rel="noopener"
+>GCS&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/kubernetes" target="_blank" rel="noopener"
+>Kubernetes&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/local" target="_blank" rel="noopener"
+>Local&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/oss" target="_blank" rel="noopener"
+>OSS&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/pg" target="_blank" rel="noopener"
+>Postgres&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/remote" target="_blank" rel="noopener"
+>Remote&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/s3" target="_blank" rel="noopener"
+>S3&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h2 id="example">Example
+&lt;/h2>&lt;h3 id="요구사항">요구사항
+&lt;/h3>&lt;ol>
+&lt;li>S3에 Multiple Backend를 설정한다.&lt;/li>
+&lt;li>실수를 줄이기 위해 default을 dev로 설정한다.&lt;/li>
+&lt;li>변수를 활용하여 dev, prd Workspace를 분리한다.&lt;/li>
+&lt;/ol>
+&lt;h3 id="코드">코드
+&lt;/h3>&lt;p>terraform block에는 어느때와 다름없이 S3 Backend를 설정하면 된다.
+S3로 Multiple Backend를 설정하게 되면 &lt;code>env:/&lt;/code> 하위 폴더에 워크 스페이스에 맞게 상태 파일이 저장된다. 하지만 경우에 따라서는 env 파일명을 바꾸고 싶을 것이다. 그럴때 &lt;code>workspace_key_prefix&lt;/code>를 사용한다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="k">terraform&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">required_providers&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> aws&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> source&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;hashicorp/aws&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> version&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;~&amp;gt; 5.0&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">backend&lt;/span> &lt;span class="s2">&amp;#34;s3&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> bucket&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;tf-backend-d7mekz&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> key&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;terraform.tfstate&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> region&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;ap-northeast-2&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> workspace_key_prefix&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;temp&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>변수를 활용해 default를 dev Workspace로 지정한다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="k">variable&lt;/span> &lt;span class="s2">&amp;#34;env&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> type&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;string&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> default&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;dev&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>workspace 명을 변수로 지정하여 공통의 모듈에 대입한다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="k">module&lt;/span> &lt;span class="s2">&amp;#34;main_vpc&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> source&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;./custom_vpc&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> env&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">terraform&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">workspace&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>변수를 활용해 workspace에 맞는 리소스 이름을 지정했다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="n">count&lt;/span> &lt;span class="o">=&lt;/span>&lt;span class="n"> var.env&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="s2">&amp;#34;default&amp;#34;&lt;/span> &lt;span class="err">?&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="err">:&lt;/span> &lt;span class="m">0&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Count를 사용하여 특정 Workspace에 리소스를 실행하지 않도록 구현할 수 있다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="k">terraform&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">required_providers&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> aws&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> source&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;hashicorp/aws&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> version&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;~&amp;gt; 5.0&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Configure the AWS Provider
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">provider&lt;/span> &lt;span class="s2">&amp;#34;aws&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> region&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;ap-northeast-2&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create a VPC
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_vpc&amp;#34; &amp;#34;default&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> cidr_block&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;10.0.0.0/16&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> tags&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> Name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;terraform_default_vpc_${var.env}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_subnet&amp;#34; &amp;#34;public_subnet_1&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> vpc_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">aws_vpc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">default&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> cidr_block&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;10.0.0.0/24&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> availability_zone&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">local&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">az_a&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> tags&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> Name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;terraform_public_subnet_1_${var.env}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_nat_gateway&amp;#34; &amp;#34;public_nat&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> connectivity_type&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;public&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> subnet_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">aws_subnet&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">public_subnet_1&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_subnet&amp;#34; &amp;#34;private_subnet_1&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> vpc_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">aws_vpc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">default&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> cidr_block&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;10.0.10.0/24&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> availability_zone&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">local&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">az_a&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> tags&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> Name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;terraform_private_subnet_1_${var.env}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="conclusion">Conclusion
+&lt;/h2>&lt;p>다양한 환경을 하나의 상태 파일로 관리하는 것은 쉽지 않다. 그래서 Terraform은 이러한 문제를 위해 환경에 따른 상태 파일을 보관할 수 있도록 Workspace을 도입하게 되었다. 다만 Workspace을 무조건 서로 다른 환경을 분리할때 사용하는 것이 아니다. &lt;strong>유사하지만 다른 환경에서 인프라를 운용해야 할 때 사용&lt;/strong>해야 한다.&lt;/p>
+&lt;h2 id="reference">Reference
+&lt;/h2>&lt;ul>
+&lt;li>&lt;a class="link" href="https://medium.com/@blaswan/terraform-workspaces-for-deployment-environments-2deff99356f6" target="_blank" rel="noopener"
+>Terraform의 Workspace를 이용해 배포 환경 분리하기&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/state/workspaces" target="_blank" rel="noopener"
+>Terraform Workspaces&lt;/a>&lt;/li>
+&lt;/ul></description></item><item><title>OpsAthlan 2 - 2. Advanced echo server 메트릭 분석</title><link>https://s0okju.github.io/p/opsathlan-2-2/</link><pubDate>Sun, 29 Sep 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/opsathlan-2-2/</guid><description>&lt;h2 id="jvm의-메모리-사용-형태">JVM의 메모리 사용 형태
+&lt;/h2>&lt;p>JVM에는 3가지 메모리 사용 형태가 있습니다.&lt;/p>
+&lt;ul>
+&lt;li>used: JVM이 사용 중인 메모리 양&lt;/li>
+&lt;li>committed: JVM이 시스템에게 요청한 메모리 양&lt;/li>
+&lt;li>max : 실행 중인 환경에서 최대로 할당할 수 있는 메모리 양&lt;/li>
+&lt;/ul>
+&lt;p>메모리 용량은 used &amp;lt;= committed &amp;lt;= max를 따르는데, used 메모리 양이 committed, max 메모리보다 크게 된다면 OOM(Out Of Memory)이 발생&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>하게 됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-2/image.png"
+width="1280"
+height="658"
+srcset="https://s0okju.github.io/p/opsathlan-2-2/image_hu_7eff0a0e3e83f7ce.png 480w, https://s0okju.github.io/p/opsathlan-2-2/image_hu_122e62af3cace43b.png 1024w"
+loading="lazy"
+alt="출처 - https://swmobenz.tistory.com/37"
+class="gallery-image"
+data-flex-grow="194"
+data-flex-basis="466px"
+>&lt;/p>
+&lt;p>그라파나를 확인해보면 3가지의 메모리 형태를 알 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-2/image-1.png"
+width="1132"
+height="298"
+srcset="https://s0okju.github.io/p/opsathlan-2-2/image-1_hu_fbf00331a397b61c.png 480w, https://s0okju.github.io/p/opsathlan-2-2/image-1_hu_339a5807185ccf79.png 1024w"
+loading="lazy"
+alt="그라파나에서 확인한 JVM Memory"
+class="gallery-image"
+data-flex-grow="379"
+data-flex-basis="911px"
+>&lt;/p>
+&lt;h3 id="committed-memory의-역할">Committed Memory의 역할
+&lt;/h3>&lt;blockquote>
+&lt;p>&lt;a class="link" href="https://swmobenz.tistory.com/37" target="_blank" rel="noopener"
+>YGwan님의 블로그: JVM Memory의 3가지 메트릭 지표 - Committed Memory란?&lt;/a>를 읽어보는 것을 추천드립니다.&lt;/p>
+&lt;/blockquote>
+&lt;p>&lt;strong>메모리를 할당하고 해제하는데 필요한 오버헤드를 줄일 수 있다는 특징&lt;/strong>을 가지고 있습니다.&lt;br>
+JVM이 시스템을 통해 미리 메모리를 할당하여 사용 시 가지고 있는 여유 메모리 공간을 활용합니다. 이를 통해 메모리를 즉시 사용할 수 있으며 메모리를 할당하는데 발생하는 오버헤드를 줄일 수 있게 됩니다.&lt;/p>
+&lt;h2 id="advanced-echo-server-jvm-메트릭-특징">Advanced echo server jvm 메트릭 특징
+&lt;/h2>&lt;p>이전 글에서 스프링부트 컨테이너의 메모리가 지속적으로 증가한다고 언급했습니다. 그래서 저는 jvm에 문제가 있을 수 있겠다는 생각이 들어 관련 지표를 확인해보겠습니다.&lt;br>
+처음에 눈여겨 봤던 것은 JVM의 committed 메모리 양이 점진적으로 증가하고 있다는 점이었습니다.&lt;/p>
+&lt;p>😂 사진에서는 잘 보이지 않지만 자세히 보면 1MB씩 상승하고 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-2/image-2.png"
+width="393"
+height="278"
+srcset="https://s0okju.github.io/p/opsathlan-2-2/image-2_hu_18af394033c56b55.png 480w, https://s0okju.github.io/p/opsathlan-2-2/image-2_hu_7d2028e9a7d4acdf.png 1024w"
+loading="lazy"
+alt="JVM 메모리 사용량"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="339px"
+>&lt;/p>
+&lt;p>자세히 알아보기 전에 heap과 non-heap 메모리에 대해 알아봅시다.&lt;/p>
+&lt;ul>
+&lt;li>Java Heap : Instance와 객체가 저장되는 공간으로 모든 Thread에 의해 공유되는 영역&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>&lt;/li>
+&lt;li>Native Area(non-heap) : OS레벨에서 관리하는 영역으로 JVM 크기에 강제되지 않기 때문에 &lt;strong>프로세스가 이용할 수 있는 메모리 자원을 최대한 활용할 수 있습니다.&lt;/strong>&lt;/li>
+&lt;/ul>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-2/image-3.png"
+width="844"
+height="250"
+srcset="https://s0okju.github.io/p/opsathlan-2-2/image-3_hu_3aa78af60af0e37e.png 480w, https://s0okju.github.io/p/opsathlan-2-2/image-3_hu_263681960e80b037.png 1024w"
+loading="lazy"
+alt="출처 : https://www.samsungsds.com/kr/insights/1232761_4627.html"
+class="gallery-image"
+data-flex-grow="337"
+data-flex-basis="810px"
+>&lt;/p>
+&lt;p>다시 돌아와 제가 운영하고 있는 웹 애플리케이션을 확인해 볼까요.&lt;br>
+정말 간단한 EchoController와 프로메테우스 metric 수집을 위한 MetricController가 있습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-java" data-lang="java">&lt;span class="line">&lt;span class="cl">&lt;span class="nd">@RestController&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="kd">public&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kd">class&lt;/span> &lt;span class="nc">EchoController&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">{&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nd">@GetMapping&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;/echo&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="kd">public&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">String&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nf">echo&lt;/span>&lt;span class="p">()&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">{&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="k">return&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s">&amp;#34;Hello, World!&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="p">}&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="p">}&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>웹 애플리케이션이 비교적 단순하기 때문에 Heap 영역의 문제는 아니라고 생각했습니다.&lt;br>
+그래도 JVM Heap를 확인해 보겠습니다. 힙 메모리의 사용량은 매우 적게 사용되었고, 안정적으로 유지되었습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-2/image-4.png"
+width="793"
+height="464"
+srcset="https://s0okju.github.io/p/opsathlan-2-2/image-4_hu_da43a9130de5bae4.png 480w, https://s0okju.github.io/p/opsathlan-2-2/image-4_hu_588eb2d140d0d865.png 1024w"
+loading="lazy"
+alt="JVM Heap Memory 사용량"
+class="gallery-image"
+data-flex-grow="170"
+data-flex-basis="410px"
+>&lt;/p>
+&lt;p>non-heap 영역을 봐봅시다.&lt;br>
+변화폭이 적어서 차이를 모르겠지만 메모리가 사용량이 조금씩 증가하고 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-2/image-5.png"
+width="475"
+height="278"
+srcset="https://s0okju.github.io/p/opsathlan-2-2/image-5_hu_80ffab263e3341fa.png 480w, https://s0okju.github.io/p/opsathlan-2-2/image-5_hu_3d49181a476e3d68.png 1024w"
+loading="lazy"
+alt="JVM Non-Heap Memory 사용량"
+class="gallery-image"
+data-flex-grow="170"
+data-flex-basis="410px"
+>&lt;/p>
+&lt;p>우선 &lt;a class="link" href="https://ko.wikipedia.org/wiki/%ED%94%84%EB%A1%9C%ED%8C%8C%EC%9D%BC%EB%A7%81_%28%EC%BB%B4%ED%93%A8%ED%84%B0_%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%29" target="_blank" rel="noopener"
+>프로파일링&lt;/a>은 무엇을 의미할까요. &lt;a class="link" href="https://hudi.blog/jvm-warm-up/" target="_blank" rel="noopener"
+>hudi.blog: 스프링 애플리케이션 배포 직후 발생하는 Latency의 원인과 이를 해결하기 위한 JVM Warm-up&lt;/a>를 참고하겠습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>JIT 컴파일러&lt;/strong>는 애플리케이션에서 &lt;strong>자주 실행된다고 판단되는 특정 부분만을 기계어로 컴파일&lt;/strong>한다. 이 부분을 &lt;strong>핫스팟(Hotspot)&lt;/strong> 이라고 부른다. JIT 컴파일러는 실행중인 애플리케이션의 동작을 분석하고 코드 실행 횟수, 루프 반복 횟수, 메소드 호출 등의 정보를 측정하고 기록한다. 이를 &lt;strong>프로파일링&lt;/strong>이라고 한다.&lt;br>
+JIT 컴파일러는 프로파일링 결과를 토대로 핫스팟을 식별한다. 핫스팟이 식별되었다면, JIT 컴파일러는 &lt;strong>메소드 단위로 바이트 코드를 기계어로 번역&lt;/strong>한다.
+JIT 컴파일러는 이렇게 번역된 기계어를 &lt;strong>코드 캐시(Code Cache)&lt;/strong> 라는 캐시공간에 저장한다.&lt;/p>
+&lt;p>출처 - &lt;a class="link" href="https://hudi.blog/jvm-warm-up/" target="_blank" rel="noopener"
+>https://hudi.blog/jvm-warm-up/&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>JIT는 전체 코드를 컴파일 하는 것이 아닌 자주 실행되는 부분에만 컴파일하며 이에 대한 데이터를 Code Cache에 저장하게 됩니다.&lt;/p>
+&lt;p>Non Heap과 관련된 지표를 확인해봅시다.&lt;br>
+아래의 세 가지 지표가 미세하게 증가하고 있습니다.&lt;/p>
+&lt;ul>
+&lt;li>Metaspace : JVM이 로드한 메타데이터를 저장&lt;/li>
+&lt;li>CodeHeap : JIT 컴파일러 관련 지표
+&lt;ul>
+&lt;li>profiled nmethods&lt;/li>
+&lt;li>non-profiled nmethods&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-2/image-6.png"
+width="1888"
+height="303"
+srcset="https://s0okju.github.io/p/opsathlan-2-2/image-6_hu_8ea4aaec242958a.png 480w, https://s0okju.github.io/p/opsathlan-2-2/image-6_hu_b5ce4ee5c73aea89.png 1024w"
+loading="lazy"
+alt="JVM Memory Pool(non-heap) 지표"
+class="gallery-image"
+data-flex-grow="623"
+data-flex-basis="1495px"
+>&lt;/p>
+&lt;p>하지만 &lt;strong>장기적인 관점에서 바라봤을때 메모리 낭비일 수 있겠다는 생각&lt;/strong>이 들었습니다.&lt;br>
+특히 Metaspace는 JVM 크기에 강제되지 않기 때문에 프로세스가 사용할 수 있는 메모리 자원을 최대한 활용할 수 있게 됩니다. 그러므로 Metaspace 메모리를 제한하여 운영할 필요가 있습니다.&lt;br>
+이러한 성능 제한은 Metaspace에만 적용되는 것이 아니라 다른 영역에서의 메모리 사이즈 제한이 필요합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-2/image-7.png"
+width="1600"
+height="922"
+srcset="https://s0okju.github.io/p/opsathlan-2-2/image-7_hu_bde5af3f07961ba8.png 480w, https://s0okju.github.io/p/opsathlan-2-2/image-7_hu_62dab2ea9282642c.png 1024w"
+loading="lazy"
+alt="출처 - https://cloud.theodo.com/en/blog/jvm-oom"
+class="gallery-image"
+data-flex-grow="173"
+data-flex-basis="416px"
+>&lt;/p>
+&lt;p>안전하게 애플리케이션을 운영하기 위해서는 각 메모리 영역에 맞는 요구사항을 고려하여 결정하는 것이 바람직합니다.&lt;/p>
+&lt;blockquote>
+&lt;p>Java 어플리케이션은 크게 위의 Heap과 Off-Heap 두 공간을 활용하여 동작하는데, 따라서 어플리케이션을 배포할 때 메모리 몇 GB를 할당해야 하는지 결정하기 위해서는 단순히 Xmx(Heap 메모리 최대치를 결정하는 Java 옵션) 값만 생각하면 OOME에 빠지기 쉽다. 실제로는 &lt;strong>Xmx에 MaxMetaspace값을 더하고, 추가로 프로그램에서 NIO를 사용해 Native Memory를 직접 할당받는 로직을 고려해서 Heap + Native Memory 사용총량으로 할당을 해야 비교적 정확&lt;/strong>하다. 특히 컨테이너의 경우 계산을 좀 더 정확하게 해야 시스템에서 OOM killed되는 상황을 면할 수 있다.&lt;/p>
+&lt;p>출처 - &lt;a class="link" href="https://www.samsungsds.com/kr/insights/1232761_4627.html" target="_blank" rel="noopener"
+>https://www.samsungsds.com/kr/insights/1232761_4627.html&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="정리">정리
+&lt;/h2>&lt;p>실제로 배포해보면서 컨테이너의 지속적인 메모리 사용량이 증가하는 것에 의문점을 가지게 되었습니다. 자바 컨테이너의 메모리 사용은 JVM이 컨트롤할 수 없는 부분이 많아 추적하기 어렵습니다&lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup>.&lt;br>
+그래서 자세히 확인할 수 있는 JVM 위주로 확인하게 되었습니다. non-heap 영역이 미세하게 상승하고 있었고, 이는 정상적인 지표라고 생각했습니다. 그러나 장기적으로는 메모리 낭비가 될 수 있으므로 메모리 사이즈를 제한하여 운영해야 합니다.&lt;/p>
+&lt;h2 id="reference">Reference
+&lt;/h2>&lt;ul>
+&lt;li>&lt;a class="link" href="https://swmobenz.tistory.com/37" target="_blank" rel="noopener"
+>https://swmobenz.tistory.com/37&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://hudi.blog/jvm-warm-up/" target="_blank" rel="noopener"
+>https://hudi.blog/jvm-warm-up/&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://velog.io/@dongvelop/Spring-Boot-%EC%84%9C%EB%B2%84-%EB%AA%A8%EB%8B%88%ED%84%B0%EB%A7%81-%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C%EB%B3%84-%EC%84%A4%EB%AA%85-%EB%B0%8F-%EC%9C%A0%EC%9D%98%EC%82%AC%ED%95%AD#codeheap-non-profiled-nmethods-non-heap" target="_blank" rel="noopener"
+>https://velog.io/@dongvelop/Spring-Boot-%EC%84%9C%EB%B2%84-%EB%AA%A8%EB%8B%88%ED%84%B0%EB%A7%81-%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C%EB%B3%84-%EC%84%A4%EB%AA%85-%EB%B0%8F-%EC%9C%A0%EC%9D%98%EC%82%AC%ED%95%AD#codeheap-non-profiled-nmethods-non-heap&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://www.samsungsds.com/kr/insights/1232761_4627.html" target="_blank" rel="noopener"
+>https://www.samsungsds.com/kr/insights/1232761_4627.html&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://obv-cloud.com/41" target="_blank" rel="noopener"
+>https://obv-cloud.com/41&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://swmobenz.tistory.com/37" target="_blank" rel="noopener"
+>https://swmobenz.tistory.com/37&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a class="link" href="https://12bme.tistory.com/382" target="_blank" rel="noopener"
+>https://12bme.tistory.com/382&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a class="link" href="https://stackoverflow.com/questions/53451103/java-using-much-more-memory-than-heap-size-or-size-correctly-docker-memory-limi" target="_blank" rel="noopener"
+>https://stackoverflow.com/questions/53451103/java-using-much-more-memory-than-heap-size-or-size-correctly-docker-memory-limi&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>OpsAthlan 2 - 1. Advanced echo server 구축</title><link>https://s0okju.github.io/p/opsathlan-2-1/</link><pubDate>Thu, 26 Sep 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/opsathlan-2-1/</guid><description>&lt;h2 id="시나리오">시나리오
+&lt;/h2>&lt;p>&lt;a class="link" href="https://s0okju.github.io/p/opsathlan-1/" target="_blank" rel="noopener"
+>이전글&lt;/a> 을 보니 스프링 애플리케이션 컨테이너에 문제가 생긴 것 같다. spring boot 애플리케이션에 대한 지표를 수집할 수 있도록 환경을 구축해보자.&lt;/p>
+&lt;h3 id="환경">환경
+&lt;/h3>&lt;ul>
+&lt;li>Ubuntu 22.04&lt;/li>
+&lt;li>Openstack 2024.1&lt;/li>
+&lt;/ul>
+&lt;h3 id="전체-구상도">전체 구상도
+&lt;/h3>&lt;p>아래와 같이 구상됩니다. cAdvisor를 설정한 이유는 컨테이너 관련 메트릭을 수집하기 위해 설정했습니다.
+docker-compose를 통해 컨테이너를 배포했습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-1/image.png"
+width="810"
+height="750"
+srcset="https://s0okju.github.io/p/opsathlan-2-1/image_hu_ad21e66785afcdf9.png 480w, https://s0okju.github.io/p/opsathlan-2-1/image_hu_984a11c238db3a47.png 1024w"
+loading="lazy"
+alt="사진 - OpsAthlan 2 구성도"
+class="gallery-image"
+data-flex-grow="108"
+data-flex-basis="259px"
+>&lt;/p>
+&lt;blockquote>
+&lt;p>쿠버네티스는 컨테이너들의 리소스 지표를 제공하기 위해 cAdvisor를 기본적으로 제공합니다.&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="절차">절차
+&lt;/h3>&lt;ol>
+&lt;li>Terraform, Ansible를 활용한 환경 구성&lt;/li>
+&lt;li>프로메테우스를 활용한 지표 수집&lt;/li>
+&lt;li>그라파나 시각화&lt;/li>
+&lt;/ol>
+&lt;h2 id="환경-구성">환경 구성
+&lt;/h2>&lt;p>클라우드 리소스의 구성 자체는 &lt;a class="link" href="https://s0okju.github.io/p/opsathlan-1/" target="_blank" rel="noopener"
+>이전&lt;/a>과 변화하지 않았습니다.&lt;/p>
+&lt;h3 id="docker-compose">docker compose
+&lt;/h3>&lt;p>다만 환경 구성은 변했습니다. 개별 컨테이너로 배포하는 것이 아닌 docker-compose를 통해 관련 컨테이너를 배포했습니다. 그 이유는 컨테이너의 개수가 많아짐에 따라 컨테이너를 큰 묶음으로 관리하기 위해서입니다.&lt;/p>
+&lt;p>총 4개의 컨테이너를 배포하게 됩니다&lt;/p>
+&lt;ul>
+&lt;li>Prometheus&lt;/li>
+&lt;li>Grafana&lt;/li>
+&lt;li>Springboot application&lt;/li>
+&lt;li>cAdvisor&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yml" data-lang="yml">&lt;span class="line">&lt;span class="cl">&lt;span class="c"># docker-compose.yml&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">version&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;3.7&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">services&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="c"># Prometheus service&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">prometheus&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">prom/prometheus:latest&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">container_name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">prometheus&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">volumes&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">ports&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;9090:9090&amp;#34;&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># Expose Prometheus web UI&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">networks&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">monitoring&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="c"># Grafana service&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">grafana&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">grafana/grafana:latest&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">container_name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">grafana&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">ports&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;3000:3000&amp;#34;&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># Expose Grafana web UI&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">networks&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">monitoring&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">depends_on&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">prometheus&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="c"># Spring Boot app service&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">advanced-echo&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">opsathlan-advanced-echo:latest&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">container_name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">opsathlan-advanced-echo&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">ports&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;8080:8080&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">networks&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">monitoring&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="c"># cadvsior config&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">cadvisor&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">container_name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">cadvisor&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">gcr.io/cadvisor/cadvisor:latest&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">ports&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;8081:8080&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">volumes&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;/:/rootfs:ro&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;/var/run:/var/run:ro&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;/sys:/sys:ro&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;/var/lib/docker/:/var/lib/docker:ro&amp;#34;&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># docker container log&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">networks&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">monitoring&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">networks&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">monitoring&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">driver&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">bridge&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="프로메테우스">프로메테우스
+&lt;/h3>&lt;p>프로메테우스가 수집한 메트릭 지표는 springboot container 관련 지표와 컨테이너 관련 지표입니다. 그래서 &lt;code>scrape_configs&lt;/code> target에 관련 컨테이너 URL를 기입하게 됩니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yml" data-lang="yml">&lt;span class="line">&lt;span class="cl">&lt;span class="c"># prometheus.yml&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">global&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">scrape_interval&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">10s&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># How often to scrape targets&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">scrape_configs&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="nt">job_name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;opsathlan-advanced-echo&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">static_configs&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="nt">targets&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s2">&amp;#34;opsathlan-advanced-echo:8080&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;cadvisor:8080&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">labels&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">group&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;test&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="docker-compose를-실행하는-ansible-playbook">docker compose를 실행하는 Ansible playbook
+&lt;/h3>&lt;p>nova에서 docker-compose를 실행시키기 위해서는 &lt;strong>관련 바이너리를 설치&lt;/strong>하고, &lt;strong>필요한 환경 파일을 인스턴스에 복사&lt;/strong>하는 작업이 필요합니다. &lt;a class="link" href="https://github.com/S0okJu/OpsAthlan/tree/sc/2/scenario_02/ansible/docker-compose" target="_blank" rel="noopener"
+>docker-compose 라는 ansible role&lt;/a>를 만들어 스프링 컨테이너 이미지를 빌드하고, docker compose를 실행시키는 테스크를 추가했습니다.&lt;/p>
+&lt;p>개인적으로 작업한 &lt;a class="link" href="https://github.com/S0okJu/OpsAthlan/tree/sc/2/scenario_02/ansible/docker-installation" target="_blank" rel="noopener"
+>도커 설치 ansible-role&lt;/a> 를 확인해보면 docker 설치할때 &lt;code>docker-compose plugin&lt;/code>를 설치하게 됩니다. 그래서 별도의 설치 없이 &lt;code>docker compose&lt;/code> 명령어 만으로도 docker-compose 파일을 실행시킬 수 있게 됩니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yml" data-lang="yml">&lt;span class="line">&lt;span class="cl">- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Update apt cache&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">apt&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">update_cache&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kc">yes&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Install Docker Engine, CLI, containerd, and plugins&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">apt&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">docker-ce&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">docker-ce-cli&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">containerd.io&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">docker-buildx-plugin&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">docker-compose-plugin&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">state&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">present&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>프로메테우스를 실행시키기 위해서는 config 파일을 nova 인스턴스에 직접 저장해야 하는 작업이 필요합니다. &lt;code>docker-compose.yml&lt;/code> 를 다시 확인해보면 local volume이 &lt;code>./prometheus/prometheus.yml&lt;/code> 로 되어 있습니다. 파일 경로는 nova 인스턴스의 파일 경로로 해당 파일 경로에 맞게 설정 파일(prometheus.yml)를 저장해야 합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yml" data-lang="yml">&lt;span class="line">&lt;span class="cl">&lt;span class="c"># docker-compose.yml&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">services&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="c"># Prometheus service&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">prometheus&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">prom/prometheus:latest&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">container_name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">prometheus&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">volumes&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">ports&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;9090:9090&amp;#34;&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># Expose Prometheus web UI&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">networks&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="l">monitoring&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>prometheus의 폴더를 만든 후에 복사하는 작업을 하면 파일이 저장됩니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yml" data-lang="yml">&lt;span class="line">&lt;span class="cl">- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Create Prometheus configuration directory&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">file&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">path&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;/home/ubuntu/prometheus&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">state&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">directory&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">owner&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;ubuntu&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">group&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;ubuntu&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">mode&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;0755&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Copy Prometheus config file&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">copy&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">src&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">./prometheus.yml&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">dest&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">/home/ubuntu/prometheus/prometheus.yml&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">owner&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;ubuntu&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">group&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;ubuntu&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">mode&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;0644&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>docker compose 명령어를 수행하면 docker-compose 파일에 정의된 컨테이너들을 실행시킬 수 있습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yml" data-lang="yml">&lt;span class="line">&lt;span class="cl">- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Copy docker-compose.yml to the target machine&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">copy&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">src&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">./docker-compose.yml&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">dest&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">/home/ubuntu/docker-compose.yml&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># Destination on the target machine&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">owner&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;ubuntu&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">group&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;ubuntu&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">mode&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;0644&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Run docker-compose up to start containers&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">command&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">docker compose up -d&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">args&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">chdir&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">/home/ubuntu/&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">become&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kc">true&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="프로메테우스를-활용한-지표-수집">프로메테우스를 활용한 지표 수집
+&lt;/h2>&lt;p>메트릭 수집, 시각화, 알림, 서비스 디스커버리 기능을 모두 제공하는 오픈 소스 모니터링 시스템입니다. Pull 방식으로 메트릭을 수집하고 시계열 데이터베이스에 저장하는 특징을 가지고 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-1/image-1.png"
+width="1042"
+height="745"
+srcset="https://s0okju.github.io/p/opsathlan-2-1/image-1_hu_41053c1b5000d2e1.png 480w, https://s0okju.github.io/p/opsathlan-2-1/image-1_hu_316dad82b9ca44a2.png 1024w"
+loading="lazy"
+alt="출처 - https://www.geeksforgeeks.org/prometheus-monitoring/"
+class="gallery-image"
+data-flex-grow="139"
+data-flex-basis="335px"
+>&lt;/p>
+&lt;p>pull 방식은 프로메테우스가 필요한 메트릭 지표를 대상 서버로부터 가져온다는 것과 같은 말입니다. 그래서 대상이 되는 서버는 프로메테우스가 메트릭을 받아갈 수 있도록 endpoint를 열어둬야 합니다.&lt;/p>
+&lt;p>보통의 방식이라면 spring boot actuator를 활용하여 &lt;code>/actuator/metrics&lt;/code> 엔드포인트를 여는 방법을 사용할 수 있습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-properties" data-lang="properties">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># application.properties&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">management.endpoints.web.exposure.include&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s">prometheus,metrics&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">management.endpoint.prometheus.enabled&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s">true&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">management.prometheus.metrics.export.enabled&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s">true&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>위와 같은 방식을 사용하게 되면 EOF 오류가 발생해 프로메테우스가 정상적으로 지표를 가져올 수 없었습니다. 그래서 header를 &lt;code>TEXT_PLAIN&lt;/code>으로 지정해주는 controller를 생성했습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-java" data-lang="java">&lt;span class="line">&lt;span class="cl">&lt;span class="kn">import&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nn">io.micrometer.prometheusmetrics.PrometheusMeterRegistry&lt;/span>&lt;span class="p">;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nd">@RestController&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nd">@RequiredArgsConstructor&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="kd">public&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kd">class&lt;/span> &lt;span class="nc">MetricsController&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">{&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="kd">private&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kd">final&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">PrometheusMeterRegistry&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">prometheusMeterRegistry&lt;/span>&lt;span class="p">;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nd">@GetMapping&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;/metrics&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="kd">public&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">ResponseEntity&lt;/span>&lt;span class="o">&amp;lt;&lt;/span>&lt;span class="n">String&lt;/span>&lt;span class="o">&amp;gt;&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nf">metrics&lt;/span>&lt;span class="p">()&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">{&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="n">String&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">scrape&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">prometheusMeterRegistry&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">scrape&lt;/span>&lt;span class="p">();&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="n">HttpHeaders&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">headers&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">new&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">HttpHeaders&lt;/span>&lt;span class="p">();&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="n">headers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">setContentType&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">MediaType&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">TEXT_PLAIN&lt;/span>&lt;span class="p">);&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="k">return&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">new&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">ResponseEntity&lt;/span>&lt;span class="o">&amp;lt;&amp;gt;&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">scrape&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">headers&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">HttpStatus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="na">OK&lt;/span>&lt;span class="p">);&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="p">}&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="p">}&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>springboot actuator
+스프링부트 애플리케이션 모니터링과 관리에 필요한 기능을 제공합니다.&lt;/p>
+&lt;/blockquote>
+&lt;p>9090 포트에 접속해 프로메테우스 web ui를 보면 스프링부트 애플리케이션과 cAdvisor 지표가 정상적으로 통신됨을 알 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-1/image-2.png"
+width="1447"
+height="245"
+srcset="https://s0okju.github.io/p/opsathlan-2-1/image-2_hu_ec8ddf7d8eb4e121.png 480w, https://s0okju.github.io/p/opsathlan-2-1/image-2_hu_2bfc4c1f6f167ed5.png 1024w"
+loading="lazy"
+alt="사진 - 프로메테우스 UI에서 확인한 Target"
+class="gallery-image"
+data-flex-grow="590"
+data-flex-basis="1417px"
+>&lt;/p>
+&lt;h2 id="그라파나를-통한-시각화">그라파나를 통한 시각화
+&lt;/h2>&lt;h3 id="cadvisor-지표-시각화">cAdvisor 지표 시각화
+&lt;/h3>&lt;p>그라파나에서 container의 메모리 사용량을 확인해봅니다. 메모리 단위로 확인하기 위해 1024를 두번 나눴습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>관련 지표는 &lt;a class="link" href="https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md" target="_blank" rel="noopener"
+>cadvisor Github&lt;/a>를 참고하길 바랍니다.&lt;/p>
+&lt;/blockquote>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-promql" data-lang="promql">&lt;span class="line">&lt;span class="cl">&lt;span class="nv">container_memory_usage_bytes&lt;/span>&lt;span class="p">{&lt;/span>&lt;span class="nl">name&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="p">&amp;#34;&lt;/span>&lt;span class="s">instance_name&lt;/span>&lt;span class="p">&amp;#34;}&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="mi">1024&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="mi">1024&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>아래의 그래프를 보면 계속 상승하고 있는 그래프를 확인할 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-1/image-3.png"
+width="1204"
+height="670"
+srcset="https://s0okju.github.io/p/opsathlan-2-1/image-3_hu_f5dd534c3d025bd8.png 480w, https://s0okju.github.io/p/opsathlan-2-1/image-3_hu_de1b884a5834c99d.png 1024w"
+loading="lazy"
+alt="사진 - 컨테이너 메모리 사용량 시각화"
+class="gallery-image"
+data-flex-grow="179"
+data-flex-basis="431px"
+>&lt;/p>
+&lt;h3 id="스프링-애플리케이션-관련-지표-시각화">스프링 애플리케이션 관련 지표 시각화
+&lt;/h3>&lt;p>저는 &lt;a class="link" href="https://grafana.com/grafana/dashboards/4701-jvm-micrometer/" target="_blank" rel="noopener"
+>GrafanaLabs에서 제공해주는 JVM 대시보드&lt;/a>를 사용했습니다. dashboard ip를 설정하면 다양한 그래프를 확인할 수 있습니다.&lt;/p>
+&lt;p>아래의 사진은 일부만 나타낸 것이며 이것 이외에도 다양한 지표가 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-2-1/image-4.png"
+width="794"
+height="270"
+srcset="https://s0okju.github.io/p/opsathlan-2-1/image-4_hu_34f8309885b1faf7.png 480w, https://s0okju.github.io/p/opsathlan-2-1/image-4_hu_475e1ab500e73524.png 1024w"
+loading="lazy"
+alt="사진 - 그라파나에서 확인한 그래프(일부)"
+class="gallery-image"
+data-flex-grow="294"
+data-flex-basis="705px"
+>&lt;/p>
+&lt;h2 id="다음글">다음글
+&lt;/h2>&lt;p>지금까지 모니터링할 수 있는 환경을 구축했습니다. 다음편에는 시각화한 표를 분석해보는 시간을 가지도록 하겠습니다.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://themapisto.tistory.com/44" target="_blank" rel="noopener"
+>https://themapisto.tistory.com/44&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>OpsAthlan 1 - Simple echo server</title><link>https://s0okju.github.io/p/opsathlan-1/</link><pubDate>Thu, 19 Sep 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/opsathlan-1/</guid><description>&lt;h2 id="시나리오">시나리오
+&lt;/h2>&lt;p>Hello World를 반환해주는 springboot 도커 서비스가 있다. 배포해보자!&lt;/p>
+&lt;h2 id="환경">환경
+&lt;/h2>&lt;ul>
+&lt;li>ubuntu 22.04&lt;/li>
+&lt;li>openstack 2024.01&lt;/li>
+&lt;/ul>
+&lt;h2 id="순서">순서
+&lt;/h2>&lt;ol>
+&lt;li>Terraform을 활용한 인프라 구성&lt;/li>
+&lt;li>Ansible를 활용한 환경 구성 및 빌드&lt;/li>
+&lt;li>cAdvisor를 활용한 모니터링&lt;/li>
+&lt;/ol>
+&lt;h3 id="cadvisor를-선택한-이유">cAdvisor를 선택한 이유
+&lt;/h3>&lt;p>cAdvsior는 컨테이너의 Metrix를 모니터링할 수 있는 도구입니다. &lt;strong>기본적인 컨테이너 메트릭 정보를 우선 확인&lt;/strong>하기 위해 선택하게 되었습니다.&lt;/p>
+&lt;h2 id="전체-구성도">전체 구성도
+&lt;/h2>&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-1/image.png"
+width="1110"
+height="750"
+srcset="https://s0okju.github.io/p/opsathlan-1/image_hu_5fa145ba6b0316be.png 480w, https://s0okju.github.io/p/opsathlan-1/image_hu_85b134d47a92c584.png 1024w"
+loading="lazy"
+alt="구성도"
+class="gallery-image"
+data-flex-grow="148"
+data-flex-basis="355px"
+>&lt;/p>
+&lt;h2 id="terraform을-활용한-리소스-배포">Terraform을 활용한 리소스 배포
+&lt;/h2>&lt;p>배포해야 할 것은 아래와 같습니다.&lt;/p>
+&lt;ul>
+&lt;li>Nova Instance&lt;/li>
+&lt;li>Network
+&lt;ul>
+&lt;li>Subnet&lt;/li>
+&lt;li>Router&lt;/li>
+&lt;li>Floating ip&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Security
+&lt;ul>
+&lt;li>Security Group
+&lt;ul>
+&lt;li>ssh, spring web port(8080), cAdvisor(8081)를 위한 rule 생성&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>ssh 통신을 위한 keypair&lt;/li>
+&lt;/ul>
+&lt;h3 id="terraform-code">Terraform code
+&lt;/h3>&lt;p>terraform은 절차 지향적이기 때문에 리소스 작성 순서가 중요합니다.그래서 간단한 nova 인스턴스 배포의 경우 아래와 같은 순서를 따랐습니다.&lt;/p>
+&lt;ol>
+&lt;li>네트워크&lt;/li>
+&lt;li>인스턴스 생성&lt;/li>
+&lt;li>floating ip 할당&lt;/li>
+&lt;/ol>
+&lt;blockquote>
+&lt;p>전체 코드는 &lt;a class="link" href="https://github.com/S0okJu/OpsAthlan/tree/sc/1/scenario_01/terraform" target="_blank" rel="noopener"
+>깃허브&lt;/a>를 참고하길 바랍니다.&lt;/p>
+&lt;/blockquote>
+&lt;p>네트워크를 생성한 이후 subnet를 생성한다. 외부와 통신하기 위해서는 external_network와 서브넷과의 연결이 필요합니다. 그러므로 &lt;code>router&lt;/code>를 생성한 후 &lt;code>router_interface&lt;/code>를 통해 external_network와 서브넷이 연결하게 됩니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-tf" data-lang="tf">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Network 생성
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_network_v2&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;opsathlan_network&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">name&lt;/span> = &lt;span class="s2">&amp;#34;opsathlan-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">scenario_id&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-network&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">admin_state_up&lt;/span> = &lt;span class="kc">true&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">port_security_enabled&lt;/span> = &lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">port_security_enabled&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Subnet 생성
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_subnet_v2&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;opsathlan_subnet&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">name&lt;/span> = &lt;span class="s2">&amp;#34;opsathlan-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">scenario_id&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-subnet&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">network_id&lt;/span> = &lt;span class="nx">openstack_networking_network_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">opsathlan_network&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">cidr&lt;/span> = &lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">subnet_cidr&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">ip_version&lt;/span> = &lt;span class="m">4&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">dns_nameservers&lt;/span> = &lt;span class="p">[&lt;/span>&lt;span class="s2">&amp;#34;8.8.8.8&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s2">&amp;#34;8.8.4.4&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Router 생성
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_router_v2&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;opsathlan_router&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">name&lt;/span> = &lt;span class="s2">&amp;#34;opsathlan-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">scenario_id&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-router&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">admin_state_up&lt;/span> = &lt;span class="kc">true&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">external_network_id&lt;/span> = &lt;span class="nb">data&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">openstack_networking_network_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">ext_network&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Router Interface 생성
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_router_interface_v2&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;router_interface&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">router_id&lt;/span> = &lt;span class="nx">openstack_networking_router_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">opsathlan_router&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">subnet_id&lt;/span> = &lt;span class="nx">openstack_networking_subnet_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">opsathlan_subnet&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="인스턴스-생성">인스턴스 생성
+&lt;/h3>&lt;p>인스턴스에 접근하는데 사용되는 keypair를 생성합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Keypair 생성&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_compute_keypair_v2&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;opsathlan_keypair&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;opsathlan-${var.scenario_id}-keypair&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">public_key&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">file&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">var&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">pubkey_file_path&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Nova 인스턴스의 접근 제어를 관리하는 Security group를 설정합니다. security group rule은 &lt;code>variables.tf&lt;/code> 에서 리스트로 받은 후에 적용할 수 있도록 구성합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Security Group 생성&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_secgroup_v2&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;opsathlan_secgroup&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;opsathlan-${var.scenario_id}-secgroup&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">description&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;OpsAthaln Security Group&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">delete_default_rules&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="bp">false&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Security Group Rule 생성&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_secgroup_rule_v2&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;secgroup_rules&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">count&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">length&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">var&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">allowed_ports&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">direction&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;ingress&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ethertype&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;IPv4&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">protocol&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">lookup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">var&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">allowed_ports&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">count&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">],&lt;/span> &lt;span class="s2">&amp;#34;protocol&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s2">&amp;#34;tcp&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">port_range_min&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">lookup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">var&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">allowed_ports&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">count&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">],&lt;/span> &lt;span class="s2">&amp;#34;port_range_min&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">port_range_max&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">lookup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">var&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">allowed_ports&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">count&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">],&lt;/span> &lt;span class="s2">&amp;#34;port_range_max&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">remote_ip_prefix&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">lookup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">var&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">allowed_ports&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">count&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">],&lt;/span> &lt;span class="s2">&amp;#34;remote_ip_prefix&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s2">&amp;#34;0.0.0.0/0&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">security_group_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">openstack_networking_secgroup_v2&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">opsathlan_secgroup&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;code>variables.tf&lt;/code> 에서는 외부에서 접근할 수 있는 포트를 설정합니다.&lt;/p>
+&lt;ul>
+&lt;li>ssh&lt;/li>
+&lt;li>spring boot application(8080)&lt;/li>
+&lt;li>cAdvisor(8081)&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="o">//&lt;/span> &lt;span class="n">variables&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">tf&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">variable&lt;/span> &lt;span class="s2">&amp;#34;allowed_ports&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">description&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;List of maps defining allowed ports for the security group. Each map should include protocol, port_range_min, port_range_max, and optionally remote_ip_prefix.&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">type&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">list&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">object&lt;/span>&lt;span class="p">({&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">protocol&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">string&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">port_range_min&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">number&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">port_range_max&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">number&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">remote_ip_prefix&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">optional&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">string&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s2">&amp;#34;0.0.0.0/0&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">default&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">protocol&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;tcp&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">port_range_min&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">22&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">port_range_max&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">22&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">protocol&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;tcp&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">port_range_min&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">8080&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">port_range_max&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">8080&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">protocol&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;tcp&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">port_range_min&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">8081&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">port_range_max&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="mi">8081&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="floating-ip-할당-및-설정">Floating ip 할당 및 설정
+&lt;/h3>&lt;p>floating ip를 생성한 후에 nova instance에 붙힙니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 5. Floating IP 생성 및 연결&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_floatingip_v2&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;floating_ip&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">pool&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">data&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">openstack_networking_network_v2&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">ext_network&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 4. Nova Instance 생성&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_compute_instance_v2&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;nova_instance&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;opsathlan-${var.scenario_id}-instance&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">image_name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">image_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">flavor_name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">flavor_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">key_pair&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">openstack_compute_keypair_v2&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">opsathlan_keypair&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">security_groups&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">[&lt;/span>&lt;span class="n">openstack_networking_secgroup_v2&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">opsathlan_secgroup&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">name&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">network&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">uuid&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">openstack_networking_network_v2&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">opsathlan_network&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">depends_on&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">[&lt;/span>&lt;span class="n">openstack_networking_subnet_v2&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">opsathlan_subnet&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_compute_floatingip_associate_v2&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;floating_ip_association&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">floating_ip&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">openstack_networking_floatingip_v2&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">floating_ip&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">address&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">instance_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">openstack_compute_instance_v2&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">nova_instance&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="ansible를-활용한-환경-구성-및-컨테이너-실행">Ansible를 활용한 환경 구성 및 컨테이너 실행
+&lt;/h2>&lt;p>Ansible를 활용하여 &lt;strong>컨테이너 이미지를 빌드하고 실행시킬 수 있는 환경을 구성&lt;/strong>해야 합니다. 그래서 총 4개의 role를 만들었습니다.&lt;/p>
+&lt;ul>
+&lt;li>java 설치&lt;/li>
+&lt;li>docker 설치&lt;/li>
+&lt;li>springboot 이미지 빌드 및 수행&lt;/li>
+&lt;li>cAdvisor 실행&lt;/li>
+&lt;/ul>
+&lt;blockquote>
+&lt;p>🤔 &lt;strong>여담&lt;/strong>&lt;/p>
+&lt;p>Jenkins와 같이 자동화 도구를 사용할 수 있지만 초반에는 불필요하다고 생각했습니다. 배포하고자 하는 애플리케이션의 규모는 현저하게 작았고, 난이도가 있어 잘못하면 예상보다 시간을 많이 할애할 수 있다고 판단했습니다.&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="spring-boot-application-배포">spring boot application 배포
+&lt;/h3>&lt;h4 id="application-소개">application 소개
+&lt;/h4>&lt;p>배포 애플리케이션은 간단하게 hello world만 반환하는 웹 서비스입니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-java" data-lang="java">&lt;span class="line">&lt;span class="cl">&lt;span class="nd">@RestController&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="kd">public&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kd">class&lt;/span> &lt;span class="nc">EchoController&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">{&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nd">@GetMapping&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;/echo&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="kd">public&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">String&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nf">echo&lt;/span>&lt;span class="p">()&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">{&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="k">return&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s">&amp;#34;Hello, World!&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="p">}&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="p">}&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="빌드-및-실행">빌드 및 실행
+&lt;/h4>&lt;p>Ansible를 활용하여 spring boot application 컨테이너를 실행합니다. 이때 컨테이너는 8080 외부 포트로 열어둡니다.&lt;/p>
+&lt;p>&lt;strong>순서&lt;/strong>&lt;/p>
+&lt;ol>
+&lt;li>Repository clone&lt;/li>
+&lt;li>Spring boot application build&lt;/li>
+&lt;li>Container Image build&lt;/li>
+&lt;li>Docker 실행&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yml" data-lang="yml">&lt;span class="line">&lt;span class="cl">&lt;span class="nn">---&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Clone Spring Boot application repository&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">git&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">repo&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;https://github.com/S0okJu/OpsAthlan.git&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">dest&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">/home/ubuntu/app/spring-boot-app&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">version&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">sc/1&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Build Spring Boot application using Gradle&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">command&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">./gradlew clean build&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">args&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">chdir&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">/home/ubuntu/app/spring-boot-app/scenario_01/spring_echo&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">register&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">gradle_build&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">failed_when&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">gradle_build.rc != 0&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Check if JAR file exists&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">stat&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">path&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">/home/ubuntu/app/spring-boot-app/scenario_01/spring_echo/build/libs/&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">register&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">jar_dir&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Fail if JAR file does not exist&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">fail&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">msg&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;JAR file was not built successfully.&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">when&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">jar_dir.stat.exists == False or jar_dir.stat.isdir == False&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Copy Dockerfile for Spring Boot&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">copy&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">src&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Dockerfile&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">dest&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">/home/ubuntu/app/spring-boot-app/scenario_01/spring_echo/Dockerfile&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Build Docker image for Spring Boot application&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">docker_image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">echo-springboot-app&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">tag&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">latest&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">source&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">build&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">build&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">path&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">/home/ubuntu/app/spring-boot-app/scenario_01/spring_echo&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Run Spring Boot container&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">docker_container&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">sc1-springboot-app&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">echo-springboot-app:latest&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">state&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">started&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">ports&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;8080:8080&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>자세한 코드는 &lt;a class="link" href="https://github.com/S0okJu/OpsAthlan/tree/sc/1/scenario_01/ansible" target="_blank" rel="noopener"
+>github&lt;/a> 참고 바랍니다.&lt;/p>
+&lt;h3 id="cadvisor">cAdvisor
+&lt;/h3>&lt;p>cAdvisor는 컨테이너 이미지를 다운받고 컨테이너를 실행할 수 있도록 구성합니다. 컨테이너는 8081로 외부포트를 열어 개발자가 대시보드를 확인할 수 있도록 설정합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yml" data-lang="yml">&lt;span class="line">&lt;span class="cl">&lt;span class="nn">---&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Pull cAdvisor image&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">docker_image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">google/cadvisor:latest&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">source&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">pull&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Run cAdvisor container&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">docker_container&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">cadvisor&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">google/cadvisor:latest&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">state&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">started&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">ports&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;8081:8080&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">volumes&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;/:/rootfs:ro&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;/var/run:/var/run:ro&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;/sys:/sys:ro&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="s2">&amp;#34;/var/lib/docker/:/var/lib/docker:ro&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="컨테이너-지표-모니터링">컨테이너 지표 모니터링
+&lt;/h2>&lt;h3 id="cadvisor-접속">cAdvisor 접속
+&lt;/h3>&lt;p>{floating_ip}:8081에 접속합니다.
+container 창에 들어가 springboot application을 확인합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-1/image-1.png"
+width="1121"
+height="383"
+srcset="https://s0okju.github.io/p/opsathlan-1/image-1_hu_e0d6f86c77e75558.png 480w, https://s0okju.github.io/p/opsathlan-1/image-1_hu_87efe80569411306.png 1024w"
+loading="lazy"
+alt="cAdvisor 접속"
+class="gallery-image"
+data-flex-grow="292"
+data-flex-basis="702px"
+> &lt;img src="https://s0okju.github.io/p/opsathlan-1/image-2.png"
+width="945"
+height="277"
+srcset="https://s0okju.github.io/p/opsathlan-1/image-2_hu_a3ec52c0fe72fa75.png 480w, https://s0okju.github.io/p/opsathlan-1/image-2_hu_6fc748575390485b.png 1024w"
+loading="lazy"
+alt="cAdvisor에서 확인한 컨테이너 목록"
+class="gallery-image"
+data-flex-grow="341"
+data-flex-basis="818px"
+>&lt;/p>
+&lt;p>springboot application에 대한 기본적인 지표를 확인할 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-1/image-3.png"
+width="1096"
+height="389"
+srcset="https://s0okju.github.io/p/opsathlan-1/image-3_hu_69ef7a997f587bc7.png 480w, https://s0okju.github.io/p/opsathlan-1/image-3_hu_51496bad0560d51f.png 1024w"
+loading="lazy"
+alt="cAdvisor에서 확인한 메트릭"
+class="gallery-image"
+data-flex-grow="281"
+data-flex-basis="676px"
+>&lt;/p>
+&lt;h3 id="test">Test
+&lt;/h3>&lt;p>자체적으로 만든 test 도구인 &lt;a class="link" href="https://github.com/S0okJu/GoNetWorker" target="_blank" rel="noopener"
+>gonetworker&lt;/a>를 활용하겠습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>GoNetWorker&lt;/strong>&lt;/p>
+&lt;p>자체적으로 만든 네트워크 테스트 도구입니다. 서버에 request를 연속에서 요청한다는 특징이 있습니다.&lt;/p>
+&lt;/blockquote>
+&lt;p>블로그 작성 기준 GoNetWorker는 동시로 전송하는 기능이 없어 &lt;strong>순차적으로 request를 요청&lt;/strong>합니다. request 요청 이후 무작위로 sleep합니다. 연속적으로 리소스를 사용하지 않을 것이라고 예상할 수 있습니다.&lt;/p>
+&lt;h4 id="network">Network
+&lt;/h4>&lt;p>네트워크 처리율을 보면 처리가 되었다가 0byte로 떨어졌다가 다시 상승합니다. 이는 저희가 사용한 도구인 GoNetWorker의 특징 때문에 발생한 그래프입니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-1/image-4.png"
+width="665"
+height="330"
+srcset="https://s0okju.github.io/p/opsathlan-1/image-4_hu_fd6fbbaa30b660af.png 480w, https://s0okju.github.io/p/opsathlan-1/image-4_hu_7ce75c807bae32b0.png 1024w"
+loading="lazy"
+alt="Springboot application bytes per second"
+class="gallery-image"
+data-flex-grow="201"
+data-flex-basis="483px"
+>&lt;/p>
+&lt;p>그 이외에도 아래와 같은 특징을 알 수 있습니다.&lt;/p>
+&lt;ul>
+&lt;li>평균적으로 1200bytes를 넘어가지 않는다.&lt;/li>
+&lt;/ul>
+&lt;h4 id="memory">Memory
+&lt;/h4>&lt;p>그에 비해 memory는 점진적으로 상승하는 그래프를 보여주고 있습니다. 그래프를 보니 &lt;strong>웹 애플리케이션이 불필요한 메모리 자원을 낭비한다&lt;/strong>고 생각했습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/opsathlan-1/image-5.png"
+width="685"
+height="394"
+srcset="https://s0okju.github.io/p/opsathlan-1/image-5_hu_1e07337cdd1a2258.png 480w, https://s0okju.github.io/p/opsathlan-1/image-5_hu_6369399b43d196dd.png 1024w"
+loading="lazy"
+alt="Springboot application의 메모리 사용량"
+class="gallery-image"
+data-flex-grow="173"
+data-flex-basis="417px"
+>&lt;/p>
+&lt;p>원인을 구체적으로 파악하기 위해서는 springboot에 대한 메트릭이 필요합니다. cAdvisor 만으로는 정교한 메트릭 수집에 한계가 있으므로 프로메테우스를 활용해야 할 것 같습니다.&lt;/p>
+&lt;h2 id="다음편에는-">다음편에는 &amp;hellip;
+&lt;/h2>&lt;p>다음 편에는 프로메테우스를 활용하여 springboot 관련 메트릭스를 수집하고 문제를 해결해 보겠습니다.&lt;/p></description></item><item><title>Terraform - Backend</title><link>https://s0okju.github.io/p/terraform-backend/</link><pubDate>Mon, 29 Jan 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/terraform-backend/</guid><description>&lt;h2 id="backend">backend
+&lt;/h2>&lt;p>Terraform Backend는 Terraform의 state(.tfstate)파일의 저장 공간을 지정하는 설정이다. 기본적으로는 로컬에 저장되지만, 설정에 따라서는 원격 저장소(S3, Terraform Cloud 등)에 저장할 수 있다.&lt;/p>
+&lt;p>Terraform에서 상태 파일은 테러폼 코드와 인프라 객체를 매핑하기 위해 존재한다.&lt;/p>
+&lt;blockquote>
+&lt;p>The primary purpose of Terraform state is to store bindings between objects in a remote system and resource instances declared in your configuration.&lt;/p>
+&lt;p>출처 - &lt;a class="link" href="https://developer.hashicorp.com/terraform/language/state" target="_blank" rel="noopener"
+>Terraform 공식 홈페이지&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>테라폼이 작동되기 전에 &lt;a class="link" href="https://developer.hashicorp.com/terraform/cli/commands/refresh" target="_blank" rel="noopener"
+>refresh&lt;/a>라는 작업을 통해 테라폼 상태 파일을 업데이트한다. 테라폼 코드의 일부 리소스 블록을 삭제하게 된다면, 실제 인프라 객체에 적용(apply)하기 전에 refresh라는 작업을 통해 테라폼 상태 파일이 업데이트 되는 것이다.&lt;/p>
+&lt;blockquote>
+&lt;p>This(refresh) won&amp;rsquo;t modify your real remote objects, but it will modify the &lt;a class="link" href="https://developer.hashicorp.com/terraform/language/state" target="_blank" rel="noopener"
+>Terraform state&lt;/a>.&lt;/p>
+&lt;p>출처 - &lt;a class="link" href="https://developer.hashicorp.com/terraform/cli/commands/refresh" target="_blank" rel="noopener"
+>Terraform 공식 홈페이지&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>상태 파일 내 객체와 인프라 객체와 1:1로 매핑하는 개념이기 때문에, 상태 파일이 유실되거나 일부만 잘못 설정되어도 큰 문제를 야기할 수 있다. 이러한 상황을 대비해 Backup과 Locking은 필수적으로 적용하게 된다.&lt;/p>
+&lt;h3 id="locking">Locking
+&lt;/h3>&lt;p>동시에 상태 파일을 접근하게 되면 충돌이 발생하거나 인프라 설정이 꼬이게 되어 전반적으로 큰 문제가 될 수 있다. Locking을 통해 동시에 접근 상태를 막아 의도치 않는 변경을 예방해야 한다.&lt;/p>
+&lt;h3 id="backup">Backup
+&lt;/h3>&lt;p>상태 파일이 유실되는 경우를 대비해서 Backup을 해야 한다. S3을 사용할때는 versioning을 사용하여 히스토리를 기억한다.&lt;/p>
+&lt;blockquote>
+&lt;p>stack overflow에 &lt;a class="link" href="https://stackoverflow.com/questions/54122890/terraform-fails-because-tfstate-s3-backend-is-lost" target="_blank" rel="noopener"
+>Terraform fails because tfstate (S3 backend) is lost&lt;/a>을 읽어보는 것을 추천합니다.&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="실습-1-s3-backend-만들기">실습 1. S3 Backend 만들기
+&lt;/h2>&lt;p>해당 실습해서는 Locking하는 것을 제외했다.&lt;/p>
+&lt;h3 id="s3-bucket-생성">S3 Bucket 생성
+&lt;/h3>&lt;p>Terraform backend 정보는 apply되면 코드가 순차적으로 실행되면서 S3에 상태 파일 업로드를 시도하게 된다. 만약에 설정하지 않으면 아래와 같은 오류를 받게 된다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-json" data-lang="json">&lt;span class="line">&lt;span class="cl">&lt;span class="err">Error:&lt;/span> &lt;span class="err">creating&lt;/span> &lt;span class="err">S&lt;/span>&lt;span class="mi">3&lt;/span> &lt;span class="err">Bucket&lt;/span> &lt;span class="err">(tf-backend-d&lt;/span>&lt;span class="mi">7&lt;/span>&lt;span class="err">mekz)&lt;/span> &lt;span class="err">ACL:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">operation&lt;/span> &lt;span class="err">error&lt;/span> &lt;span class="err">S&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="err">:&lt;/span> &lt;span class="err">PutBucketAcl,&lt;/span> &lt;span class="err">https&lt;/span> &lt;span class="err">response&lt;/span> &lt;span class="err">error&lt;/span> &lt;span class="err">StatusCode:&lt;/span> &lt;span class="mi">400&lt;/span>&lt;span class="err">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">~&lt;/span> &lt;span class="err">api&lt;/span> &lt;span class="err">error&lt;/span> &lt;span class="err">AccessControlListNotSupported:&lt;/span> &lt;span class="err">The&lt;/span> &lt;span class="err">bucket&lt;/span> &lt;span class="err">does&lt;/span> &lt;span class="err">not&lt;/span> &lt;span class="err">allow&lt;/span> &lt;span class="err">ACLs&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;a class="link" href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket" target="_blank" rel="noopener"
+>aws_s3_bucket&lt;/a>, &lt;a class="link" href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_acl" target="_blank" rel="noopener"
+>aws_s3_bucket_acl&lt;/a>을 활용해 private S3 bucket을 생성한다. 또한 히스토리를 저장하기 위해 S3의 Versioning도 추가했다.&lt;/p>
+&lt;p>공식 홈페이지에서도 Versioning 설정을 적극 권장하고 있다.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>Warning!&lt;/strong> It is highly recommended that you enable &lt;a class="link" href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/manage-versioning-examples.html" target="_blank" rel="noopener"
+>Bucket Versioning&lt;/a> on the S3 bucket to allow for state recovery in the case of accidental deletions and human error.&lt;/p>
+&lt;p>출처 -&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/s3" target="_blank" rel="noopener"
+>Backend Type: s3 | Terraform | HashiCorp Developer&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-json" data-lang="json">&lt;span class="line">&lt;span class="cl">&lt;span class="err">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_s3_bucket&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;tf_backend&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">bucket&lt;/span> &lt;span class="err">=&lt;/span> &lt;span class="nt">&amp;#34;d7_tf_backend&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">tags&lt;/span> &lt;span class="err">=&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">Name&lt;/span> &lt;span class="err">=&lt;/span> &lt;span class="nt">&amp;#34;tf_backend&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_s3_bucket_acl&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;example&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">bucket&lt;/span> &lt;span class="err">=&lt;/span> &lt;span class="err">aws_s3_bucket.tf_backend.id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">acl&lt;/span> &lt;span class="err">=&lt;/span> &lt;span class="nt">&amp;#34;private&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">#&lt;/span> &lt;span class="err">Versioning&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_s3_bucket_versioning&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;versioning_example&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">bucket&lt;/span> &lt;span class="err">=&lt;/span> &lt;span class="err">aws_s3_bucket.tf_backend.id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">versioning_configuration&lt;/span> &lt;span class="err">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">status&lt;/span> &lt;span class="err">=&lt;/span> &lt;span class="nt">&amp;#34;Enabled&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://s0okju.github.io/p/terraform-backend/image.png"
+width="377"
+height="230"
+srcset="https://s0okju.github.io/p/terraform-backend/image_hu_380b4c847ec460f.png 480w, https://s0okju.github.io/p/terraform-backend/image_hu_639a0b0419ca8b9b.png 1024w"
+loading="lazy"
+alt="S3 List"
+class="gallery-image"
+data-flex-grow="163"
+data-flex-basis="393px"
+>&lt;/p>
+&lt;h3 id="backend-설정">Backend 설정
+&lt;/h3>&lt;p>S3 생성 이후 &lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/s3" target="_blank" rel="noopener"
+>Hashicorp의 공식 홈페이지&lt;/a>를 참고하여 backend을 설정하면 된다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="k">terraform&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">required_providers&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> aws&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> source&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;hashicorp/aws&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> version&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;~&amp;gt; 5.0&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">backend&lt;/span> &lt;span class="s2">&amp;#34;s3&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> bucket&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;tf-backend-d7mekz&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> key&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;terraform.tfstate&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> region&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;ap-northeast-2&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>terraform 블록에 수정이 가하면 init를 해줘야 한다. init 후 apply을 실행시키면 아래와 같이 S3에 상태 파일이 저장되었음을 확인할 수 있다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/terraform-backend/image-1.png"
+width="338"
+height="201"
+srcset="https://s0okju.github.io/p/terraform-backend/image-1_hu_11c0d3f3d001f75a.png 480w, https://s0okju.github.io/p/terraform-backend/image-1_hu_18f326a56751352c.png 1024w"
+loading="lazy"
+alt="tfstate"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="403px"
+>&lt;/p>
+&lt;p>Remote Backend을 설정하게 되면 로컬에 있는 상태 파일 내용은 사라지게 된다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/terraform-backend/image-2.png"
+width="332"
+height="117"
+srcset="https://s0okju.github.io/p/terraform-backend/image-2_hu_ae24777a877bce68.png 480w, https://s0okju.github.io/p/terraform-backend/image-2_hu_e35be4c6874d5141.png 1024w"
+loading="lazy"
+alt="Local tfstate 파일"
+class="gallery-image"
+data-flex-grow="283"
+data-flex-basis="681px"
+>&lt;/p>
+&lt;h2 id="reference">Reference
+&lt;/h2>&lt;ul>
+&lt;li>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language/settings/backends/s3" target="_blank" rel="noopener"
+>Backend Type: s3 | Terraform | HashiCorp Developer&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://terraform101.inflearn.devopsart.dev/advanced/backend/" target="_blank" rel="noopener"
+>Backend 활용하기Terraform &amp;amp; AWS 101&lt;/a>&lt;/li>
+&lt;/ul></description></item><item><title>Terraform - 기본 문법 익히기</title><link>https://s0okju.github.io/p/basic-terraform-1/</link><pubDate>Thu, 25 Jan 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/basic-terraform-1/</guid><description>&lt;h2 id="terraform-이란">Terraform 이란
+&lt;/h2>&lt;p>HashiCorp에서 오픈소스로 개발중인, 클라우드 및 온프로미스 인프라를 코드로 관리할 수 있는 코드이다. 인프라 환경 구성 시 선언적 코드형식을 사용하여 리소스를 생성, 수정, 삭제하여 관리가 가능한 laC(Infrastructure as Code) 프로비저닝 도구이다.&lt;/p>
+&lt;h2 id="terraform-작동-방식">Terraform 작동 방식
+&lt;/h2>&lt;p>주로 Write, Plan, Apply 절차로 이뤄진다.&lt;/p>
+&lt;ol>
+&lt;li>Write : Hashicorp에서 자체 개발한 HCL 언어로 스크립트 작성&lt;/li>
+&lt;li>Plan : 상태를 비교하며 변경점을 사용자에게 보여줌&lt;/li>
+&lt;li>Apply : 실행하는 단계, 순차적으로 실행
+&lt;ol>
+&lt;li>의존 관계에 따라 순서를 명시할 수 있다.&lt;/li>
+&lt;/ol>
+&lt;/li>
+&lt;/ol>
+&lt;p>상태 비교를 통해 휴먼 에러를 줄일 수 있다. 그러나 코드의 무게가 무거워지면, 실행하는데 오래걸리는 원인이 될 수 있다. 그 외에도 다양한 단점이 존재할 것이다. 그럼에도 불구하고 생산성 측면, 종속성 그래프 등 장점들이 더 크기 때문에 사용하는 것이다.&lt;/p>
+&lt;blockquote>
+&lt;p>클라우드 컴퓨팅 환경은 참조된 리소스가 처음의 리소스를 참조하는 순환루프 문제를 지니고 있다. 무한한 반복으로 인해 시스템이 빠르게 고갈되고, 성능이 저하된다. Terraform에서는 리소스의 참조 내용을 그래프로 보여주는 Resource Graph를 제공해주는데, 이를 활용해 순환루프 문제를 예방할 수 있다.&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="연습">연습
+&lt;/h2>&lt;blockquote>
+&lt;p>자세한 문법은 &lt;strong>&lt;a class="link" href="https://developer.hashicorp.com/terraform/language" target="_blank" rel="noopener"
+>Terraform Language Documentation&lt;/a>을 참고하길 바란다.&lt;/strong>&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="시나리오">시나리오
+&lt;/h3>&lt;ol>
+&lt;li>AWS를 활용한다.&lt;/li>
+&lt;li>개발, 운영 VPC를 구축한다.
+&lt;ul>
+&lt;li>각 VPC에서 private, public subnet이 존재한다.&lt;/li>
+&lt;li>외부와 통신을 위해 internet gateway와 내부 리소스끼리만 통신할 수 있는 NAT gateway를 설치한다.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;p>&lt;img src="https://s0okju.github.io/p/basic-terraform-1/20240128_aws.png"
+width="361"
+height="331"
+srcset="https://s0okju.github.io/p/basic-terraform-1/20240128_aws_hu_1644083ee8167cb1.png 480w, https://s0okju.github.io/p/basic-terraform-1/20240128_aws_hu_9458ba6fde0152aa.png 1024w"
+loading="lazy"
+alt="출처 - 저자"
+class="gallery-image"
+data-flex-grow="109"
+data-flex-basis="261px"
+>&lt;/p>
+&lt;h3 id="구현">구현
+&lt;/h3>&lt;ol>
+&lt;li>AWS를 활용한다.&lt;/li>
+&lt;/ol>
+&lt;p>&lt;a class="link" href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs" target="_blank" rel="noopener"
+>&lt;strong>Terraform AWS Registry&lt;/strong>&lt;/a>에서 제공해주는 코드를 그대로 사용한다. 나의 경우 region을 &lt;code>ap-northeast-2&lt;/code> 로 설정했다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="k">terraform&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">required_providers&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> aws&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> source&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;hashicorp/aws&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> version&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;~&amp;gt; 5.0&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Configure the AWS Provider
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">provider&lt;/span> &lt;span class="s2">&amp;#34;aws&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> region&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;ap-northeast-2&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol>
+&lt;li>개발 운영 vpc를 구축한다.&lt;/li>
+&lt;/ol>
+&lt;p>vpc 모듈을 별도로 만들어 코드를 재사용했고, env를 변수로 삼아 리소스의 이름에 개발 환경을 명시하도록 했다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="err">//&lt;/span> &lt;span class="k">For&lt;/span> &lt;span class="k">Dev&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">module&lt;/span> &lt;span class="s2">&amp;#34;dev_vpc&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> source&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;./vpc.d&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> env&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;dev&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">//&lt;/span> &lt;span class="k">For&lt;/span> &lt;span class="k">Production&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">module&lt;/span> &lt;span class="s2">&amp;#34;prd_vpc&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> source&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;./vpc.d&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> env&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;prd&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>모듈의 main.tf에는 public, private Subnet 그리고 NAT gateway, Internet gateway를 생성하는 코드를 작성했다.&lt;/p>
+&lt;p>Private Subnet을 구성하기 위해서는 라우팅 테이블이 필요하지만, 임시이므로 Private NAT Gateway만 작성했다. 여기서 &lt;strong>주목해야 할 점은 NAT, Internet Gateway의 경우 Subnet이 우선적으로 만들어져야 실행된다&lt;/strong>.(만약에 그러지 않는다면 오류가 뜬다.) 그러므로 코드를 작성할때 각 리소스의 의존성을 고려해서 작성해야 한다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;span class="lnt">54
+&lt;/span>&lt;span class="lnt">55
+&lt;/span>&lt;span class="lnt">56
+&lt;/span>&lt;span class="lnt">57
+&lt;/span>&lt;span class="lnt">58
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="k">terraform&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">required_providers&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> aws&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> source&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;hashicorp/aws&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> version&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;~&amp;gt; 5.0&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">//&lt;/span> &lt;span class="k">Configure&lt;/span> &lt;span class="k">the&lt;/span> &lt;span class="k">AWS&lt;/span> &lt;span class="k">Provider&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">provider&lt;/span> &lt;span class="s2">&amp;#34;aws&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> region&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;ap-northeast-2&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">//&lt;/span> &lt;span class="k">Create&lt;/span> &lt;span class="k">a&lt;/span> &lt;span class="k">VPC&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_vpc&amp;#34; &amp;#34;default&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> cidr_block&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;10.0.0.0/16&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> tags&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> Name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;terraform_default_vpc_${var.env}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">//&lt;/span> &lt;span class="k">public&lt;/span> &lt;span class="k">subnet&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_subnet&amp;#34; &amp;#34;public_subnet_1&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> vpc_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">aws_vpc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">default&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> cidr_block&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;10.0.0.0/24&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> tags&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> Name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;terraform_public_subnet_1_${var.env}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">//&lt;/span> &lt;span class="k">private&lt;/span> &lt;span class="k">subnet&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_subnet&amp;#34; &amp;#34;private_subnet_1&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> vpc_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">aws_vpc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">default&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> cidr_block&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;10.0.10.0/24&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> tags&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> Name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;terraform_private_subnet_1_${var.env}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">//&lt;/span> &lt;span class="k">private&lt;/span> &lt;span class="k">NAT&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_nat_gateway&amp;#34; &amp;#34;private_nat&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> connectivity_type&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;private&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> subnet_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">aws_subnet&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">private_subnet_1&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> tags&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> Name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;terraform_nat_${var.env}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">//&lt;/span> &lt;span class="k">Internet&lt;/span> &lt;span class="k">gateway&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_internet_gateway&amp;#34; &amp;#34;igw&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> vpc_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">aws_vpc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">default&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> tags&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> Name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;terraform_igw_${var.env}&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="terraform-도입과-관련된-기술-블로그">Terraform 도입과 관련된 기술 블로그
+&lt;/h2>&lt;ul>
+&lt;li>&lt;a class="link" href="https://techblog.woowahan.com/2646/" target="_blank" rel="noopener"
+>좌충우돌 Terraform 입문기, 우아한형제들 기술블로그&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://helloworld.kurly.com/blog/terraform-adventure/" target="_blank" rel="noopener"
+>DevOps팀의 Terraform 모험&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://saramin.github.io/2022-10-21-terraform/" target="_blank" rel="noopener"
+>Terraform IaC 도구를 활용한 AWS 웹콘솔 클릭 노가다 해방기&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>→ 다들 웹콘솔에서의 해방을 외치고 있었다..&lt;/p></description></item></channel></rss>

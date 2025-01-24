@@ -1,0 +1,1695 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>HexaCTF on S0okJu.dev</title><link>https://s0okju.github.io/categories/hexactf/</link><description>Recent content in HexaCTF on S0okJu.dev</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Fri, 24 Jan 2025 00:00:00 +0900</lastBuildDate><atom:link href="https://s0okju.github.io/categories/hexactf/index.xml" rel="self" type="application/rss+xml"/><item><title>HexaCTF 6. Kubebuilder를 활용한 ChallengeDefinition&amp;Challenge Type 구현</title><link>https://s0okju.github.io/p/hexactf-6/</link><pubDate>Fri, 24 Jan 2025 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/hexactf-6/</guid><description>&lt;h2 id="이전-이야기">이전 이야기
+&lt;/h2>&lt;p>이전 글에는 ChallengeDefinition, Challenge 개념을 정의하고 설계하는 과정을 설명했습니다.&lt;/p>
+&lt;p>이제부터 ChallengeDefinition과 Challenge의 속성은 무엇인지 코드와 함께 소개하겠습니다.&lt;/p>
+&lt;h2 id="challengedefinitionchallenge-구성">ChallengeDefinition&amp;amp;Challenge 구성
+&lt;/h2>&lt;p>HexaCTF는 두 개의 쿠버네티스 CR로 구성되어 있습니다.&lt;/p>
+&lt;ul>
+&lt;li>ChallengeDefinition : 문제 상세 정보를 나타내며 챌린지 정보, 구성 리소스를 컴포넌트 단위로 정의한다.&lt;/li>
+&lt;li>Challenge : 사용자(문제 풀이자)가 생성하는 문제의 단위로 참조된 ChallengeDefinition을 기반으로 리소스를 생성하고 삭제한다.&lt;/li>
+&lt;/ul>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-6/image.png"
+width="862"
+height="492"
+srcset="https://s0okju.github.io/p/hexactf-6/image_hu_8aa7f99b6fd840b5.png 480w, https://s0okju.github.io/p/hexactf-6/image_hu_dc443c05dda744a.png 1024w"
+loading="lazy"
+alt="ChallengeDefinition&amp;Challenge 구성도"
+class="gallery-image"
+data-flex-grow="175"
+data-flex-basis="420px"
+>&lt;/p>
+&lt;p>이제부터 각각의 리소스가 어떤 구성요소를 가지고 있는지 설명하겠습니다.&lt;/p>
+&lt;h3 id="challenge">Challenge
+&lt;/h3>&lt;p>Flask 서버는 Challenge 생성 요청을 통해 사용자 이름(username)과 문제 번호(challenge_id) 얻게 됩니다. 그리고 파이썬 쿠버네티스 라이브러리를 활용하여 Challenge CR을 실행시키게 됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-6/image-1.png"
+width="579"
+height="252"
+srcset="https://s0okju.github.io/p/hexactf-6/image-1_hu_c3470e8cff99fcc3.png 480w, https://s0okju.github.io/p/hexactf-6/image-1_hu_fd596b7f452226ef.png 1024w"
+loading="lazy"
+alt="대략적인 시스템 구성도"
+class="gallery-image"
+data-flex-grow="229"
+data-flex-basis="551px"
+>&lt;/p>
+&lt;p>요구사항을 정의하자면 &lt;strong>두 개의 정보 만으로도 Challenge를 생성할 수 있어야 하며 모든 문제가 실행 가능하도록 일관된 구조를 가지고 있어야 합니다.&lt;/strong> 그래야 서버가 파일을 불러오는 형식이 아닌 Kubernetes API에 CR 생성을 요청할 수 있게 됩니다.&lt;/p>
+&lt;h4 id="파일을-불러오는-방식">파일을 불러오는 방식
+&lt;/h4>&lt;p>Challenge의 구조가 문제 유형마다 다르면 Challenge CR 파일을 별도로 저장해서 호출해야 합니다. 파일이 아니더라도 어떻게 다른지를 저장해야 할 것입니다.&lt;/p>
+&lt;h3 id="구조">구조
+&lt;/h3>&lt;h4 id="metadata">Metadata
+&lt;/h4>&lt;ul>
+&lt;li>name : 챌린지 이름&lt;/li>
+&lt;li>namespace : Challenge를 실행시킬 namespace&lt;/li>
+&lt;li>labels
+&lt;ul>
+&lt;li>username : 사용자 이름&lt;/li>
+&lt;li>challenge_id : Challenge id&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;h4 id="spec">Spec
+&lt;/h4>&lt;ul>
+&lt;li>definition : ChallengeDefinition 이름&lt;/li>
+&lt;/ul>
+&lt;p>Metadata는 go map 형식으로 이뤄져 있습니다. 그러므로 손쉽게 key를 통해서 값을 가져올 수 있게 됩니다.
+직접 구조체로 명시해야 하는 부분은 바로 &lt;code>Spec&lt;/code> 입니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">type&lt;/span> &lt;span class="nx">ChallengeSpec&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Definition: ChallengeDefinition 이름&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Definition&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="s">`json:&amp;#34;definition&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Kubebuilder의 명령어를 통해 코드를 CRD로 변환시킨 후 설치하는 작업을 수행합니다. (&lt;a class="link" href="https://book.kubebuilder.io/quick-start" target="_blank" rel="noopener"
+>Kubebuilder 공식문서 Quickstart&lt;/a>) 모든 작업이 끝나면 아래의 yaml 파일을 통해 Challenge를 생성할 수 있게 됩니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">apiVersion&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">apps.hexactf.io/v1alpha1&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">kind&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Challenge&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">metadata&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">ubuntu-instance-1&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">namespace&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">default&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">labels&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">apps.hexactf.io/challengeId&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;1&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">apps.hexactf.io/user&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;test&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">spec&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="c"># 사용할 ChallengeDefinition의 이름&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">definition&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">ubuntu-basic&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>주된 목표는 서버가 &lt;strong>사용자의 Challenge&lt;/strong>를 만드는 것입니다. 다시 말해 서버가 사용자 정보가 담긴 yaml 파일을 선언하고 실행시켜야 한다는 의미와 같습니다.&lt;/p>
+&lt;p>사전에 문제 등록 과정이 있기에 사용자, Challenge에 대한 기본 정보는 저장되어 있습니다.
+이후에 설명하겠지만 definition는 ChallengeDefinition의 이름으로 Challenge의 이름(제목)에 해당됩니다. 다른 말로 &lt;strong>Challenge id만으로도 definition을 알 수 있어 최소한의 정보로 Challenge를 생성할 수 있게 됩니다.&lt;/strong>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-python" data-lang="python">&lt;span class="line">&lt;span class="cl"> &lt;span class="n">user_challenge_repo&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">UserChallengesRepository&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># Challenge definition 조회&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">challenge_definition&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">ChallengeRepository&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">get_challenge_name&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">challenge_id&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="ow">not&lt;/span> &lt;span class="n">challenge_definition&lt;/span>&lt;span class="p">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">raise&lt;/span> &lt;span class="n">ChallengeNotFound&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">error_msg&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="sa">f&lt;/span>&lt;span class="s2">&amp;#34;Challenge definition not found for ID: &lt;/span>&lt;span class="si">{&lt;/span>&lt;span class="n">challenge_id&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># Challenge name 생성 및 검증&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">challenge_name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="sa">f&lt;/span>&lt;span class="s2">&amp;#34;challenge-&lt;/span>&lt;span class="si">{&lt;/span>&lt;span class="n">challenge_id&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-&lt;/span>&lt;span class="si">{&lt;/span>&lt;span class="n">username&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="ow">not&lt;/span> &lt;span class="bp">self&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">_is_valid_k8s_name&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">challenge_name&lt;/span>&lt;span class="p">):&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">raise&lt;/span> &lt;span class="n">UserChallengeCreationError&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">error_msg&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="sa">f&lt;/span>&lt;span class="s2">&amp;#34;Invalid challenge name: &lt;/span>&lt;span class="si">{&lt;/span>&lt;span class="n">challenge_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># ...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># Challenge manifest 생성&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">challenge_manifest&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;apiVersion&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s2">&amp;#34;apps.hexactf.io/v1alpha1&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;kind&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s2">&amp;#34;Challenge&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;metadata&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">challenge_name&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;labels&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;apps.hexactf.io/challengeId&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nb">str&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">challenge_id&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;apps.hexactf.io/user&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">username&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;spec&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;namespace&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">namespace&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;definition&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">challenge_definition&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">challenge&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="bp">self&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">custom_api&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">create_namespaced_custom_object&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">group&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;apps.hexactf.io&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">version&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;v1alpha1&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">namespace&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="n">namespace&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">plural&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;challenges&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">body&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="n">challenge_manifest&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="challengedefinition">ChallengeDefinition
+&lt;/h2>&lt;p>ChallengeDefinition은 Challenge의 &lt;strong>인프라 구성을 기술하는 부분&lt;/strong>입니다. &amp;ldquo;어떤 이미지를 컨테이너로 만들어서 어떻게 네트워크를 구성할건데?&amp;rdquo; 를 명시하는 구간입니다.&lt;/p>
+&lt;h3 id="구조-1">구조
+&lt;/h3>&lt;h5 id="metadata-1">Metadata
+&lt;/h5>&lt;ul>
+&lt;li>name: 챌린지 이름(제목)&lt;/li>
+&lt;/ul>
+&lt;h5 id="spec-1">Spec
+&lt;/h5>&lt;ul>
+&lt;li>isOne : 영속성 여부입니다. 값이 True인 경우 1:1 문제 유형으로 30분 후에 삭제되어야 합니다.&lt;/li>
+&lt;li>component : 쿠버네티스 리소스인 Deployment &amp;amp; Service를 하나의 Component로 정의합니다.&lt;/li>
+&lt;/ul>
+&lt;p>Component 내에 있는 Deployment, Service는 기존의 yaml 선언 형식과 동일합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">apiVersion&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">apps.hexactf.io/v1alpha1&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">kind&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">ChallengeDefinition&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">metadata&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">web-basic&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">namespace&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">default&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">spec&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">isOne&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="kc">false&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">components&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">web&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">deployment&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">spec&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">replicas&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">template&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">spec&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">containers&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">nginx&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">image&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">nginx:1.25&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">ports&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="nt">containerPort&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="m">80&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="l">....&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">service&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">spec&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">ports&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>- &lt;span class="nt">name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">http&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">port&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="m">80&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">targetPort&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="m">80&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">protocol&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">TCP&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">type&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">NodePort&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="challengedefinition은-deployment의-모든-필드를-지원하는-것이-아니다">ChallengeDefinition은 Deployment의 모든 필드를 지원하는 것이 아니다.
+&lt;/h4>&lt;p>앞서 Component 내에 있는 Deployment는 기존의 yaml 선언 형식과 동일하다고 말씀을 드렸지만 일부는 지원하지 않습니다.&lt;/p>
+&lt;p>Kubebuilder를 활용하여 코드를 제작할때 라이브러리를 통해 쿠버네티스의 리소스를 활용합니다.
+Service를 예로 들면 yaml에 정의된 필드가 구조체 형식으로 선언되어 있습니다. 쿠버네티스의 리소스는 라이브러리의 구조체를 활용하는 것이라고 보면 됩니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">type&lt;/span> &lt;span class="nx">Service&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">metav1&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">TypeMeta&lt;/span> &lt;span class="s">`json:&amp;#34;,inline&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Standard object&amp;#39;s metadata.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// +optional&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">metav1&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">ObjectMeta&lt;/span> &lt;span class="s">`json:&amp;#34;metadata,omitempty&amp;#34; protobuf:&amp;#34;bytes,1,opt,name=metadata&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Spec defines the behavior of a service.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// +optional&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Spec&lt;/span> &lt;span class="nx">ServiceSpec&lt;/span> &lt;span class="s">`json:&amp;#34;spec,omitempty&amp;#34; protobuf:&amp;#34;bytes,2,opt,name=spec&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Most recently observed status of the service.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Populated by the system.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Read-only.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// +optional&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Status&lt;/span> &lt;span class="nx">ServiceStatus&lt;/span> &lt;span class="s">`json:&amp;#34;status,omitempty&amp;#34; protobuf:&amp;#34;bytes,3,opt,name=status&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>라이브러리를 적절하게 사용하여 Component의 Deployment, Service를 선언합니다.
+이번 프로젝트의 경우 Service는 라이브러리에서 제공하는 구조체를 모두 사용했지만 Deployment는 필요한 부분만 추출해서 선언했습니다.
+라이브러리에서 제공하는 Deployment를 사용하면 &lt;strong>Deployment의 수많은 옵션이 포함된 구조체를 Copy하는 과정에서 용량이 초과되어 CRD 생성에 실패하게 됩니다.&lt;/strong>&lt;/p>
+&lt;p>ChallengeDefinition의 Deployment에서는 컨테이너 구성 부분인 Containers와 Replicas만으로 구성했습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="line">&lt;span class="cl">&lt;span class="kn">import&lt;/span> &lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">corev1&lt;/span> &lt;span class="s">&amp;#34;k8s.io/api/core/v1&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">metav1&lt;/span> &lt;span class="s">&amp;#34;k8s.io/apimachinery/pkg/apis/meta/v1&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// ChallengeDefinitionSpec defines the desired state of ChallengeDefinition.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">type&lt;/span> &lt;span class="nx">ChallengeDefinitionSpec&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Important: Run &amp;#34;make&amp;#34; to regenerate code after modifying this file&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// IsOne: 하나만 생성할 경우&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// False일 경우 일정 시간 내에서만 작동된다.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">IsOne&lt;/span> &lt;span class="kt">bool&lt;/span> &lt;span class="s">`json:&amp;#34;isOne,omitempty&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Components: Challenge를 구성하는 컴포넌트들&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Components&lt;/span> &lt;span class="p">[]&lt;/span>&lt;span class="nx">Component&lt;/span> &lt;span class="s">`json:&amp;#34;components,omitempty&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// Component 는 이름과 리소스를 정의&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">type&lt;/span> &lt;span class="nx">Component&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Name&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="s">`json:&amp;#34;name,omitempty&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Deployment&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">CustomDeployment&lt;/span> &lt;span class="s">`json:&amp;#34;deployment,omitempty&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Service&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">corev1&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Service&lt;/span> &lt;span class="s">`json:&amp;#34;service,omitempty&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// Deployment 관련 구조체&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// CustomDeploymentSpec 는 Replicas와 Template을 정의&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 자세한 내용은 Kubernetes Deployment API 문서 참고&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// https://kubernetes.io/docs/concepts/workloads/controllers/deployment/&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">type&lt;/span> &lt;span class="nx">CustomDeployment&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Spec&lt;/span> &lt;span class="nx">CustomDeploymentSpec&lt;/span> &lt;span class="s">`json:&amp;#34;spec,omitempty&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">type&lt;/span> &lt;span class="nx">CustomDeploymentSpec&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Replicas&lt;/span> &lt;span class="kt">int32&lt;/span> &lt;span class="s">`json:&amp;#34;replicas,omitempty&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Template&lt;/span> &lt;span class="nx">CustomPodTemplateSpec&lt;/span> &lt;span class="s">`json:&amp;#34;template,omitempty&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">type&lt;/span> &lt;span class="nx">CustomPodTemplateSpec&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Spec&lt;/span> &lt;span class="nx">CustomPodSpec&lt;/span> &lt;span class="s">`json:&amp;#34;spec,omitempty&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">type&lt;/span> &lt;span class="nx">CustomPodSpec&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Containers&lt;/span> &lt;span class="p">[]&lt;/span>&lt;span class="nx">corev1&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Container&lt;/span> &lt;span class="s">`json:&amp;#34;containers,omitempty&amp;#34;`&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="component-구성-이유">Component 구성 이유
+&lt;/h4>&lt;p>이전 글에서 언급한 SQL Injection 사례 기억나시나요? 문제를 배포하기 위해서는 server- db가 필요하다고 말씀드렸습니다.&lt;/p>
+&lt;p>문제를 실행시키기 위해서는 server는 db가 어디에 있는지 알아야 합니다.
+어떤 문제를 사용하면서 사용자가 누구인지 알았지만 어떤 서비스인지 알 수 있는 방법이 있을까요? 단순히 Deployment, Service를 나열하는 구조라고 했을때 애플리케이션의 특징에 맞는 prefix를 추가하면 됩니다. 그러나 일관성이 떨어질 수 있다고 생각하여 Component 단위로 Deployment, Service를 묶게 되었습니다.&lt;/p>
+&lt;h4 id="component-내-label-selector">Component 내 Label Selector
+&lt;/h4>&lt;p>쿠버네티스에서 label은 중요한 역할을 합니다. 리소스 간 연결해주는 다리 역할을 합니다.&lt;/p>
+&lt;p>기본적으로 쿠버네티스는 Deployment의 네트워크를 정의하기 위해서는 label selector를 통해 Service와 연결합니다. 그렇다면 ChallengeDefinition을 정의할때 label을 사용자가 지정해야 할까요?&lt;/p>
+&lt;p>답은 &lt;strong>Operator가 자동으로 지정해줍니다.&lt;/strong>&lt;/p>
+&lt;p>리소스의 이름에 대해 이야기를 해보겠습니다.
+Challenge을 통해 생성된 리소스는 Challenge의 challenge_id, user 정보와 ChallengeDefinition에서 얻은 Component 이름을 조합한 고유한 prefix를 가지고 있습니다. 역할에 따라 deploy, svc를 추가로 붙여서 리소스의 이름을 정하게 됩니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// ChallengeIdentifier&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 도메인에 맞는 식별자를 생성해주는 구조체&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">type&lt;/span> &lt;span class="nx">ChallengeIdentifier&lt;/span> &lt;span class="kd">struct&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">prefix&lt;/span> &lt;span class="kt">string&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">labels&lt;/span> &lt;span class="kd">map&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="kt">string&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">func&lt;/span> &lt;span class="nf">NewChallengeIdentifier&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">challenge&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">hexactfproj&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Challenge&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">component&lt;/span> &lt;span class="nx">hexactfproj&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Component&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">ChallengeIdentifier&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// prefix 생성 (리소스 이름에 사용)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">prefix&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">fmt&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Sprintf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;chall-%s-%s-%s&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">challenge&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Labels&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;apps.hexactf.io/challengeId&amp;#34;&lt;/span>&lt;span class="p">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">component&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Name&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">challenge&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Labels&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;apps.hexactf.io/user&amp;#34;&lt;/span>&lt;span class="p">])&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 단일 레이블 맵 사용&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">labels&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="kd">map&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;apps.hexactf.io/instance&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">prefix&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;apps.hexactf.io/name&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">component&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Name&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;apps.hexactf.io/part-of&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">challenge&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Name&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;apps.hexactf.io/managed-by&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s">&amp;#34;challenge-operator&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="o">&amp;amp;&lt;/span>&lt;span class="nx">ChallengeIdentifier&lt;/span>&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">prefix&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">prefix&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">labels&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">labels&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="err">#&lt;/span> &lt;span class="o">...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">func&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">c&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">ChallengeIdentifier&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="nf">GetDeploymentPrefix&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nx">c&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">prefix&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="s">&amp;#34;-deploy&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">func&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="nx">c&lt;/span> &lt;span class="o">*&lt;/span>&lt;span class="nx">ChallengeIdentifier&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="nf">GetServicePrefix&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nx">c&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">prefix&lt;/span> &lt;span class="o">+&lt;/span> &lt;span class="s">&amp;#34;-svc&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>또한 Challenge로부터 생성된 Deployment 리소스는 아래와 같은 레이블을 추가로 가지게 됩니다. 그 중 &lt;code>apps.hexactf.io/instance&lt;/code> Service의 &lt;code>selector&lt;/code> 로 선언하여 서로 연결해줍니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">prefix&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">fmt&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Sprintf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;chall-%s-%s-%s&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">challenge&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Labels&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;apps.hexactf.io/challengeId&amp;#34;&lt;/span>&lt;span class="p">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">component&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Name&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">challenge&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Labels&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;apps.hexactf.io/user&amp;#34;&lt;/span>&lt;span class="p">])&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 단일 레이블 맵 사용&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">labels&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="kd">map&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;apps.hexactf.io/instance&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">prefix&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;apps.hexactf.io/name&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">component&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Name&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;apps.hexactf.io/part-of&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">challenge&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Name&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;apps.hexactf.io/managed-by&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s">&amp;#34;challenge-operator&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="컴포넌트-간-통신은-어떻게해요">컴포넌트 간 통신은 어떻게해요?
+&lt;/h4>&lt;p>SQL Injection 문제를 다시 생각해보겠습니다. Server는 데이터베이스와 통신하기 위해서 데이터베이스의 host 주소를 지정해줘야 합니다. host 주소를 어떻게 알 수 있을까요?&lt;/p>
+&lt;ol>
+&lt;li>자동으로 찾아준다. : 🥹&lt;/li>
+&lt;li>직접 지정해준다. : IaC 도구처럼 서비스 이름을 지정해준다. 가변 인자를 삽입할 수 있는 로직을 구현해야 한다.&lt;/li>
+&lt;li>localhost로 설정한다. : 일관된 host를 가질 수 있다.&lt;/li>
+&lt;/ol>
+&lt;p>이걸 다르게 해석할 수 있습니다.&lt;/p>
+&lt;ol>
+&lt;li>자동으로 찾아준다. : 🥹&lt;/li>
+&lt;li>직접 지정해준다. : 다른 컴포넌트의 Service를 지정할 수 있기 때문에 컴포넌트 간 통신이 가능합니다.&lt;/li>
+&lt;li>localhost로 설정한다. : 컴포넌트 간 통신이 불가능합니다. Pod 내 여러개의 컨테이너를 배포합니다.&lt;/li>
+&lt;/ol>
+&lt;p>3번인 &lt;strong>Pod 내에 다양한 컨테이너를 삽입하는 방향을 선택&lt;/strong>했습니다.
+서비스를 지원하려면 ChallengeDefinition 구조를 크게 바꿔야 합니다. 시간 여유도 없지만 기술적으로 부담이 됩니다. 또한 2개 이상의 컴포넌트를 제공하는 경우는 드물고 대부분 제한 시간 후에 삭제되는 유형(1:1)입니다. 현재로서 급한 기능은 아니기 때문에 제외했습니다.&lt;/p>
+&lt;h2 id="다음-이야기">다음 이야기
+&lt;/h2>&lt;p>이번 글에서는 ChallengeDefinition과 Challenge type에 대한 구성 요소와 관련 코드를 보여드렸습니다.
+이제부터 Operator 구현 시작이라고 생각합니다. &amp;ldquo;CR을 어떻게 상태 관리할래?&amp;ldquo;를 구현한 controller를 제작해야 합니다.
+다음 글에는 controller 구현 부분인 &amp;ldquo;상태 관리 파트&amp;quot;로 찾아오겠습니다.&lt;/p></description></item><item><title>HexaCTF 5. Kubernetes CR를 활용한 Challenge 설계</title><link>https://s0okju.github.io/p/hexactf-5/</link><pubDate>Sat, 18 Jan 2025 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/hexactf-5/</guid><description>&lt;h2 id="이전-이야기">이전 이야기
+&lt;/h2>&lt;p>이전글에서는 문제 컨테이너(Challenge)의 특징과 그에 따른 요구사항을 정의했습니다.&lt;/p>
+&lt;ol>
+&lt;li>컨테이너 상태를 지속적으로 확인할 수 있어야 함&lt;/li>
+&lt;li>다양한 컨테이너를 하나의 구조로 직접 정의하고 관리할 수 있어야 함&lt;/li>
+&lt;/ol>
+&lt;p>Docker로 위의 기능을 구현하는 것은 기술적인 한계가 있으므로 Kubernetes를 선택했다고 말씀드렸습니다. Kubernetes를 통해 어떻게 CTF를 제작했는지 작성하겠습니다.&lt;/p>
+&lt;h2 id="kubernetes를-선택한-이유">Kubernetes를 선택한 이유
+&lt;/h2>&lt;p>글 초반에 두 가지의 요구사항은 충족되어야 한다고 말씀 드렸습니다. 쿠버네티스를 사용하면 요구사항을 충족할 수 있습니다.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>컨테이너 상태를 지속적으로 확인할 수 있어야 함
+쿠버네티스는 기본적으로 리소스의 상태를 주기적으로 확인하며 오류 발생시 재시작을 수행하는 특징을 가지고 있습니다. 별도의 구현 없이 지속적으로 컨테이너 상태를 확인하는 기능을 활용할 수 있습니다.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>다양한 컨테이너를 하나의 구조로 직접 정의하고 관리할 수 있어야 함&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-5/image.png"
+width="1920"
+height="1080"
+srcset="https://s0okju.github.io/p/hexactf-5/image_hu_f66ec269c2b8996f.png 480w, https://s0okju.github.io/p/hexactf-5/image_hu_9fa085d9a7445b35.png 1024w"
+loading="lazy"
+alt="출처 - https://www.cncf.io/blog/2022/06/15/kubernetes-operators-what-are-they-some-examples/"
+class="gallery-image"
+data-flex-grow="177"
+data-flex-basis="426px"
+>&lt;/p>
+&lt;blockquote>
+&lt;p>NOTICE!
+물론 쿠버네티스가 쉽다는 것은 아닙니다. 현재로서 위의 요구사항을 직접 구현한 것보다는 쿠버네티스를 활용하는 것이 현실적으로 가능한 방법이라고 생각했습니다.&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="challenge-개념-재정의">Challenge 개념 재정의
+&lt;/h2>&lt;p>기술적인 이야기를 말하기 앞서 도메인 정의가 필요합니다.&lt;/p>
+&lt;h3 id="ctf-사용자-분류">CTF 사용자 분류
+&lt;/h3>&lt;ul>
+&lt;li>대회 운영자
+&lt;ul>
+&lt;li>CTF 대회 사이트를 운영하는 사람&lt;/li>
+&lt;li>문제 발생 시 즉시 해결해야 함&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>문제 출제자
+&lt;ul>
+&lt;li>문제 파일을 제작 후 운영자에게 제공&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>대회 참가자
+&lt;ul>
+&lt;li>CTF 사이트에서 제공한 문제를 해결&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;p>대회 운영 방식마다 각 역할이 하는 범위는 달라질 것입니다. 그러나 저희 프로젝트에서는 문제 등록과 리소스 관리를 대회 운영자가 하기로 결정했습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-5/image-1.png"
+width="1006"
+height="507"
+srcset="https://s0okju.github.io/p/hexactf-5/image-1_hu_995a9d39471bf59b.png 480w, https://s0okju.github.io/p/hexactf-5/image-1_hu_8c6e4b2059596945.png 1024w"
+loading="lazy"
+alt="역할에 따른 Challenge 구성도"
+class="gallery-image"
+data-flex-grow="198"
+data-flex-basis="476px"
+>&lt;/p>
+&lt;h3 id="개념-정의">개념 정의
+&lt;/h3>&lt;p>쿠버네티스를 적용하기 이전에 개념을 다시 정리해봅시다.&lt;/p>
+&lt;p>사전에 등록한 문제를 사용자가 실행시키기 위해서는 어떻게 해야할까요?&lt;br>
+등록하는 &lt;strong>사람은 문제(Challenge) 컨테이너에 대한 구성을 정의하고 사용자는 그 정의한 내용을 그대로 실행시키는 것입니다.&lt;/strong> 생성된 문제들은 사용자 정보를 기준으로 식별되어야 합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-5/image-2.png"
+width="664"
+height="315"
+srcset="https://s0okju.github.io/p/hexactf-5/image-2_hu_3ab6201f1884f269.png 480w, https://s0okju.github.io/p/hexactf-5/image-2_hu_71bdb1956457a80c.png 1024w"
+loading="lazy"
+alt="Challenge 생성 특징"
+class="gallery-image"
+data-flex-grow="210"
+data-flex-basis="505px"
+>&lt;/p>
+&lt;p>그렇다면 문제를 생성하기 위해서는 최종적으로 두 가지가 필요하게 됩니다.&lt;/p>
+&lt;ul>
+&lt;li>문제 정의서(ChallengeDefinition)&lt;/li>
+&lt;li>사용자의 정보가 포함된 문제(Challenge)&lt;/li>
+&lt;/ul>
+&lt;p>이제부터 문제 정의서와 사용자가 풀어야 하는 문제를 ChallengeDefinition과 Challenge라고 부르겠습니다.&lt;/p>
+&lt;h2 id="cr로-challengedefinition과-challenge-정의하기">CR로 ChallengeDefinition과 Challenge 정의하기
+&lt;/h2>&lt;h3 id="프로젝트에서-kubernetes-operator를-사용하는-방법">프로젝트에서 Kubernetes Operator를 사용하는 방법
+&lt;/h3>&lt;p>Kubernetes Operator는 사용자가 정의한 리소스(CR)를 관리하는 프로그램입니다. 즉, 오퍼레이터를 제작한다는 것은 사용자가 정의한 리소스를 모니터링하는 루프를 실행시키는 프로그램을 제작한다는 의미입니다.&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>&lt;/p>
+&lt;p>&lt;strong>리소스를 모니터링한다는 것은 상태를 관리한다는 의미와 같습니다. 그 대상은 상태 라이프사이클을 가질 것입니다&lt;/strong> Kubernetes Operator SDK (kubebuilder, kopf &amp;hellip;)를 활용하여 상태 라이프사이클을 정의하고 구현할 수 있게 됩니다. Kubernetes Operator의 활용은 요구사항 모두 충족할 수 있습니다.&lt;/p>
+&lt;p>이번 프로젝트에서는 Challenge의 Controller로서 Kubernetes Operator를 구현할 예정입니다.&lt;/p>
+&lt;h3 id="crcustom-resourcecrdcustom-resource-definition">CR(Custom Resource)&amp;amp;CRD(Custom Resource Definition)
+&lt;/h3>&lt;p>직접 정의한 리소스의 스펙을 CRD(CustomResourceDefinition)으로 정의한 후 스펙에 맞게 CR(CustomResource)를 생성하는 YAML를 실행시키면 커스텀 리소스를 실행시킬 수 있습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>CR&amp;amp;CRD에 대한 기술적인 내용은 ccambo님의 &lt;a class="link" href="https://ccambo.tistory.com/entry/Kubernetes-%ED%99%95%EC%9E%A5%EC%9D%B8-CRD%EC%99%80-CR-%EC%97%90-%EB%8C%80%ED%95%9C-%EA%B0%9C%EB%85%90-%EC%A0%95%EB%A6%AC" target="_blank" rel="noopener"
+>Kubernetes 확장인 CRD와 CR 에 대한 개념 정리&lt;/a> 를 참고하시길 바랍니다.&lt;/p>
+&lt;/blockquote>
+&lt;p>원하는 리소스를 직접 정의해서 배포할 수 있다는 특징은 요구사항 2번인 &amp;ldquo;다양한 컨테이너를 하나의 구조로 직접 정의한다&amp;quot;를 가능하게 만들어줍니다.
+이번 프로젝트에서는 CR&amp;amp;CRD를 적극적으로 활용할 예정입니다.&lt;/p>
+&lt;h3 id="challengedefinitionchallenge-간단하게-정의하기">ChallengeDefinition&amp;amp;Challenge 간단하게 정의하기
+&lt;/h3>&lt;p>이번 프로젝트에서는 두 개의 커스텀 리소스를 생성할 것입니다.&lt;/p>
+&lt;ul>
+&lt;li>ChallengeDefinition : 문제 상세 정보를 나타내면 챌린지 정보, 구성 리소스를 컴포넌트 단위로 정의한다. CTF 문제를 등록할때 &lt;code>ChallengeDefinition&lt;/code>을 등록한다.&lt;/li>
+&lt;li>Challenge : 사용자 정보를 metadata에 주로 저장하고 spec으로 &lt;code>ChallengeDefinition&lt;/code>를 참조하여 정의한다. 주로 사용자가 챌린지 컨테이너를 생성하고 실행할때 &lt;code>Challenge&lt;/code>를 정의하고 실행시킨다.&lt;/li>
+&lt;/ul>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-5/image-3.png"
+width="862"
+height="492"
+srcset="https://s0okju.github.io/p/hexactf-5/image-3_hu_c7cc7fbe726d4d4c.png 480w, https://s0okju.github.io/p/hexactf-5/image-3_hu_ba57c42f629ce5bc.png 1024w"
+loading="lazy"
+alt="ChallengeDefinition&amp;Challenge 구체적인 구성도"
+class="gallery-image"
+data-flex-grow="175"
+data-flex-basis="420px"
+>&lt;/p>
+&lt;h4 id="왜-저렇게-구성했을까요">왜 저렇게 구성했을까요?
+&lt;/h4>&lt;p>구체적인 이유는 뒤에 구현과 함께 설명할 예정입니다. 간단하게 말씀드리자면 &lt;strong>모든 리소스가 사용자마다 식별 가능해야 합니다.&lt;/strong>&lt;br>
+사용자의 고유 데이터, 문제의 고유 데이터를 가지고 ChallengeDefinition에 정의된 리소스들이 서로 식별 가능하도록 이름을 정할 것입니다. 그래야 동일한 리소스더라도 충돌이 발생하지 않을 것입니다.&lt;/p>
+&lt;h2 id="다음-이야기">다음 이야기
+&lt;/h2>&lt;p>지금까지 Challenge라는 개념을 재정의하고 Kubernetes 커스텀 리소스로써 어떻게 구성할 것인지 작성했습니다.&lt;br>
+다음 글에서는 어떻게 코드로 ChallengeDefinition, Challenge를 구현했는지 설명하겠습니다.&lt;/p>
+&lt;h2 id="reference">Reference
+&lt;/h2>&lt;ul>
+&lt;li>&lt;a class="link" href="https://ccambo.tistory.com/entry/Kubernetes-%ED%99%95%EC%9E%A5%EC%9D%B8-CRD%EC%99%80-CR-%EC%97%90-%EB%8C%80%ED%95%9C-%EA%B0%9C%EB%85%90-%EC%A0%95%EB%A6%AC" target="_blank" rel="noopener"
+>Kubernetes 확장인 CRD와 CR 에 대한 개념 정리&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://bcho.tistory.com/1391" target="_blank" rel="noopener"
+>간단하게 알아보는 Kubernetes Operator의 개념과 Kopf 프레임웍&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>쿠버네티스 오퍼레이터. 제이슨 도비스, 조슈아 우드 지음, 에이콘&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>HexaCTF 4. Docker를 활용한 Challenge 설계 및 한계점</title><link>https://s0okju.github.io/p/hexactf-4/</link><pubDate>Thu, 16 Jan 2025 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/hexactf-4/</guid><description>&lt;ul>
+&lt;li>2025.01.18: 제목 수정&lt;/li>
+&lt;/ul>
+&lt;h2 id="ctf의-문제-특징">CTF의 문제 특징
+&lt;/h2>&lt;h3 id="문제-종류">문제 종류
+&lt;/h3>&lt;p>Challenge를 어떻게 구성할 것인가를 생각하기 전에 문제 배포 관점에서 CTF 문제 종류를 파악해야 합니다.
+크게 5가지의 카테고리가 있으며 문제를 출제하는 방식은 크게 두 가지있습니다.&lt;/p>
+&lt;ul>
+&lt;li>Live : 실제로 운영중인 서버를 통해 문제를 푸는 경우&lt;/li>
+&lt;li>File : 파일을 다운받아서 문제를 푸는 경우&lt;/li>
+&lt;/ul>
+&lt;p>Live 방식 중에서 두 가지를 더 나눌 수 있습니다.&lt;/p>
+&lt;ul>
+&lt;li>1:1 : 한 사람당 고유한 서버에 접속해야 하는 경우, 주로 상태가 있는(Stateful) 애플리케이션 문제에 적합&lt;/li>
+&lt;li>1:N : 하나의 서버에 여러 사람이 접속해야 하는 경우, 주로 상태가 없는(Stateless) 애플리케이션의 문제에 적합&lt;/li>
+&lt;/ul>
+&lt;p>예를 한번 들어보겠습니다.
+단순하게 nginx, server로만 구성된 간단한 XSS 문제가 있다고 생각해봅시다.&lt;br>
+자바스크립트 코드를 삽입해 악의적인 행위를 하는 공격 방법입니다.&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup> XSS CTF 문제에서는 의도한 악의적인 행위를 수행하면 플래그를 반환하게 됩니다.&lt;br>
+이때 여러 사람들이 동일한 XSS 문제 사이트 접속했을때 서로 영향을 받을까요? 그렇지 않습니다. 사용자는 자신만의 독립적인 환경에서 nginx가 반환하는 자바스크립트를 사용하고 있기 때문에 서로 영향을 받지 않게 되는 것입니다. 이런 문제 유형은 위에서 말한 1:N 방식을 사용하게 됩니다.&lt;/p>
+&lt;p>SQL Injection 문제를 생각해봅시다.
+SQL Injection을 시도하기 위해 다양한 명령어를 시도하게 됩니다. 그 과정에서 문제를 해결한 사람의 데이터를 확인할 수 있게 됩니다. 이는 대회에 큰 영향을 주기 때문에 사용자마다 격리가 필요합니다.(서로 독립된 데이터베이스를 가져야 합니다.) 이런 문제 유형은 위에서 말한 1:1 방식을 사용하게 됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-4/image.png"
+width="670"
+height="592"
+srcset="https://s0okju.github.io/p/hexactf-4/image_hu_67fc72af7361ccf5.png 480w, https://s0okju.github.io/p/hexactf-4/image_hu_89283d698eddbe03.png 1024w"
+loading="lazy"
+alt="CTF 문제 구성도"
+class="gallery-image"
+data-flex-grow="113"
+data-flex-basis="271px"
+>&lt;/p>
+&lt;h3 id="주목할만한-특징">주목할만한 특징
+&lt;/h3>&lt;p>Live 1:1 서비스는 자원 낭비를 최소화하기 위해 문제가 실행된지 30분 후에 자동으로 삭제가 됩니다. 대부분의 CTF 문제 풀이 사이트는 특정 문제에 제한 시간을 두는 등 많이 사용하는 방식입니다.&lt;/p>
+&lt;ul>
+&lt;li>Live 1:1 서비스 : 실행한지 30분이 지나면 삭제되어야 한다.&lt;/li>
+&lt;/ul>
+&lt;p>CTF 대회를 많이 경험해본 친구에게 제한 시간을 걸어두는 것에 대해 의견을 나눈 적이 있습니다. 친구가 말하길 중간에 시간 만료로 문제 사이트가 다운되더라도 일반적인 현상으로 받아들인다고 합니다.&lt;/p>
+&lt;h2 id="문제-컨테이너-초기-구성-1---docker-사용">문제 컨테이너 초기 구성 (1) - Docker 사용
+&lt;/h2>&lt;p>Python Docker SDK를 활용해서 도커를 생성하고 삭제할 수 있습니다. 초기에는 간단하게 Docker SDK를 사용하는 방식을 채택했습니다.&lt;/p>
+&lt;h3 id="컨테이너의-무한-증식을-막아라">컨테이너의 무한 증식을 막아라
+&lt;/h3>&lt;p>동일한 프로젝트를 수행한 동아리원을 만나게 되었습니다. 프로젝트 관련된 이야기를 하다가 &lt;strong>컨테이너의 무한 증식으로 인한 서버 과부하 현상 해결이 필요하다는 의견을 받았습니다.&lt;/strong>&lt;/p>
+&lt;p>제가 예상한 문제의 원인은 다음과 같습니다.&lt;/p>
+&lt;ol>
+&lt;li>문제 생성을 요청할때 문제 컨테이너 실행 상태를 검증하지 않거나 저장된 상태와 실제 상태에 불일치가 발생했다.&lt;/li>
+&lt;li>컨테이너 이름에 사용자 식별값 + 난수가 섞여 있다.&lt;/li>
+&lt;/ol>
+&lt;p>문제 생성을 요청할때 문제 컨테이너 실행 상태를 검증하지 않았다면 데이터베이스에 값을 저장하면 됩니다. &lt;strong>문제는 저장된 상태와 실제 상태에 불일치가 발생을 어떻게 해결할 것인가 입니다.&lt;/strong>&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-4/image-1.png"
+width="790"
+height="742"
+srcset="https://s0okju.github.io/p/hexactf-4/image-1_hu_b1127a67be3ee039.png 480w, https://s0okju.github.io/p/hexactf-4/image-1_hu_4e379ba41e41ca26.png 1024w"
+loading="lazy"
+alt="Docker 서버 구성도"
+class="gallery-image"
+data-flex-grow="106"
+data-flex-basis="255px"
+>&lt;/p>
+&lt;h3 id="상태-불일치-해결방안은-간단하지만-구현하기-어렵다">상태 불일치 해결방안은 간단하지만 구현하기 어렵다.
+&lt;/h3>&lt;p>데이터베이스에 저장된 상태와 실제 상태의 불일치를 해결하는 방법은 &lt;strong>주기적으로 대상을 확인&lt;/strong>하는 것이라고 생각합니다.
+단순하게 하나의 애플리케이션만 주기적으로 상태를 확인하는 것은 비교적 구현이 쉽습니다. 그러나 컨테이너가 여러개인 경우에는 병렬 처리로 인해 구현 난이도가 올라가게 됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-4/image-2.png"
+width="700"
+height="250"
+srcset="https://s0okju.github.io/p/hexactf-4/image-2_hu_a7edf729cd76099f.png 480w, https://s0okju.github.io/p/hexactf-4/image-2_hu_a102f2d1a2858878.png 1024w"
+loading="lazy"
+alt="출처 - https://kwahome.medium.com/concurrency-is-not-parallelism-a5451d1cde8d"
+class="gallery-image"
+data-flex-grow="280"
+data-flex-basis="672px"
+>&lt;/p>
+&lt;p>상태 불일치를 확인해야 하는 대상은 Live이면서 한사람당 하나의 컨테이너가 배포되어야 하는 1:1 서비스일 것입니다. 그런데 시간 만료로 인해 문제 컨테이너는 자주 삭제되고 생성됩니다. 2개의 1:1 문제를 출제한다고 가정했을때 10명이 문제에 접속한다고 한다면 컨테이너의 총합은 절대 작은 숫자는 아닙니다.&lt;br>
+이러한 상황에서 한정된 자원 내에 일반적인 방법(순차적)으로 서비스를 찾고 대상을 지속적으로 확인하는 것은 비효율적입니다. 그러므로 병렬처리 또는 동시성 처리를 통해 효율성을 높이는 작업이 필요하게 됩니다.&lt;/p>
+&lt;h3 id="컨테이너-패키지-문제">컨테이너 패키지 문제
+&lt;/h3>&lt;p>SQL Injection 문제를 출제한다고 가정하겠습니다. nginx, server, db 컨테이너 3개가 필요하게 됩니다. 관리하는 사람 입장에서는 3개를 일괄적으로 관리하는 것이 효율적입니다.&lt;br>
+이와 같은 기능을 하는 것이 docker-compose입니다. docker-compose를 사용하여 여러개의 컨테이너를 하나의 서비스로 구성해서 관리할 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-4/image-3.png"
+width="800"
+height="262"
+srcset="https://s0okju.github.io/p/hexactf-4/image-3_hu_cccb9a68fdafc357.png 480w, https://s0okju.github.io/p/hexactf-4/image-3_hu_9d1be009d35bf0af.png 1024w"
+loading="lazy"
+alt="출처 - https://dev.to/arif_hossain/introduction-to-docker-compose-ddh"
+class="gallery-image"
+data-flex-grow="305"
+data-flex-basis="732px"
+>&lt;/p>
+&lt;p>그러나 별도의 파이썬 라이브러리로 제공되지 않고 subprocess에 명령어 형태로 구현해야 합니다. 구현하더라도 잘 안되는 경우가 있습니다.&lt;br>
+사용자마다 고유한 컨테이너를 가져야 한다는 것은 다른 말로 각각 고유한 컨테이너 이름을 가져야 한다는 것과 같습니다. 결국 일반적인 docker-compose 만으로는 문제 컨테이너를 만드는데 한계가 있으며 원활한 처리를 위해서는 직접 구조를 정의해야 합니다.&lt;/p>
+&lt;h3 id="요구사항">요구사항
+&lt;/h3>&lt;ol>
+&lt;li>컨테이너 상태를 지속적으로 확인&lt;/li>
+&lt;li>다양한 컨테이너를 하나의 구조로 직접 정의하고 관리&lt;/li>
+&lt;/ol>
+&lt;p>위의 요구사항을 충족하기 위해서는 기능을 처음부터 구현해야 합니다.
+시간이 많이 소요되며 궁극적인 목표인 CTF 대회 개최와 멀어질 수 있다고 생각했습니다.&lt;/p>
+&lt;h2 id="다음화---kubernetes-사용">다음화 - Kubernetes 사용
+&lt;/h2>&lt;p>지금까지 CTF 문제 컨테이너를 docker로 설계하면서 느낀 한계점에 대해 설명했습니다.&lt;br>
+팀원들과 상의해본 결과 docker만으로는 우리가 원하는 기술을 구현할 수 없다고 결론을 지었습니다. 그 대신 주기적으로 리소스의 상태를 확인할 수 있으며 CR를 통해 커스텀으로 리소스를 정의할 수 있는 쿠버네티스를 선택하게 되었습니다.&lt;br>
+다음 글에서는 쿠버네티스를 통해 어떻게 설계했는지 설명하겠습니다.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://www.skshieldus.com/blog-security/security-trend-idx-06" target="_blank" rel="noopener"
+>XSS(크로스 사이트 스크립트)란? 공격 유형부터 보안대책까지! | SK쉴더스&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>HexaCTF - 3. Jenkins를 활용한 CI 환경 구성하기</title><link>https://s0okju.github.io/p/hexactf-3/</link><pubDate>Sun, 05 Jan 2025 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/hexactf-3/</guid><description>&lt;h2 id="jenkins-환경-구성">Jenkins 환경 구성
+&lt;/h2>&lt;h3 id="어디에-젠킨스를-설치해야-할까">어디에 젠킨스를 설치해야 할까?
+&lt;/h3>&lt;p>쿠버네티스를 처음 공부했을때 “쿠버네티스 내에 데이터베이스를 운영하는 것이 과연 안전할까?”에 대해 의문점을 가지게 되었습니다. 데이터 손실이 우려된다는 과거의 의견과 달리 현재는 다양한 기업들이 DBaaS를 도입하고 있었습니다.&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>&lt;br>
+이런 흐름으로 젠킨스 또한 쿠버네티스 내에 운영할까요? 레딧과 같은 지식 공유 플랫폼을 종합해보면 쿠버네티스 내에 젠킨스를 운영하는
+경우가 많이 보입니다.&lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup>&lt;br>
+그러나 저희 프로젝트는 CI를 담당하는 팀원은 따로 있습니다. 완전한 역할 분리를 위해 인스턴스에 따로 젠킨스를 설치하게 되었습니다.&lt;/p>
+&lt;h3 id="jenkins-배포">Jenkins 배포
+&lt;/h3>&lt;p>아래는 대략적인 아키텍쳐입니다. 여기서 중요한 점은 Jenkins 인스턴스와 쿠버네티스 노드와 연결되어야 합니다. 각각의 서브넷이 라우터로 연결하여 서로 통신할 수 있도록 설정해야 합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-3/image.png"
+width="1100"
+height="287"
+srcset="https://s0okju.github.io/p/hexactf-3/image_hu_f06e3dff2c2ab5c8.png 480w, https://s0okju.github.io/p/hexactf-3/image_hu_9381f73eecfd8e3c.png 1024w"
+loading="lazy"
+alt="간단한 구성도"
+class="gallery-image"
+data-flex-grow="383"
+data-flex-basis="919px"
+>&lt;/p>
+&lt;p>Jenkins를 인스턴스로 배포하고 외부 IP(Floating IP)로 연결하는 부분은 생략하겠습니다.
+이전 글에서 언급한 것처럼 하나의 라우터에 여러 개의 포트를 연결하고 싶다면 openstack_networking_port_v2 함수를 활용해야 한다고 말했습니다. 이도 동일하게 Jenkins가 포함되어 있는 서브넷에 포트를 생성하여 쿠버네티스 라우터에 연결합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_port_v2&amp;#34; &amp;#34;devops_kubernetes_router_port&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;kubernetes-devops-port&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> network_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_network_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">devops_network&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> admin_state_up&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;true&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">fixed_ip&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> subnet_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_subnet_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">devops_subnet&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> ip_address&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">devops_port_address&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_router_interface_v2&amp;#34; &amp;#34;devops_kubernetes_interface&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> router_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_router_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">kubernetes_router&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> port_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_port_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">devops_kubernetes_router_port&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>배포를 모두 끝내면 아래와 같은 토폴로지를 확인할 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-3/image-1.png"
+width="1098"
+height="764"
+srcset="https://s0okju.github.io/p/hexactf-3/image-1_hu_72cf2be9378ebb5.png 480w, https://s0okju.github.io/p/hexactf-3/image-1_hu_5f6e1d81653f6735.png 1024w"
+loading="lazy"
+alt="Openstack 네트워크 토폴로지"
+class="gallery-image"
+data-flex-grow="143"
+data-flex-basis="344px"
+>&lt;/p>
+&lt;h2 id="harbor">Harbor
+&lt;/h2>&lt;h3 id="쿠버네티스-환경에서-ci">쿠버네티스 환경에서 CI
+&lt;/h3>&lt;p>쿠버네티스 환경에서 CI 과정은 컨테이너를 빌드하고 이미지를 저장하는 프로세스가 포함됩니다. 그 중 이미지를 저장하기 위해서는 도커 레지스트리가 필요합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-3/image-2.png"
+width="720"
+height="443"
+srcset="https://s0okju.github.io/p/hexactf-3/image-2_hu_307d455d43ccf37d.png 480w, https://s0okju.github.io/p/hexactf-3/image-2_hu_20a9e7be839d274b.png 1024w"
+loading="lazy"
+alt="출처 - https://thenewstack.io/ci-cd-with-kubernetes-tools-and-practices/"
+class="gallery-image"
+data-flex-grow="162"
+data-flex-basis="390px"
+>&lt;/p>
+&lt;h3 id="도커-레지스트리">도커 레지스트리
+&lt;/h3>&lt;p>도커 레지스트리는 도커 이미지를 관리하는 저장소 입니다. 저장소는 크게 public과 private이 있습니다. 내부적으로 사용할 예정이므로 private 레지스트리를 선택하게 되었습니다.&lt;/p>
+&lt;p>후보는 크게 두 가지입니다.&lt;/p>
+&lt;ul>
+&lt;li>Docker Registry&lt;/li>
+&lt;li>Harbor&lt;/li>
+&lt;/ul>
+&lt;p>도커 레지스트리 선정 기준은 “깔끔한 UI를 가지고 있는가?” 입니다. 후보 중에는 기준에 부합한 플랫폼은 Harbor였습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-3/image-3.png"
+width="1100"
+height="313"
+srcset="https://s0okju.github.io/p/hexactf-3/image-3_hu_95b24d92b56a31b6.png 480w, https://s0okju.github.io/p/hexactf-3/image-3_hu_805930a03405b52f.png 1024w"
+loading="lazy"
+alt="출처 - 공식 문서"
+class="gallery-image"
+data-flex-grow="351"
+data-flex-basis="843px"
+>&lt;/p>
+&lt;h3 id="설치">설치
+&lt;/h3>&lt;p>공식 문서를 참고해서 helm 파일을 다운로드 받습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">helm repo add harbor https://helm.goharbor.io
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">helm fetch harbor/harbor --untar
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>가장 먼저 해야하는 것은 Volume에 대한 설정입니다. Harbor는 다양한 PVC를 요청합니다. 프로젝트는 Dynamic Provisioning을 위한 NFS 환경을 구축했습니다. 그러므로 values.yaml 에 strageClass만 값을 입력하면 됩니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">persistentVolumeClaim&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">registry&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="c"># Use the existing PVC which must be created manually before bound,&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="c"># and specify the &amp;#34;subPath&amp;#34; if the PVC is shared with other components&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">existingClaim&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="c"># Specify the &amp;#34;storageClass&amp;#34; used to provision the volume. Or the default&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="c"># StorageClass will be used (the default).&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="c"># Set it to &amp;#34;-&amp;#34; to disable dynamic provisioning&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">storageClass&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;nfs-client&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">subPath&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">accessMode&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">ReadWriteOnce&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">size&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">5Gi&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">annotations&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>{}&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">jobservice&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">jobLog&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">existingClaim&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">storageClass&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;nfs-client&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">subPath&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">accessMode&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">ReadWriteOnce&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">size&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">1Gi&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">annotations&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>{}&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>환경 설정을 다 하고 배포하면 정상적으로 작동됩니다.&lt;/p>
+&lt;h2 id="jenkins--harbor-연결하기">Jenkins — Harbor 연결하기
+&lt;/h2>&lt;h3 id="http로-연결하기">HTTP로 연결하기
+&lt;/h3>&lt;p>젠킨스 인스턴스가 쿠버네티스 내부에 있는 Harbor에 이미지를 저장해야 합니다. 저희 환경에서는 Harbor를 nodePort로 연결하여 도커 레지스트리에 연결할 수 있도록 설정하겠습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-3/image-4.png"
+width="582"
+height="282"
+srcset="https://s0okju.github.io/p/hexactf-3/image-4_hu_6b69d058954a6de0.png 480w, https://s0okju.github.io/p/hexactf-3/image-4_hu_7198799d8e08f5f2.png 1024w"
+loading="lazy"
+alt="젠킨스 - 쿠버네티스 연결 흐름"
+class="gallery-image"
+data-flex-grow="206"
+data-flex-basis="495px"
+>&lt;/p>
+&lt;p>Harbor와 같은 도커 레지스티의 경우 HTTPS로 연결하는 것을 권장합니다. 하지만 저희는 HTTP로 설정하겠습니다.
+Harbor의 우선 nodePort를 30002로 설정한 후 externalURL 에 http가 포함된 URL를 설정해야 합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">externalURL&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">http://10.0.10.156:30002&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>젠킨스 인스턴스에서 &lt;code>/etc/docker/daemon.json&lt;/code> 파일에 HTTP를 적용할 harbor의 host를 명시해줍니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">{&lt;span class="w"> &lt;/span>&lt;span class="nt">&amp;#34;insecure-registries&amp;#34;: &lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s2">&amp;#34;http://10.0.10.156:30002&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="w"> &lt;/span>}&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>도커를 재시작하면 위의 설정이 적용됩니다.&lt;/p>
+&lt;h3 id="jenkins-pipeline-설정">Jenkins Pipeline 설정
+&lt;/h3>&lt;p>Credential 설정등은 생략하겠습니다.
+도커를 빌드하기 위해서는 크게 3가지 과정이 필요합니다.&lt;/p>
+&lt;ol>
+&lt;li>도커 빌드&lt;/li>
+&lt;li>도커 이미지 Tagging&lt;/li>
+&lt;li>도커 이미지 Push&lt;/li>
+&lt;/ol>
+&lt;p>젠킨스는 프로젝트 단위로 이미지를 관리합니다. 아래의 코드는 ubuntu 이미지를 빌드하여 test 프로젝트에 이미지를 push하는 것을 보여줍니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">pipeline {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> agent any
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> environment {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> DOCKER_REGISTRY = &amp;#34;10.0.10.156:30002&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> IMAGE_NAME = &amp;#34;ubuntu&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> TARGET_REPO = &amp;#34;test/ubuntu&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> stages {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> stage(&amp;#39;Pull Ubuntu Image&amp;#39;) {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> steps {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> echo &amp;#34;Pulling the Ubuntu image from Docker Hub...&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sh &amp;#34;docker pull ${IMAGE_NAME}:latest&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> stage(&amp;#39;Tag Image&amp;#39;) {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> steps {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> echo &amp;#34;Tagging the image for Harbor...&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sh &amp;#34;docker tag ${IMAGE_NAME}:latest ${DOCKER_REGISTRY}/${TARGET_REPO}:latest&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> stage(&amp;#39;Push Image to Harbor&amp;#39;) {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> steps {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> echo &amp;#34;Pushing the image to Harbor...&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> withDockerRegistry([credentialsId: &amp;#39;harbor-credentials&amp;#39;, url: &amp;#34;http://${DOCKER_REGISTRY}&amp;#34;]) {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sh &amp;#34;docker push ${DOCKER_REGISTRY}/${TARGET_REPO}:latest&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> post {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> always {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> echo &amp;#34;Cleaning up Docker images...&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sh &amp;#34;docker rmi ${IMAGE_NAME}:latest || true&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sh &amp;#34;docker rmi ${DOCKER_REGISTRY}/${TARGET_REPO}:latest || true&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>이미지를 push하면 정상적으로 작동됨을 확인할 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-3/image-5.png"
+width="1100"
+height="222"
+srcset="https://s0okju.github.io/p/hexactf-3/image-5_hu_f0c8cfc782bec904.png 480w, https://s0okju.github.io/p/hexactf-3/image-5_hu_bca97cd70a32e092.png 1024w"
+loading="lazy"
+alt="자동화 빌드 결과"
+class="gallery-image"
+data-flex-grow="495"
+data-flex-basis="1189px"
+>&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://sungchul-p.github.io/db-on-k8s-case-study" target="_blank" rel="noopener"
+>https://sungchul-p.github.io/db-on-k8s-case-study&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a class="link" href="https://engineering.linecorp.com/ko/blog/declarative-cloud-db-service-using-kubernetes" target="_blank" rel="noopener"
+>https://engineering.linecorp.com/ko/blog/declarative-cloud-db-service-using-kubernetes&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a class="link" href="https://www.reddit.com/r/devops/comments/m3lc3r/jenkins_inside_kubernetes_or_not/" target="_blank" rel="noopener"
+>https://www.reddit.com/r/devops/comments/m3lc3r/jenkins_inside_kubernetes_or_not/&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>HexaCTF - 2. Openstack Terraform을 활용한 NFS 서버 설치 및 활용</title><link>https://s0okju.github.io/p/hexactf-2/</link><pubDate>Fri, 29 Nov 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/hexactf-2/</guid><description>&lt;h2 id="전체-아키텍쳐-구성도">전체 아키텍쳐 구성도
+&lt;/h2>&lt;p>저희 프로젝트는 크게 3개의 서브넷을 가지게 됩니다.&lt;/p>
+&lt;ul>
+&lt;li>Kubernetes Subnet
+&lt;ul>
+&lt;li>Kubernetes Master, Worker nodes&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Storage Subnet
+&lt;ul>
+&lt;li>NFS Server&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>DevOps Subnet
+&lt;ul>
+&lt;li>Jenkins Server&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image.png"
+width="1064"
+height="763"
+srcset="https://s0okju.github.io/p/hexactf-2/image_hu_ea2064f9e1730b7c.png 480w, https://s0okju.github.io/p/hexactf-2/image_hu_34ea0a13599035a7.png 1024w"
+loading="lazy"
+alt="전체 네트워크 토폴로지"
+class="gallery-image"
+data-flex-grow="139"
+data-flex-basis="334px"
+>&lt;/p>
+&lt;h2 id="nfs-아키텍쳐-구성">NFS 아키텍쳐 구성
+&lt;/h2>&lt;h3 id="왜-필요할까">왜 필요할까?
+&lt;/h3>&lt;h4 id="상태값-저장">상태값 저장
+&lt;/h4>&lt;p>저희 프로젝트는 쿠버네티스 환경에서 수행하게 됩니다. 그 과정에서 데이터베이스와 같이 상태를 저장해야 하는 애플리케이션이 필요하게 됩니다. 관리자는 PV로 스토리지를 정의하고 상태 저장이 필요한 애플리케이션의 PVC를 활용하여 데이터를 영구적으로 저장하게 됩니다.
+PV는 로컬 디스크에 저장하거나 NFS와 같은 통신이 필요한 스토리지 시스템으로 정의할 수 있습니다. 로컬 디스크에 저장한다는 것은 Worker node의 디스크에 저장한다는 말과 같습니다. 그러므로 데이터 저장소를 외부와 분리하고자 NFS를 사용하게 되었습니다.&lt;/p>
+&lt;h4 id="dynamic-provisioning">Dynamic Provisioning
+&lt;/h4>&lt;p>NFS를 선택한 핵심적인 이유입니다. 애플리케이션이 스토리지 사용을 위해 PVC를 요청하게 되면 요구사항에 맞는 PV에 바인딩하게 됩니다. 모든 작업마다 그에 상응하는 PV-PVC 쌍을 만들어야 한다는 것과 같습니다. 불편함을 해소하기 위해서 PVC 요청에 대한 PV를 생성하는 과정을 자동화는 Dynamic Provisioning을 활용하게 되었습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-1.png"
+width="834"
+height="509"
+srcset="https://s0okju.github.io/p/hexactf-2/image-1_hu_c10d44b34ed51e15.png 480w, https://s0okju.github.io/p/hexactf-2/image-1_hu_59108b20283660b5.png 1024w"
+loading="lazy"
+alt="출처 - https://www.unixarena.com/2022/04/kubernetes-storage-dynamic-nfs-client-provisioner.html/"
+class="gallery-image"
+data-flex-grow="163"
+data-flex-basis="393px"
+>&lt;/p>
+&lt;h3 id="nfs-in-nova-vs-manila">NFS in Nova vs Manila
+&lt;/h3>&lt;p>데이터베이스를 구축하는 방법으로 EC2 Instance에서 DB 엔진을 직접 설치하듯이 NFS로 직접 인스턴스에 직접 설치할 수 있는 방법이 있습니다.
+Openstack에는 NFS를 직접 설치할 수 있도록 &lt;a class="link" href="https://docs.openstack.org/manila/latest/" target="_blank" rel="noopener"
+>Manila&lt;/a>라는 파일 공유 서비스를 제공해줍니다.&lt;/p>
+&lt;p>공식문서에 의하면 NFS는 아래와 같은 기능을 목표로 삼습니다.&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>&lt;/p>
+&lt;ul>
+&lt;li>Component based architecture: Quickly add new behaviors&lt;/li>
+&lt;li>Highly available: Scale to very serious workloads&lt;/li>
+&lt;li>Fault-Tolerant: Isolated processes avoid cascading failures&lt;/li>
+&lt;li>Recoverable: Failures should be easy to diagnose, debug, and rectify&lt;/li>
+&lt;li>Open Standards: Be a reference implementation for a community-driven api&lt;/li>
+&lt;/ul>
+&lt;p>그 이외에도 통합적인 대시보드, 모니터링, 로깅 도구를 활용할 수 있다는 것이 큰 장점입니다.
+그럼에도 Manila가 아닌 &lt;strong>Nova에 NFS를 설치하는 방안&lt;/strong>을 선택했습니다.
+선택한 가장 큰 이유는 &lt;strong>어렵다&lt;/strong>는 것입니다. 프로젝트 이전에 &lt;a class="link" href="https://medium.com/s0okju-tech/opsathlan-scenario-3-1-hello-mysql-28965a7bc466" target="_blank" rel="noopener"
+>데이터베이스 시스템인 trove를 설치한 경험이 있었습니다. &lt;/a> 원인을 찾았지만 해결하지 못한 경험이 있었습니다. 클라우드에 적합한 시스템이라 네트워크, 인증 등 고려사항이 많다고 느꼈습니다. 소규모에 쉬운 방법으로 하나의 인스턴스에서 nfs-server에 설치하는 방식을 선택했습니다.&lt;/p>
+&lt;h3 id="nfs-설치하기">NFS 설치하기
+&lt;/h3>&lt;p>설치하기 이전에 NFS 요구사항에 대해 생각해보겠습니다.&lt;/p>
+&lt;h4 id="nfs-네트워크-요구사항">NFS 네트워크 요구사항
+&lt;/h4>&lt;ul>
+&lt;li>쿠버네티스 서브넷과 통신해야 한다.&lt;/li>
+&lt;li>nfs server를 설치하기 위해 외부와 통신해야 한다.&lt;/li>
+&lt;/ul>
+&lt;p>위의 요구사항에 맞게 storage subnet은 public, kubernetes subnet의 router로 연결했습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-2.png"
+width="789"
+height="750"
+srcset="https://s0okju.github.io/p/hexactf-2/image-2_hu_844b9b0fc6631666.png 480w, https://s0okju.github.io/p/hexactf-2/image-2_hu_98afd115106ed716.png 1024w"
+loading="lazy"
+alt="네트워크 토폴로지"
+class="gallery-image"
+data-flex-grow="105"
+data-flex-basis="252px"
+>&lt;/p>
+&lt;h3 id="terraform-으로-구성하기">Terraform 으로 구성하기
+&lt;/h3>&lt;h4 id="네트워크">네트워크
+&lt;/h4>&lt;p>storage라는 prefix를 가진 network와 subnet를 만들어줍니다. 그리고 라우터를 정의하여 서로 다른 네트워크를 연결합니다.
+Openstack의 Neutron의 경우에는 크게 가상 라우터와 서브넷의 연결 관계로 구성됩니다. 이는 실제 물리적인 네트워크 환경처럼 라우터 인터페이스에 네트워크 케이블을 꽂는 형식과 유사합니다. 그래서 Neutron 내부에서는 서브넷이 할당된 네트워크에 논리 포트를 만들고 이를 라우터에 연결하게 됩니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Get the existing public network
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">data&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_network_v2&amp;#34; &amp;#34;public_network&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">public_network_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Get the existing public router
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">data&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_router_v2&amp;#34; &amp;#34;public_router&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">public_router_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create the storage network
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_network_v2&amp;#34; &amp;#34;storage_network&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_network_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create the storage subnet
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_subnet_v2&amp;#34; &amp;#34;storage_subnet&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_subnet_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> network_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_network_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_network&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> cidr&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_subnet_cidr&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> ip_version&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="m">4&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> dns_nameservers&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">dns_nameservers&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Connect the storage subnet to the public router
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_router_interface_v2&amp;#34; &amp;#34;storage_router_interface&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> router_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">data&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">openstack_networking_router_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">public_router&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> subnet_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_subnet_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_subnet&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>서브넷을 라우터에 연결하기 위해서는 &lt;a class="link" href="https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest/docs" target="_blank" rel="noopener"
+>openstack_networking_router_interface_v2&lt;/a>함수를 사용하게 됩니다. 서브넷을 연결할 때 &lt;code>subnet_id&lt;/code>를 사용할 수 있고 &lt;code>port_id&lt;/code>를 사용할 수 있습니다.&lt;/p>
+&lt;p>subnet_id를 사용하게 되면 자동으로 해당 CIDR의 x.x.x.1 의 주소의 포트로 연결됩니다. 그러나 하나의 서브넷이 2개 이상일 경우 subnet_id를 두 번이상 사용하게 된다면 사용중인 port IP라는 에러 메세지를 확인할 수 있습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Subnet_id를 사용하는 방법
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_router_interface_v2&amp;#34; &amp;#34;storage_router_interface&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> router_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">data&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">openstack_networking_router_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">public_router&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> subnet_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_subnet_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_subnet&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>그럴 경우 &lt;a class="link" href="https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest/docs/resources/networking_port_v2" target="_blank" rel="noopener"
+>openstack_networking_port_v2&lt;/a> 에서 사용할 port_ip를 지정해서 사용할 수 있습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Port를 사용하는 방법
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_port_v2&amp;#34; &amp;#34;storage_kubernetes_router_port&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;kubernetes-storage-port&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> network_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_network_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_network&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> admin_state_up&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;true&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">fixed_ip&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> subnet_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_subnet_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_subnet&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> ip_address&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;10.0.50.20&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_router_interface_v2&amp;#34; &amp;#34;storage_kubernetes_interface&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> router_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_router_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">kubernetes_router&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> port_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_port_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_kubernetes_router_port&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="컴퓨팅-자원">컴퓨팅 자원
+&lt;/h4>&lt;p>NFS 서버와 관련된 인스턴스를 제작해보겠습니다.
+NFS 서버는 2049, 111 포트를 활용합니다. NFS 서버는 쿠버네티스 서브넷과 주로 통신하므로 Kubernetes subnet인 10.0.10.0/24에서 요청하는 2049, 111 TCP, UDP 네트워크를 모두 허락해줍니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create the NFS security group
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_secgroup_v2&amp;#34; &amp;#34;nfs_secgroup&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;${var.storage_instance_name}-nfs-secgroup&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> description&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;Security group for NFS access&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_secgroup_rule_v2&amp;#34; &amp;#34;nfs_ingress&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> direction&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;ingress&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> ethertype&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;IPv4&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> protocol&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;tcp&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> port_range_min&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="m">2049&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> port_range_max&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="m">2049&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> remote_ip_prefix&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;10.0.10.0/24&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> security_group_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_secgroup_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">nfs_secgroup&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># ... secgroup 일부 생략
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create a port in the storage network for the instance
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_port_v2&amp;#34; &amp;#34;storage_port&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;${var.storage_instance_name}-port&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> network_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_network_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_network&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> security_group_ids&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">[&lt;/span>&lt;span class="k">openstack_networking_secgroup_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">nfs_secgroup&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">fixed_ip&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> subnet_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_subnet_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_subnet&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create a floating IP for the storage instance
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_floatingip_v2&amp;#34; &amp;#34;storage_fip&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> pool&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">public_network_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Associate the floating IP with the storage instance&amp;#39;s port
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_floatingip_associate_v2&amp;#34; &amp;#34;storage_fip_assoc&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> floating_ip&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_floatingip_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_fip&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">address&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> port_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_port_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_port&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>그리고 50GB 블록 스토리지(Cinder)를 NFS 인스턴스에 붙여서 생성합니다. 인스턴스를 만들때 이전에 정의한 보안 그룹도 지정해줍니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_blockstorage_volume_v3&amp;#34; &amp;#34;nfs-volume&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;bfs-volume&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> size&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="m">50&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create the storage instance
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_compute_instance_v2&amp;#34; &amp;#34;storage_instance&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_instance_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> flavor_name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_flavor_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> image_name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_image_name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> key_pair&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_compute_keypair_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">nfs_keypair&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> security_groups&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">[&lt;/span>&lt;span class="k">openstack_networking_secgroup_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">nfs_secgroup&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">name&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">network&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> port&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_networking_port_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_port&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> metadata&lt;/span> &lt;span class="o">=&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> ssh_user&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;ubuntu&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> }
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_compute_volume_attach_v2&amp;#34; &amp;#34;nfs-volume-attached&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> instance_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_compute_instance_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">storage_instance&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> volume_id&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="k">openstack_blockstorage_volume_v3&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">nfs&lt;/span>&lt;span class="err">-&lt;/span>&lt;span class="k">volume&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="k">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>NFS는 Private Network 환경에만 사용합니다. 그러나 nfs 설정 시 외부와의 접근이 필요하므로 floating ip를 할당했습니다.&lt;/p>
+&lt;/blockquote>
+&lt;h2 id="nfs-서버-설정">NFS 서버 설정
+&lt;/h2>&lt;h3 id="환경-설정">환경 설정
+&lt;/h3>&lt;p>NFS 서버는 50GB 블록 스토리지와 연결된 인스턴스로 이뤄져 있습니다. Horizon에서 인스턴스의 정보를 보면 부착된 볼륨을 확인할 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-3.png"
+width="483"
+height="97"
+srcset="https://s0okju.github.io/p/hexactf-2/image-3_hu_f441246ff546ab2e.png 480w, https://s0okju.github.io/p/hexactf-2/image-3_hu_d1495e51d241a717.png 1024w"
+loading="lazy"
+alt="Horizon에서 확인한 Volume"
+class="gallery-image"
+data-flex-grow="497"
+data-flex-basis="1195px"
+>&lt;/p>
+&lt;p>ssh에 접속해보면 마운팅된 볼륨을 확인할 수 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-4.png"
+width="402"
+height="173"
+srcset="https://s0okju.github.io/p/hexactf-2/image-4_hu_b3ee19f95f714682.png 480w, https://s0okju.github.io/p/hexactf-2/image-4_hu_1acd0a07b7a1b29d.png 1024w"
+loading="lazy"
+alt="디스크 정보"
+class="gallery-image"
+data-flex-grow="232"
+data-flex-basis="557px"
+>&lt;/p>
+&lt;p>추후 쿠버네티스에서 사용될 모든 데이터는 볼륨 스토리지에 저장할 것입니다. 그러므로 볼륨을 ext4 형태로 포맷하여 &lt;code>/mnt/data&lt;/code> 경로에 마운팅합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-5.png"
+width="401"
+height="239"
+srcset="https://s0okju.github.io/p/hexactf-2/image-5_hu_7c6d75a808f784a2.png 480w, https://s0okju.github.io/p/hexactf-2/image-5_hu_7fa07b74adc3aba.png 1024w"
+loading="lazy"
+alt="Mounting 이후"
+class="gallery-image"
+data-flex-grow="167"
+data-flex-basis="402px"
+>&lt;/p>
+&lt;p>&lt;code>nfs-server&lt;/code> 라이브러리를 설치한 후 &lt;code>/etc/exports&lt;/code> 파일을 수정합니다. 쿠버네티스 서브넷이 블록 스토리지에 있는 &lt;code>/mnt/data&lt;/code> 에 읽고 쓸 수 있도록 권한을 설정합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">/mnt/data 10.0.10.0/24(rw,sync,no_subtree_check)
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>자세한 사항은 &lt;a class="link" href="https://dongle94.github.io/ubuntu/ubuntu-nfs-setting/" target="_blank" rel="noopener"
+>[Ubuntu] NFS 서버 및 클라이언트 구성 - Dongle’s 개발노트&lt;/a> 를 참고하시길 바랍니다.&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="테스트하기">테스트하기
+&lt;/h3>&lt;p>우선 쿠버네티스에서 NFS 서버 IP인 &lt;code>10.0.50.170&lt;/code>가 정상적으로 통신한지 확인합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-6.png"
+width="486"
+height="205"
+srcset="https://s0okju.github.io/p/hexactf-2/image-6_hu_d155203b5275d652.png 480w, https://s0okju.github.io/p/hexactf-2/image-6_hu_d2b0cae3c8e5c27b.png 1024w"
+loading="lazy"
+alt="Ping Test"
+class="gallery-image"
+data-flex-grow="237"
+data-flex-basis="568px"
+>&lt;/p>
+&lt;p>NFS 서버에 Hello World 문자열이 있는 &lt;code>test.txt&lt;/code> 파일을 정의합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-7.png"
+width="471"
+height="160"
+srcset="https://s0okju.github.io/p/hexactf-2/image-7_hu_86508c0a3216c6dd.png 480w, https://s0okju.github.io/p/hexactf-2/image-7_hu_201d04b770c861d6.png 1024w"
+loading="lazy"
+alt="nfs server에서 임시 파일 생성"
+class="gallery-image"
+data-flex-grow="294"
+data-flex-basis="706px"
+>&lt;/p>
+&lt;p>마운팅에서 확인해보면 데이터가 정상적으로 저장되었음을 확인할 수 있습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sudo mount 10.0.50.170:/mnt/server /mnt
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-8.png"
+width="430"
+height="141"
+srcset="https://s0okju.github.io/p/hexactf-2/image-8_hu_e745c2b685e4b796.png 480w, https://s0okju.github.io/p/hexactf-2/image-8_hu_390a7c36ead38d0.png 1024w"
+loading="lazy"
+alt="쿠버네티스 인스턴스에서 NFS 마운팅"
+class="gallery-image"
+data-flex-grow="304"
+data-flex-basis="731px"
+>&lt;/p>
+&lt;h2 id="활용하기---harbor-in-kubernetes">활용하기 - Harbor in Kubernetes
+&lt;/h2>&lt;p>Harbor를 설정하기 이전에 Dynamic provisioner를 설치합니다. &lt;a class="link" href="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner#with-helm" target="_blank" rel="noopener"
+>nfs-subdir-external-provisioner&lt;/a> 를 사용했으며 helm을 통해 쉽게 설치했습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --set nfs.server&lt;span class="o">=&lt;/span>10.0.50.170 &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --set nfs.path&lt;span class="o">=&lt;/span>/mnt/data
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>&lt;a class="link" href="https://jeongchul.tistory.com/728" target="_blank" rel="noopener"
+>Harbor Kubernetes Helm 설치 — Jeongchul Kim&lt;/a> 블로그를 참고하여 harbor를 설치했습니다.&lt;/p>
+&lt;/blockquote>
+&lt;p>values.ym의 &lt;code>persistence&lt;/code> 에서 nfs-subdir-external-provisioner에서 생성한 storageClass를 정의합니다. 그리고 실행되면 정상적으로 작동됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-9.png"
+width="891"
+height="124"
+srcset="https://s0okju.github.io/p/hexactf-2/image-9_hu_237f146736854c37.png 480w, https://s0okju.github.io/p/hexactf-2/image-9_hu_f48fab1511c52eed.png 1024w"
+loading="lazy"
+alt="Harbor PVC 목록"
+class="gallery-image"
+data-flex-grow="718"
+data-flex-basis="1724px"
+>&lt;/p>
+&lt;p>만약에 설치하다가 아래와 같이 helper program이 필요하다는 에러 메세지를 볼 수 있습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-gdscript3" data-lang="gdscript3">&lt;span class="line">&lt;span class="cl">&lt;span class="n">Output&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">mount&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="o">/&lt;/span>&lt;span class="k">var&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">lib&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">kubelet&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">pods&lt;/span>&lt;span class="o">/.../&lt;/span>&lt;span class="n">volumes&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">kubernetes&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">io&lt;/span>&lt;span class="o">~&lt;/span>&lt;span class="n">nfs&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">nfs&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">pv&lt;/span>&lt;span class="o">-&lt;/span>&lt;span class="n">test&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">bad&lt;/span> &lt;span class="n">option&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">for&lt;/span> &lt;span class="n">several&lt;/span> &lt;span class="n">filesystems&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">e&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">g&lt;/span>&lt;span class="o">.&lt;/span> &lt;span class="n">nfs&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">cifs&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="n">you&lt;/span> &lt;span class="n">might&lt;/span> &lt;span class="n">need&lt;/span> &lt;span class="n">a&lt;/span> &lt;span class="o">/&lt;/span>&lt;span class="n">sbin&lt;/span>&lt;span class="o">/&lt;/span>&lt;span class="n">mount&lt;/span>&lt;span class="o">.&amp;lt;&lt;/span>&lt;span class="n">type&lt;/span>&lt;span class="o">&amp;gt;&lt;/span> &lt;span class="n">helper&lt;/span> &lt;span class="n">program&lt;/span>&lt;span class="o">.&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>실제로 쿠버네티스에서 Mounting을 할때 &lt;code>mount&lt;/code> 명령어를 사용합니다. 이는 &lt;code>nfs-common&lt;/code> 패키지에 있는 명령어로 노드에 &lt;code>nfs-common&lt;/code> 를 직접 설치해야 합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-2/image-10.png"
+width="1774"
+height="218"
+srcset="https://s0okju.github.io/p/hexactf-2/image-10_hu_147b9e208e0766d3.png 480w, https://s0okju.github.io/p/hexactf-2/image-10_hu_2b2ba354d49931ce.png 1024w"
+loading="lazy"
+alt="Mounting Error"
+class="gallery-image"
+data-flex-grow="813"
+data-flex-basis="1953px"
+>&lt;/p>
+&lt;h2 id="마치며">마치며
+&lt;/h2>&lt;p>지금까지 NFS를 구축하기 위해 Terraform으로 인프라 환경을 설정하고 인스턴스에 nfs 서버를 설정했습니다. 다음에는 Jenkins 인프라 환경을 구성하고 어떻게 Harbor Registry에 빌드한 도커 이미지를 Push하는지 작성하겠습니다.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://docs.openstack.org/manila/latest/" target="_blank" rel="noopener"
+>OpenStack Shared Filesystems (manila) documentation — manila 19.1.0.dev52 documentation&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>HexaCTF - 1. 인프라 플랫폼 선정과 서버 이전 시 마주한 문제</title><link>https://s0okju.github.io/p/hexactf-1/</link><pubDate>Mon, 25 Nov 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/hexactf-1/</guid><description>&lt;h2 id="ctf-프로젝트">CTF 프로젝트
+&lt;/h2>&lt;p>CTF란 해킹 대회로 참가자가 의도적으로 취약한 프로그램이나 웹사이트에 숨겨진 플래그를 찾는 게임&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>입니다. 대표적인 CTF 사이트로는 &lt;a class="link" href="https://dreamhack.io/" target="_blank" rel="noopener"
+>드림핵&lt;/a>이 있습니다.
+현재 해킹 동아리 소속으로 주변에 CTF에 활발하게 참가하는 친구들이 많이 있습니다. 저 또한 CTF는 아니지만 문제 제작에 관심이 많습니다. 해킹이라는 관심사를 가진 인원이 모여 CTF에 대한 아이디어를 나누게 되었고, 이후 직접 사이트를 구축하고 대회를 개최하기로 결정했습니다.&lt;/p>
+&lt;h2 id="ctf-제작-필수-요소---컨테이너">CTF 제작 필수 요소 - 컨테이너
+&lt;/h2>&lt;p>CTF 문제 중에는 호스팅된 취약한 웹사이트가 필요할 수 있고, 취약한 운영체제 환경이 필요할 수 있습니다. 각각 하나의 환경을 구성해서 사용자에게 배포할 수 있습니다. 이럴경우 다른 사용자의 문제 풀이를 알 수 있고 다른 사용자가 발빠르게 문제를 해결하면 다른 사용자는 문제를 풀 수 없게 됩니다. 그렇다면 해킹 대회의 의미가 없어질 것입니다. 문제 환경의 분리가 필요하다고 판단했고 경량화된 실행 환경인 컨테이너를 사용하기로 결정했습니다.&lt;/p>
+&lt;h2 id="쿠버네티스">쿠버네티스
+&lt;/h2>&lt;p>쿠버네티스는 러닝 커브가 있는 플랫폼입니다. 저 또한 쿠버네티스의 기본 개념만 알지 온전히 사용해본 경험은 없었습니다. 하지만 &lt;strong>컨테이너를 관리한다는 측면에서 쿠버네티스만큼 좋은 플랫폼이 없어서 선택하게 되었습니다.&lt;/strong>&lt;/p>
+&lt;p>Python Docker SDK에서 서비스를 개발하고 있을때 제가 고민했던 것이 있었습니다.&lt;/p>
+&lt;ol>
+&lt;li>30분 후에는 컨테이너를 중단시켜야 하는데 어떻게 해야하지?&lt;/li>
+&lt;li>2개 이상의 컨테이너가 필요한 경우에는 어떻게 논리적으로 분리해서 관리하고 모니터링하지?&lt;/li>
+&lt;li>Health Check 어떻게 하지?&lt;/li>
+&lt;/ol>
+&lt;p>모든 고민의 해결방안은 &lt;strong>직접 구현&lt;/strong>해야 한다는 것이었습니다. 직접 구현하는 것보다는 증명된 플랫폼을 활용하는 것이 적절하다고 판단했고 쿠버네티스를 선택하게 되었습니다.&lt;/p>
+&lt;h2 id="운영-플랫폼-선정---openstack">운영 플랫폼 선정 - Openstack
+&lt;/h2>&lt;p>&lt;a class="link" href="https://www.redhat.com/ko/resources/openstack-platform-datasheet" target="_blank" rel="noopener"
+>OpenStack이란&lt;/a>이란 풀링된 가상 리소스를 사용하여 &lt;a class="link" href="https://www.redhat.com/ko/topics/cloud-computing/what-is-private-cloud" target="_blank" rel="noopener"
+>프라이빗&lt;/a> 및 &lt;a class="link" href="https://www.redhat.com/ko/topics/cloud-computing/what-is-public-cloud" target="_blank" rel="noopener"
+>퍼블릭&lt;/a> 클라우드를 구축하고 관리하는 오픈소스 플랫폼를 뜻합니다.&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>
+이번 프로젝트에서 인프라 담당을 맡게 되면서 홈서버를 가지고 CTF를 운영하게 되었습니다.
+저는 홈서버에 Openstack를 구축하고 활용한 경험이 있습니다. Openstack를 사용하면서 가장 편리했던 부분은 &lt;strong>IaC를 통해 인프라를 쉽게 관리할 수 있다는 점&lt;/strong>이었습니다. 또한 다양한 스토리지 종류가 있으며 역할에 따라 활용할 수 있다는 것도 큰 매력이었습니다.
+운영 난이도는 높지만 클라우드만이 가질 수 있는 장점을 활용하고 싶어 Openstack을 선택하게 되었습니다.&lt;/p>
+&lt;h2 id="서버-구축---제한된-환경에서-느낀-것">서버 구축 - 제한된 환경에서 느낀 것
+&lt;/h2>&lt;p>집에 있는 홈서버를 다른 장소로 이전하게 되었습니다. 이후 Openstack 서버를 현재 환경에 맞게 설정해야 했습니다. 작업에는 네트워크 설정이 큰 비중을 차지했습니다. 설정 과정에서 느낀점을 적어보고자 합니다.&lt;/p>
+&lt;h3 id="nat-gateway-의-필요성">NAT Gateway 의 필요성
+&lt;/h3>&lt;p>Public Cloud에서 Private Subnet 내에 있는 인스턴스가 인터넷과 접속하기 위해서는 NAT Gateway가 필요합니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-1/image.png"
+width="581"
+height="510"
+srcset="https://s0okju.github.io/p/hexactf-1/image_hu_5f5e5bd567aa439.png 480w, https://s0okju.github.io/p/hexactf-1/image_hu_b68bf485a9687392.png 1024w"
+loading="lazy"
+alt="출처 - https://docs.aws.amazon.com/ko_kr/vpc/latest/userguide/nat-gateway-scenarios.html"
+class="gallery-image"
+data-flex-grow="113"
+data-flex-basis="273px"
+>&lt;/p>
+&lt;p>위의 상황과 유사하게 서버의 사설 네트워크 대역에 접근해야 할 일이 있었습니다. 예로 172.19.0.2에 접근하고 싶은데 같은 네트워크 대역에 있지 않으므로 접근할 수 없습니다. 그러나 &lt;code>enp2s0&lt;/code> 네트워크 인터페이스를 NAT로 사용하면 172.19.0.2에 접근할 수 있게 됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-1/image-1.png"
+width="969"
+height="755"
+srcset="https://s0okju.github.io/p/hexactf-1/image-1_hu_fed93365860df3c7.png 480w, https://s0okju.github.io/p/hexactf-1/image-1_hu_205f793a9ba41934.png 1024w"
+loading="lazy"
+alt="구성도"
+class="gallery-image"
+data-flex-grow="128"
+data-flex-basis="308px"
+>&lt;/p>
+&lt;p>서버에 enp2s0가 NAT이며 사설 네트워크인 enp2s0.191에 트래픽을 허용해주는 방화벽 규칙을 추가합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># enp2s0 인터페이스를 통해 나가는 모든 트래픽의 소스에 NAT 수행 &lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo iptables -t nat -A POSTROUTING -o enp2s0 -j MASQUERADE
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># enp2s0에 들어와 br-ex로 나가는 ICMP 트래픽을 허용한다.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo iptables -A FORWARD -i enp2s0 -o enp2s0.191 -p icmp -j ACCEPT
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># br-ex로 들어와서 enp2s0로 나가는 ICMP 트래픽을 허용한다.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo iptables -A FORWARD -i enp2s0.191 -o enp2s0 -p icmp -j ACCEPT
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Private Subnet 내에 있는 리소스가 외부 인터넷과 통신할 수 있도록 NAT Gateway가 필요합니다.
+이는 온프로미스 환경에서도 해당됩니다. 온프로미스 환경에서 사설 네트워크에 접근하기 위해서는 NAT 기능이 필요하며 이는 &lt;strong>공용(Public) 네트워크 인터페이스로 구성&lt;/strong>되어 있어야 합니다. 그래야 외부와 연결하여 통신할 수 있게 됩니다.
+Public Cloud에서 NAT Gateway를 Public Subnet에 배치하는 이유도 온프로미스와 동일할 것입니다.&lt;/p>
+&lt;p>현재 프로젝트에서는 NAT를 활용하지 않습니다. vlan을 외부 네트워크 인터페이스로 활용하고 싶었으나 실패했습니다. 결국 enp2s0를 Public IP 할당에 사용되는 외부 네트워크 인터페이스(&lt;strong>br-ex&lt;/strong>)로 사용할 것입니다.&lt;/p>
+&lt;h3 id="ip-부족">IP 부족
+&lt;/h3>&lt;p>&lt;strong>새로운 장소에서 가장 큰 고민거리는 IP Pool 설정&lt;/strong>이었습니다. Openstack은 Floating IP Pool 내에서 외부에 노출할 IP를 할당받게 됩니다. 실제 운영을 위한 IP, 개발을 위한 IP 등 생각보다 IP를 할당받아야 하는 경우가 많습니다.
+현재 환경에서는 다양한 서버의 IP가 불규칙적으로 할당되어 있습니다. 또한 많은 사람이 인터넷을 활용하는 공간이기에 무분별하게 IP를 할당할 수 없었습니다.&lt;/p>
+&lt;p>꼭 필요한 IP 개수에서 일시적으로 할당받을 것을 고려해 10개를 할당했습니다.&lt;/p>
+&lt;ul>
+&lt;li>쿠버네티스 : Master, node 2개&lt;/li>
+&lt;li>개발 관련 : Jenkins&lt;/li>
+&lt;li>기타(일시적) : MySQL 관리용 등등..&lt;/li>
+&lt;/ul>
+&lt;h2 id="마치며">마치며
+&lt;/h2>&lt;p>지금까지 프로젝트가 왜 이러한 플랫폼을 선택했는지 설명했습니다. 또한 서버를 다른 곳에 이전하게 되면서 생긴 경험을 보여드렸습니다.
+다음편에는 전체적인 구성도와 함께 찾아오겠습니다.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://en.wikipedia.org/wiki/Capture_the_flag_%28cybersecurity%29" target="_blank" rel="noopener"
+>https://en.wikipedia.org/wiki/Capture_the_flag_(cybersecurity)&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a class="link" href="https://www.redhat.com/ko/topics/openstack" target="_blank" rel="noopener"
+>https://www.redhat.com/ko/topics/openstack&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item></channel></rss>
