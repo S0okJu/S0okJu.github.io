@@ -9,6 +9,8 @@ tags:
   - Kubernetes
 ---
 
+2025-03-04 - 내용 수정
+
 일반적으로 쿠버네티스의 파드는 라이프 사이클을 가지고 있습니다.
 
 ![출처 - https://medium.com/@ollycare/a-guide-to-thekubernetes-pod-lifecycle-dc7992255001](image-1.png)
@@ -116,17 +118,14 @@ Kubebuilder는 오퍼레이터를 빌드하는데 사용되는 도구라고 알�
 
 ![출처 - [Architecture - The Kubebuilder Book](https://book.kubebuilder.io/architecture)](image-4.png)
 
-kubebuilder는 Operator를 빌드하는데 사용되는 라이브러리 입니다. 다르게 해석하면 manager를 빌드해야 한다는 의미와 같습니다.
-공식 문서 상에서 Kubebuilder는 아래와 같은 구조를 가지지만 실제 코드로 구현해야 할 부분은 `Manager`, `Builder`, `Reconciler` 가 됩니다.
+kubebuilder는 **Controller를 빌드하는 프로그램**이라고 보면 됩니다.
+공식 문서 상에서 Kubebuilder는 위와 같은 구조를 가지지만 실제 코드로 구현해야 할 부분은 `Manager`, `Builder`, `Reconciler` 가 됩니다.
 
 - Builder : controller-runtime 라이브러리를 감싸며, 일반적인 컨트롤러를 구축하기 위한 패턴을 제공한다.([builder package 문서](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/builder))
 - Manager : controller를 제작하는데 필요하며 client, caches, schemes등 의 공유 디펜던시를 제공한다. 컨트롤러는 Manager.Start를 호출하여 시작되어야 한다.([manager package 문서](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/manager) )
 - Reconciler: 조정 동기화 작업으로 대상의 상태를 원하는 상태로 일치시키는 과정을 의미한다.
 
-다음 편에 설명하겠지만 kubebuilder는 builder를 활용하여 타겟 리소스(CR) 정의하고 manager를 만듭니다. manager는 controller를 만들고 reconciler를 controller 내부로 binding 하게 됩니다. 타겟 리소스(CR)가 변경될때마다 reconciler 내부에 있는 `reconcile()` 함수를 실행시키는 구조가 됩니다.
-
-![출처 - [Kubernetes Operator series 4— controller-runtime component — Builder | by Masato Naka | Medium](https://nakamasato.medium.com/kubernetes-operator-series-4-controller-runtime-component-builder-c649c0ad2dc0)](image-5.png)
-
+대부분의 그림에서는 Builder에 대한 내용이 없는데 그 이유는 Operator-SDK가 Builder의 역할을 하기 때문입니다.
 자세한 이야기는 Challenge 생성, 삭제 부분에서 자세하게 말씀 드리겠습니다.
 
 ### Challenge CR로 Operator를 제작해도 될까?
