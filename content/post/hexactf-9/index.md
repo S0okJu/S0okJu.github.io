@@ -1,15 +1,16 @@
 ---
 title: "HexaCTF 8. 커스텀 컨트롤러를 통한 Challenge 생성 및 삭제 구현"
-date: 2025-03-04
-slug: hexactf-8
+date: 2025-03-07
+slug: hexactf-9
 categories:
   - HexaCTF
 tags:
-  - Openstack
   - Kubernetes
+  - Prometheus
+  - Grafana
 ---
 
-- 2025-03-07 - 내용 수정
+- 2025-03-08 - 내용 수정
 
 이전 글에는 상태를 어떻게 정의했는지 설명했습니다. 지금부터 어떻게 Challenge를 생성, 삭제할 수 있는지 설명하겠습니다.
 
