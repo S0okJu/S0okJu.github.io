@@ -1,0 +1,420 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="이전 이야기 이전 글에는 ChallengeDefinition, Challenge 개념을 정의하고 설계하는 과정을 설명했습니다.\n이제부터 ChallengeDefinition과 Challenge의 속성은 무엇인지 코드와 함께 소개하겠습니다.\n"><title>HexaCTF 6. Kubebuilder를 활용한 ChallengeDefinition&amp;Challenge Type 구현</title>
+<link rel=canonical href=https://s0okju.github.io/p/hexactf-6/><link rel=stylesheet href=/scss/style.min.663803bebe609202d5b39d848f2d7c2dc8b598a2d879efa079fa88893d29c49c.css><meta property='og:title' content="HexaCTF 6. Kubebuilder를 활용한 ChallengeDefinition&Challenge Type 구현"><meta property='og:description' content="이전 이야기 이전 글에는 ChallengeDefinition, Challenge 개념을 정의하고 설계하는 과정을 설명했습니다.\n이제부터 ChallengeDefinition과 Challenge의 속성은 무엇인지 코드와 함께 소개하겠습니다.\n"><meta property='og:url' content='https://s0okju.github.io/p/hexactf-6/'><meta property='og:site_name' content='S0okJu.dev'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='Openstack'><meta property='article:tag' content='Kubernetes'><meta property='article:published_time' content='2025-01-24T00:00:00+09:00'><meta property='article:modified_time' content='2025-01-24T00:00:00+09:00'><meta name=twitter:title content="HexaCTF 6. Kubebuilder를 활용한 ChallengeDefinition&Challenge Type 구현"><meta name=twitter:description content="이전 이야기 이전 글에는 ChallengeDefinition, Challenge 개념을 정의하고 설계하는 과정을 설명했습니다.\n이제부터 ChallengeDefinition과 Challenge의 속성은 무엇인지 코드와 함께 소개하겠습니다.\n"><link rel="shortcut icon" href=/favicon.ico></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_c3a763b4e1e1539a.png width=300 height=248 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>👾</span></figure><div class=site-meta><h1 class=site-name><a href=/>S0okJu.dev</a></h1><h2 class=site-description>Hello, World!</h2></div></header><ol class=menu-social><li><a href=https://github.com/S0okJu target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+<span>About</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>Links</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#이전-이야기>이전 이야기</a></li><li><a href=#challengedefinitionchallenge-구성>ChallengeDefinition&amp;Challenge 구성</a><ol><li><a href=#challenge>Challenge</a><ol><li><a href=#파일을-불러오는-방식>파일을 불러오는 방식</a></li></ol></li><li><a href=#구조>구조</a><ol><li><a href=#metadata>Metadata</a></li><li><a href=#spec>Spec</a></li></ol></li></ol></li><li><a href=#challengedefinition>ChallengeDefinition</a><ol><li><a href=#구조-1>구조</a><ol><li></li><li><a href=#challengedefinition은-deployment의-모든-필드를-지원하는-것이-아니다>ChallengeDefinition은 Deployment의 모든 필드를 지원하는 것이 아니다.</a></li><li><a href=#component-구성-이유>Component 구성 이유</a></li><li><a href=#component-내-label-selector>Component 내 Label Selector</a></li><li><a href=#컴포넌트-간-통신은-어떻게해요>컴포넌트 간 통신은 어떻게해요?</a></li></ol></li></ol></li><li><a href=#다음-이야기>다음 이야기</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/hexactf/>HexaCTF</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/hexactf-6/>HexaCTF 6. Kubebuilder를 활용한 ChallengeDefinition&amp;Challenge Type 구현</a></h2></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Jan 24, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>8 minute read</time></div></footer></div></header><section class=article-content><h2 id=이전-이야기>이전 이야기</h2><p>이전 글에는 ChallengeDefinition, Challenge 개념을 정의하고 설계하는 과정을 설명했습니다.</p><p>이제부터 ChallengeDefinition과 Challenge의 속성은 무엇인지 코드와 함께 소개하겠습니다.</p><h2 id=challengedefinitionchallenge-구성>ChallengeDefinition&amp;Challenge 구성</h2><p>HexaCTF는 두 개의 쿠버네티스 CR로 구성되어 있습니다.</p><ul><li>ChallengeDefinition : 문제 상세 정보를 나타내며 챌린지 정보, 구성 리소스를 컴포넌트 단위로 정의한다.</li><li>Challenge : 사용자(문제 풀이자)가 생성하는 문제의 단위로 참조된 ChallengeDefinition을 기반으로 리소스를 생성하고 삭제한다.</li></ul><p><img src=/p/hexactf-6/image.png width=862 height=492 srcset="/p/hexactf-6/image_hu_8aa7f99b6fd840b5.png 480w, /p/hexactf-6/image_hu_dc443c05dda744a.png 1024w" loading=lazy alt="ChallengeDefinition&Challenge 구성도" class=gallery-image data-flex-grow=175 data-flex-basis=420px></p><p>이제부터 각각의 리소스가 어떤 구성요소를 가지고 있는지 설명하겠습니다.</p><h3 id=challenge>Challenge</h3><p>Flask 서버는 Challenge 생성 요청을 통해 사용자 이름(username)과 문제 번호(challenge_id) 얻게 됩니다. 그리고 파이썬 쿠버네티스 라이브러리를 활용하여 Challenge CR을 실행시키게 됩니다.</p><p><img src=/p/hexactf-6/image-1.png width=579 height=252 srcset="/p/hexactf-6/image-1_hu_c3470e8cff99fcc3.png 480w, /p/hexactf-6/image-1_hu_fd596b7f452226ef.png 1024w" loading=lazy alt="대략적인 시스템 구성도" class=gallery-image data-flex-grow=229 data-flex-basis=551px></p><p>요구사항을 정의하자면 <strong>두 개의 정보 만으로도 Challenge를 생성할 수 있어야 하며 모든 문제가 실행 가능하도록 일관된 구조를 가지고 있어야 합니다.</strong> 그래야 서버가 파일을 불러오는 형식이 아닌 Kubernetes API에 CR 생성을 요청할 수 있게 됩니다.</p><h4 id=파일을-불러오는-방식>파일을 불러오는 방식</h4><p>Challenge의 구조가 문제 유형마다 다르면 Challenge CR 파일을 별도로 저장해서 호출해야 합니다. 파일이 아니더라도 어떻게 다른지를 저장해야 할 것입니다.</p><h3 id=구조>구조</h3><h4 id=metadata>Metadata</h4><ul><li>name : 챌린지 이름</li><li>namespace : Challenge를 실행시킬 namespace</li><li>labels<ul><li>username : 사용자 이름</li><li>challenge_id : Challenge id</li></ul></li></ul><h4 id=spec>Spec</h4><ul><li>definition : ChallengeDefinition 이름</li></ul><p>Metadata는 go map 형식으로 이뤄져 있습니다. 그러므로 손쉽게 key를 통해서 값을 가져올 수 있게 됩니다.
+직접 구조체로 명시해야 하는 부분은 바로 <code>Spec</code> 입니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>type</span> <span class=nx>ChallengeSpec</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Definition: ChallengeDefinition 이름</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Definition</span> <span class=kt>string</span> <span class=s>`json:&#34;definition&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>Kubebuilder의 명령어를 통해 코드를 CRD로 변환시킨 후 설치하는 작업을 수행합니다. (<a class=link href=https://book.kubebuilder.io/quick-start target=_blank rel=noopener>Kubebuilder 공식문서 Quickstart</a>) 모든 작업이 끝나면 아래의 yaml 파일을 통해 Challenge를 생성할 수 있게 됩니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>apps.hexactf.io/v1alpha1</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>Challenge</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>ubuntu-instance-1</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>namespace</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>labels</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>apps.hexactf.io/challengeId</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;1&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>apps.hexactf.io/user</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;test&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=c># 사용할 ChallengeDefinition의 이름</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>definition</span><span class=p>:</span><span class=w> </span><span class=l>ubuntu-basic</span><span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><p>주된 목표는 서버가 <strong>사용자의 Challenge</strong>를 만드는 것입니다. 다시 말해 서버가 사용자 정보가 담긴 yaml 파일을 선언하고 실행시켜야 한다는 의미와 같습니다.</p><p>사전에 문제 등록 과정이 있기에 사용자, Challenge에 대한 기본 정보는 저장되어 있습니다.
+이후에 설명하겠지만 definition는 ChallengeDefinition의 이름으로 Challenge의 이름(제목)에 해당됩니다. 다른 말로 <strong>Challenge id만으로도 definition을 알 수 있어 최소한의 정보로 Challenge를 생성할 수 있게 됩니다.</strong></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl>	 	<span class=n>user_challenge_repo</span> <span class=o>=</span> <span class=n>UserChallengesRepository</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1># Challenge definition 조회</span>
+</span></span><span class=line><span class=cl>        <span class=n>challenge_definition</span> <span class=o>=</span> <span class=n>ChallengeRepository</span><span class=o>.</span><span class=n>get_challenge_name</span><span class=p>(</span><span class=n>challenge_id</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=ow>not</span> <span class=n>challenge_definition</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=k>raise</span> <span class=n>ChallengeNotFound</span><span class=p>(</span><span class=n>error_msg</span><span class=o>=</span><span class=sa>f</span><span class=s2>&#34;Challenge definition not found for ID: </span><span class=si>{</span><span class=n>challenge_id</span><span class=si>}</span><span class=s2>&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1># Challenge name 생성 및 검증</span>
+</span></span><span class=line><span class=cl>        <span class=n>challenge_name</span> <span class=o>=</span> <span class=sa>f</span><span class=s2>&#34;challenge-</span><span class=si>{</span><span class=n>challenge_id</span><span class=si>}</span><span class=s2>-</span><span class=si>{</span><span class=n>username</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=ow>not</span> <span class=bp>self</span><span class=o>.</span><span class=n>_is_valid_k8s_name</span><span class=p>(</span><span class=n>challenge_name</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>            <span class=k>raise</span> <span class=n>UserChallengeCreationError</span><span class=p>(</span><span class=n>error_msg</span><span class=o>=</span><span class=sa>f</span><span class=s2>&#34;Invalid challenge name: </span><span class=si>{</span><span class=n>challenge_name</span><span class=si>}</span><span class=s2>&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=c1># ...</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1># Challenge manifest 생성</span>
+</span></span><span class=line><span class=cl>        <span class=n>challenge_manifest</span> <span class=o>=</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=s2>&#34;apiVersion&#34;</span><span class=p>:</span> <span class=s2>&#34;apps.hexactf.io/v1alpha1&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=s2>&#34;kind&#34;</span><span class=p>:</span> <span class=s2>&#34;Challenge&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=s2>&#34;metadata&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=s2>&#34;name&#34;</span><span class=p>:</span> <span class=n>challenge_name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=s2>&#34;labels&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                    <span class=s2>&#34;apps.hexactf.io/challengeId&#34;</span><span class=p>:</span> <span class=nb>str</span><span class=p>(</span><span class=n>challenge_id</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>                    <span class=s2>&#34;apps.hexactf.io/user&#34;</span><span class=p>:</span> <span class=n>username</span>
+</span></span><span class=line><span class=cl>                <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=p>},</span>
+</span></span><span class=line><span class=cl>            <span class=s2>&#34;spec&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=s2>&#34;namespace&#34;</span><span class=p>:</span> <span class=n>namespace</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=s2>&#34;definition&#34;</span><span class=p>:</span> <span class=n>challenge_definition</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>challenge</span> <span class=o>=</span> <span class=bp>self</span><span class=o>.</span><span class=n>custom_api</span><span class=o>.</span><span class=n>create_namespaced_custom_object</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>group</span><span class=o>=</span><span class=s2>&#34;apps.hexactf.io&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>version</span><span class=o>=</span><span class=s2>&#34;v1alpha1&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>namespace</span><span class=o>=</span><span class=n>namespace</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>plural</span><span class=o>=</span><span class=s2>&#34;challenges&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=n>body</span><span class=o>=</span><span class=n>challenge_manifest</span>
+</span></span><span class=line><span class=cl>        <span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=challengedefinition>ChallengeDefinition</h2><p>ChallengeDefinition은 Challenge의 <strong>인프라 구성을 기술하는 부분</strong>입니다. &ldquo;어떤 이미지를 컨테이너로 만들어서 어떻게 네트워크를 구성할건데?&rdquo; 를 명시하는 구간입니다.</p><h3 id=구조-1>구조</h3><h5 id=metadata-1>Metadata</h5><ul><li>name: 챌린지 이름(제목)</li></ul><h5 id=spec-1>Spec</h5><ul><li>isOne : 영속성 여부입니다. 값이 True인 경우 1:1 문제 유형으로 30분 후에 삭제되어야 합니다.</li><li>component : 쿠버네티스 리소스인 Deployment & Service를 하나의 Component로 정의합니다.</li></ul><p>Component 내에 있는 Deployment, Service는 기존의 yaml 선언 형식과 동일합니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>apps.hexactf.io/v1alpha1</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>ChallengeDefinition</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>web-basic</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>namespace</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>isOne</span><span class=p>:</span><span class=w> </span><span class=kc>false</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>components</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>web</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>deployment</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>        </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>          </span><span class=nt>replicas</span><span class=p>:</span><span class=w> </span><span class=m>1</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>          </span><span class=nt>template</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>            </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>              </span><span class=nt>containers</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>                </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>nginx</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>                  </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class=l>nginx:1.25</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>                  </span><span class=nt>ports</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>                    </span>- <span class=nt>containerPort</span><span class=p>:</span><span class=w> </span><span class=m>80</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>	</span><span class=l>....</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>	 </span><span class=nt>service</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>        </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>          </span><span class=nt>ports</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>            </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>http</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>              </span><span class=nt>port</span><span class=p>:</span><span class=w> </span><span class=m>80</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>              </span><span class=nt>targetPort</span><span class=p>:</span><span class=w> </span><span class=m>80</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>              </span><span class=nt>protocol</span><span class=p>:</span><span class=w> </span><span class=l>TCP</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>          </span><span class=nt>type</span><span class=p>:</span><span class=w> </span><span class=l>NodePort</span><span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><h4 id=challengedefinition은-deployment의-모든-필드를-지원하는-것이-아니다>ChallengeDefinition은 Deployment의 모든 필드를 지원하는 것이 아니다.</h4><p>앞서 Component 내에 있는 Deployment는 기존의 yaml 선언 형식과 동일하다고 말씀을 드렸지만 일부는 지원하지 않습니다.</p><p>Kubebuilder를 활용하여 코드를 제작할때 라이브러리를 통해 쿠버네티스의 리소스를 활용합니다.
+Service를 예로 들면 yaml에 정의된 필드가 구조체 형식으로 선언되어 있습니다. 쿠버네티스의 리소스는 라이브러리의 구조체를 활용하는 것이라고 보면 됩니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>type</span> <span class=nx>Service</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>metav1</span><span class=p>.</span><span class=nx>TypeMeta</span> <span class=s>`json:&#34;,inline&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Standard object&#39;s metadata.</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// +optional</span>
+</span></span><span class=line><span class=cl>	<span class=nx>metav1</span><span class=p>.</span><span class=nx>ObjectMeta</span> <span class=s>`json:&#34;metadata,omitempty&#34; protobuf:&#34;bytes,1,opt,name=metadata&#34;`</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// Spec defines the behavior of a service.</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// +optional</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Spec</span> <span class=nx>ServiceSpec</span> <span class=s>`json:&#34;spec,omitempty&#34; protobuf:&#34;bytes,2,opt,name=spec&#34;`</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// Most recently observed status of the service.</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Populated by the system.</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Read-only.</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// +optional</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Status</span> <span class=nx>ServiceStatus</span> <span class=s>`json:&#34;status,omitempty&#34; protobuf:&#34;bytes,3,opt,name=status&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>라이브러리를 적절하게 사용하여 Component의 Deployment, Service를 선언합니다.
+이번 프로젝트의 경우 Service는 라이브러리에서 제공하는 구조체를 모두 사용했지만 Deployment는 필요한 부분만 추출해서 선언했습니다.
+라이브러리에서 제공하는 Deployment를 사용하면 <strong>Deployment의 수많은 옵션이 포함된 구조체를 Copy하는 과정에서 용량이 초과되어 CRD 생성에 실패하게 됩니다.</strong></p><p>ChallengeDefinition의 Deployment에서는 컨테이너 구성 부분인 Containers와 Replicas만으로 구성했습니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kn>import</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=nx>corev1</span> <span class=s>&#34;k8s.io/api/core/v1&#34;</span>
+</span></span><span class=line><span class=cl>	<span class=nx>metav1</span> <span class=s>&#34;k8s.io/apimachinery/pkg/apis/meta/v1&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// ChallengeDefinitionSpec defines the desired state of ChallengeDefinition.</span>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>ChallengeDefinitionSpec</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Important: Run &#34;make&#34; to regenerate code after modifying this file</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// IsOne: 하나만 생성할 경우</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// False일 경우 일정 시간 내에서만 작동된다.</span>
+</span></span><span class=line><span class=cl>	<span class=nx>IsOne</span> <span class=kt>bool</span> <span class=s>`json:&#34;isOne,omitempty&#34;`</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// Components: Challenge를 구성하는 컴포넌트들</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Components</span> <span class=p>[]</span><span class=nx>Component</span> <span class=s>`json:&#34;components,omitempty&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// Component 는 이름과 리소스를 정의</span>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>Component</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Name</span>       <span class=kt>string</span>            <span class=s>`json:&#34;name,omitempty&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Deployment</span> <span class=o>*</span><span class=nx>CustomDeployment</span> <span class=s>`json:&#34;deployment,omitempty&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Service</span>    <span class=o>*</span><span class=nx>corev1</span><span class=p>.</span><span class=nx>Service</span>   <span class=s>`json:&#34;service,omitempty&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// Deployment 관련 구조체</span>
+</span></span><span class=line><span class=cl><span class=c1>// CustomDeploymentSpec 는 Replicas와 Template을 정의</span>
+</span></span><span class=line><span class=cl><span class=c1>// 자세한 내용은 Kubernetes Deployment API 문서 참고</span>
+</span></span><span class=line><span class=cl><span class=c1>// https://kubernetes.io/docs/concepts/workloads/controllers/deployment/</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>CustomDeployment</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Spec</span> <span class=nx>CustomDeploymentSpec</span> <span class=s>`json:&#34;spec,omitempty&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>CustomDeploymentSpec</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Replicas</span> <span class=kt>int32</span>                 <span class=s>`json:&#34;replicas,omitempty&#34;`</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Template</span> <span class=nx>CustomPodTemplateSpec</span> <span class=s>`json:&#34;template,omitempty&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>CustomPodTemplateSpec</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Spec</span> <span class=nx>CustomPodSpec</span> <span class=s>`json:&#34;spec,omitempty&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>CustomPodSpec</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Containers</span> <span class=p>[]</span><span class=nx>corev1</span><span class=p>.</span><span class=nx>Container</span> <span class=s>`json:&#34;containers,omitempty&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=component-구성-이유>Component 구성 이유</h4><p>이전 글에서 언급한 SQL Injection 사례 기억나시나요? 문제를 배포하기 위해서는 server- db가 필요하다고 말씀드렸습니다.</p><p>문제를 실행시키기 위해서는 server는 db가 어디에 있는지 알아야 합니다.
+어떤 문제를 사용하면서 사용자가 누구인지 알았지만 어떤 서비스인지 알 수 있는 방법이 있을까요? 단순히 Deployment, Service를 나열하는 구조라고 했을때 애플리케이션의 특징에 맞는 prefix를 추가하면 됩니다. 그러나 일관성이 떨어질 수 있다고 생각하여 Component 단위로 Deployment, Service를 묶게 되었습니다.</p><h4 id=component-내-label-selector>Component 내 Label Selector</h4><p>쿠버네티스에서 label은 중요한 역할을 합니다. 리소스 간 연결해주는 다리 역할을 합니다.</p><p>기본적으로 쿠버네티스는 Deployment의 네트워크를 정의하기 위해서는 label selector를 통해 Service와 연결합니다. 그렇다면 ChallengeDefinition을 정의할때 label을 사용자가 지정해야 할까요?</p><p>답은 <strong>Operator가 자동으로 지정해줍니다.</strong></p><p>리소스의 이름에 대해 이야기를 해보겠습니다.
+Challenge을 통해 생성된 리소스는 Challenge의 challenge_id, user 정보와 ChallengeDefinition에서 얻은 Component 이름을 조합한 고유한 prefix를 가지고 있습니다. 역할에 따라 deploy, svc를 추가로 붙여서 리소스의 이름을 정하게 됩니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// ChallengeIdentifier</span>
+</span></span><span class=line><span class=cl><span class=c1>// 도메인에 맞는 식별자를 생성해주는 구조체</span>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>ChallengeIdentifier</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>prefix</span> <span class=kt>string</span>
+</span></span><span class=line><span class=cl>	<span class=nx>labels</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kt>string</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>NewChallengeIdentifier</span><span class=p>(</span><span class=nx>challenge</span> <span class=o>*</span><span class=nx>hexactfproj</span><span class=p>.</span><span class=nx>Challenge</span><span class=p>,</span> <span class=nx>component</span> <span class=nx>hexactfproj</span><span class=p>.</span><span class=nx>Component</span><span class=p>)</span> <span class=o>*</span><span class=nx>ChallengeIdentifier</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// prefix 생성 (리소스 이름에 사용)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>prefix</span> <span class=o>:=</span> <span class=nx>fmt</span><span class=p>.</span><span class=nf>Sprintf</span><span class=p>(</span><span class=s>&#34;chall-%s-%s-%s&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/challengeId&#34;</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>		<span class=nx>component</span><span class=p>.</span><span class=nx>Name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/user&#34;</span><span class=p>])</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// 단일 레이블 맵 사용</span>
+</span></span><span class=line><span class=cl>	<span class=nx>labels</span> <span class=o>:=</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kt>string</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=s>&#34;apps.hexactf.io/instance&#34;</span><span class=p>:</span>   <span class=nx>prefix</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=s>&#34;apps.hexactf.io/name&#34;</span><span class=p>:</span>       <span class=nx>component</span><span class=p>.</span><span class=nx>Name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=s>&#34;apps.hexactf.io/part-of&#34;</span><span class=p>:</span>    <span class=nx>challenge</span><span class=p>.</span><span class=nx>Name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=s>&#34;apps.hexactf.io/managed-by&#34;</span><span class=p>:</span> <span class=s>&#34;challenge-operator&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=o>&amp;</span><span class=nx>ChallengeIdentifier</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>prefix</span><span class=p>:</span> <span class=nx>prefix</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>labels</span><span class=p>:</span> <span class=nx>labels</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=err>#</span> <span class=o>...</span>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>c</span> <span class=o>*</span><span class=nx>ChallengeIdentifier</span><span class=p>)</span> <span class=nf>GetDeploymentPrefix</span><span class=p>()</span> <span class=kt>string</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>c</span><span class=p>.</span><span class=nx>prefix</span> <span class=o>+</span> <span class=s>&#34;-deploy&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>c</span> <span class=o>*</span><span class=nx>ChallengeIdentifier</span><span class=p>)</span> <span class=nf>GetServicePrefix</span><span class=p>()</span> <span class=kt>string</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>c</span><span class=p>.</span><span class=nx>prefix</span> <span class=o>+</span> <span class=s>&#34;-svc&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>또한 Challenge로부터 생성된 Deployment 리소스는 아래와 같은 레이블을 추가로 가지게 됩니다. 그 중 <code>apps.hexactf.io/instance</code> Service의 <code>selector</code> 로 선언하여 서로 연결해줍니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl>	<span class=nx>prefix</span> <span class=o>:=</span> <span class=nx>fmt</span><span class=p>.</span><span class=nf>Sprintf</span><span class=p>(</span><span class=s>&#34;chall-%s-%s-%s&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/challengeId&#34;</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>		<span class=nx>component</span><span class=p>.</span><span class=nx>Name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/user&#34;</span><span class=p>])</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// 단일 레이블 맵 사용</span>
+</span></span><span class=line><span class=cl>	<span class=nx>labels</span> <span class=o>:=</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kt>string</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=s>&#34;apps.hexactf.io/instance&#34;</span><span class=p>:</span>   <span class=nx>prefix</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=s>&#34;apps.hexactf.io/name&#34;</span><span class=p>:</span>       <span class=nx>component</span><span class=p>.</span><span class=nx>Name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=s>&#34;apps.hexactf.io/part-of&#34;</span><span class=p>:</span>    <span class=nx>challenge</span><span class=p>.</span><span class=nx>Name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=s>&#34;apps.hexactf.io/managed-by&#34;</span><span class=p>:</span> <span class=s>&#34;challenge-operator&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h4 id=컴포넌트-간-통신은-어떻게해요>컴포넌트 간 통신은 어떻게해요?</h4><p>SQL Injection 문제를 다시 생각해보겠습니다. Server는 데이터베이스와 통신하기 위해서 데이터베이스의 host 주소를 지정해줘야 합니다. host 주소를 어떻게 알 수 있을까요?</p><ol><li>자동으로 찾아준다. : 🥹</li><li>직접 지정해준다. : IaC 도구처럼 서비스 이름을 지정해준다. 가변 인자를 삽입할 수 있는 로직을 구현해야 한다.</li><li>localhost로 설정한다. : 일관된 host를 가질 수 있다.</li></ol><p>이걸 다르게 해석할 수 있습니다.</p><ol><li>자동으로 찾아준다. : 🥹</li><li>직접 지정해준다. : 다른 컴포넌트의 Service를 지정할 수 있기 때문에 컴포넌트 간 통신이 가능합니다.</li><li>localhost로 설정한다. : 컴포넌트 간 통신이 불가능합니다. Pod 내 여러개의 컨테이너를 배포합니다.</li></ol><p>3번인 <strong>Pod 내에 다양한 컨테이너를 삽입하는 방향을 선택</strong>했습니다.
+서비스를 지원하려면 ChallengeDefinition 구조를 크게 바꿔야 합니다. 시간 여유도 없지만 기술적으로 부담이 됩니다. 또한 2개 이상의 컴포넌트를 제공하는 경우는 드물고 대부분 제한 시간 후에 삭제되는 유형(1:1)입니다. 현재로서 급한 기능은 아니기 때문에 제외했습니다.</p><h2 id=다음-이야기>다음 이야기</h2><p>이번 글에서는 ChallengeDefinition과 Challenge type에 대한 구성 요소와 관련 코드를 보여드렸습니다.
+이제부터 Operator 구현 시작이라고 생각합니다. &ldquo;CR을 어떻게 상태 관리할래?&ldquo;를 구현한 controller를 제작해야 합니다.
+다음 글에는 controller 구현 부분인 &ldquo;상태 관리 파트"로 찾아오겠습니다.</p></section><footer class=article-footer><section class=article-tags><a href=/tags/openstack/>Openstack</a>
+<a href=/tags/kubernetes/>Kubernetes</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/p/hexactf-8/><div class=article-details><h2 class=article-title>HexaCTF 8. 커스텀 컨트롤러를 통한 Challenge 생성 및 삭제 구현</h2></div></a></article><article><a href=/p/hexactf-7/><div class=article-details><h2 class=article-title>HexaCTF 7. Challenge CR 상태 정의와 Operator 개념 정리</h2></div></a></article><article><a href=/p/hexactf-5/><div class=article-details><h2 class=article-title>HexaCTF 5. Kubernetes CR를 활용한 Challenge 설계</h2></div></a></article><article><a href=/p/hexactf-4/><div class=article-details><h2 class=article-title>HexaCTF 4. Docker를 활용한 Challenge 설계 및 한계점</h2></div></a></article><article><a href=/p/hexactf-3/><div class=article-details><h2 class=article-title>HexaCTF - 3. Jenkins를 활용한 CI 환경 구성하기</h2></div></a></article></div></div></aside><footer class=site-footer><section class=copyright>&copy;
+2024 -
+2025 S0okJu.dev</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

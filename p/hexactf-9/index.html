@@ -1,0 +1,307 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="Prometheus 왜 promethues Operator를 사용했을까? Prometheus는 다양한 대상(target)에서 시간 경과에 따른 지표를 수집하여 저장하는 시계열 데이터베이스입니다. 이러한 데이터를 우리 눈에 쉽게 보여주는 것이 Grafana입니다.\n"><title>HexaCTF 9. Challenge Operator 커스텀 메트릭 설정 및 Prometheus Operator와 연결하기</title>
+<link rel=canonical href=https://s0okju.github.io/p/hexactf-9/><link rel=stylesheet href=/scss/style.min.663803bebe609202d5b39d848f2d7c2dc8b598a2d879efa079fa88893d29c49c.css><meta property='og:title' content="HexaCTF 9. Challenge Operator 커스텀 메트릭 설정 및 Prometheus Operator와 연결하기"><meta property='og:description' content="Prometheus 왜 promethues Operator를 사용했을까? Prometheus는 다양한 대상(target)에서 시간 경과에 따른 지표를 수집하여 저장하는 시계열 데이터베이스입니다. 이러한 데이터를 우리 눈에 쉽게 보여주는 것이 Grafana입니다.\n"><meta property='og:url' content='https://s0okju.github.io/p/hexactf-9/'><meta property='og:site_name' content='S0okJu.dev'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='Kubernetes'><meta property='article:tag' content='Prometheus'><meta property='article:tag' content='Grafana'><meta property='article:published_time' content='2025-03-07T00:00:00+09:00'><meta property='article:modified_time' content='2025-03-07T00:00:00+09:00'><meta name=twitter:title content="HexaCTF 9. Challenge Operator 커스텀 메트릭 설정 및 Prometheus Operator와 연결하기"><meta name=twitter:description content="Prometheus 왜 promethues Operator를 사용했을까? Prometheus는 다양한 대상(target)에서 시간 경과에 따른 지표를 수집하여 저장하는 시계열 데이터베이스입니다. 이러한 데이터를 우리 눈에 쉽게 보여주는 것이 Grafana입니다.\n"><link rel="shortcut icon" href=/favicon.ico></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_c3a763b4e1e1539a.png width=300 height=248 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>👾</span></figure><div class=site-meta><h1 class=site-name><a href=/>S0okJu.dev</a></h1><h2 class=site-description>Hello, World!</h2></div></header><ol class=menu-social><li><a href=https://github.com/S0okJu target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+<span>About</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>Links</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#prometheus>Prometheus</a><ol><li><a href=#왜-promethues-operator를-사용했을까>왜 promethues Operator를 사용했을까?</a></li></ol></li><li><a href=#challenge-상태를-나타내는-커스텀-메트릭-제작하기>Challenge 상태를 나타내는 커스텀 메트릭 제작하기</a><ol><li><a href=#challenge-상태-정보-메트릭의-특징>Challenge 상태 정보 메트릭의 특징</a><ol><li></li><li><a href=#challenge-사용-패턴-확인>Challenge 사용 패턴 확인</a></li></ol></li><li><a href=#어떤-메트릭을-활용할까>어떤 메트릭을 활용할까</a><ol><li><a href=#선택-기준은>선택 기준은?</a></li></ol></li><li><a href=#label은-어떻게-설정할까>Label은 어떻게 설정할까?</a></li><li><a href=#추가-deleted-상태-정보는-언제까지-가지고-있어야-할까>추가: Deleted 상태 정보는 언제까지 가지고 있어야 할까?</a></li></ol></li><li><a href=#challenge-operator-쿠버네티스에-배포하기>Challenge Operator 쿠버네티스에 배포하기</a><ol><li><a href=#metrics-endpoint-설정>metrics endpoint 설정</a></li><li><a href=#helm-으로-배포하기>Helm 으로 배포하기</a></li><li><a href=#servicemonitor-설정하기>ServiceMonitor 설정하기</a></li></ol></li><li><a href=#시각화>시각화</a><ol><li><a href=#상태별-challenge-개수>상태별 Challenge 개수</a></li><li><a href=#사용자-문제-별-challenge-상태>사용자, 문제 별 Challenge 상태</a></li></ol></li><li><a href=#마치며>마치며</a></li><li><a href=#references>References</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/hexactf/>HexaCTF</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/hexactf-9/>HexaCTF 9. Challenge Operator 커스텀 메트릭 설정 및 Prometheus Operator와 연결하기</a></h2></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Mar 07, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>9 minute read</time></div></footer></div></header><section class=article-content><h2 id=prometheus>Prometheus</h2><h3 id=왜-promethues-operator를-사용했을까>왜 promethues Operator를 사용했을까?</h3><p>Prometheus는 다양한 대상(target)에서 시간 경과에 따른 지표를 수집하여 저장하는 시계열 데이터베이스입니다. 이러한 데이터를 우리 눈에 쉽게 보여주는 것이 Grafana입니다.</p><blockquote><p>프로메테우스 실행 절차는 <a class=link href=https://wlsdn3004.tistory.com/35 target=_blank rel=noopener>wlsdn3004님의 Prometheus 란?</a>를 참고하시길 바랍니다.</p></blockquote><p>여기서 단순한 쿠버네티스가 아닌 쿠버네티스 오퍼레이터를 활용한 이유는 서비스 모니터를 통해 멀티 클러스터 혹은 다른 네임스페이스 환경에 대응할 수 있기 때문입니다.<br>여기서 서비스 모니터가 무엇인지 알아야겠죠? 서비스 모니터(ServiceMonitor)는 동적으로 다수 서비스를 모니터링할 수 있는 방법을 선언적으로 정의한 것입니다. 원하는 구성으로 ServiceMonitor를 적용시키면 Prometheus Operator는 자동으로 새로운 서비스를 찾게 됩니다.</p><p><img src=/p/hexactf-9/image.png width=798 height=355 srcset="/p/hexactf-9/image_hu_fdd2ca4f2b5427d9.png 480w, /p/hexactf-9/image_hu_326563f517b9604c.png 1024w" loading=lazy alt="출처 - Prometheus Operator Architecture. Source:  www.nicktriller.com" class=gallery-image data-flex-grow=224 data-flex-basis=539px></p><p>제가 Prometheus Operator를 쓰는 이유는 <strong>다른 Namespace에 있는 Challenge Operator의 메트릭 정보를 얻기 위해서입니다.</strong> 구체적으로 어떻게 설정할지는 아래에서 설명하겠습니다.</p><p><img src=/p/hexactf-9/image-1.png width=972 height=677 srcset="/p/hexactf-9/image-1_hu_35953a980b95830c.png 480w, /p/hexactf-9/image-1_hu_973d19064e74c360.png 1024w" loading=lazy alt="네임스페이스에 따른 프로젝트 구성도" class=gallery-image data-flex-grow=143 data-flex-basis=344px></p><h2 id=challenge-상태를-나타내는-커스텀-메트릭-제작하기>Challenge 상태를 나타내는 커스텀 메트릭 제작하기</h2><h3 id=challenge-상태-정보-메트릭의-특징>Challenge 상태 정보 메트릭의 특징</h3><h5 id=빠른-문제-해결>빠른 문제 해결</h5><p>현재 저희 대회에서 필요한 것은 Challenge 성능 정보보다 <strong>상태 정보</strong>입니다. 왜냐하면 문제 발생 시 빠르게 대처해야 하기 때문입니다.</p><p>여기서 Challenge 내에 있는 Deployment에 대해 이해해야 합니다. 해킹 문제의 경우 취약한 하나의 기능을 구현하여 배포하게 됩니다. 즉, 모든 프로그램 자체가 단순합니다. 또한 한 사람당 하나의 Challenge만 사용하기 때문에 트래픽 문제가 발생할 확률은 높습니다.</p><blockquote><p>트래픽 항상 낮게 측정되지 않습니다. 간혹 Brute Force 특징을 가진 해킹 도구를 활용하는 경우가 있습니다. 그러나 이러한 행동은 부정 행위로 간주됩니다.</p></blockquote><p>여기서 말하는 문제는 <strong>서버 생성 실패, 서버 삭제 실패 등 오퍼레이터에 발생하는 문제</strong>를 말하는 것입니다. 빈번하는 아니지만 드물게 삭제가 실패되는 경우가 있어서 Challenge 상태 정보를 중심으로 시각화를 했습니다. 만약에 삭제가 실패되었는데 실행 중이라면 남아 있는 리소스를 삭제하는 것이 우선이겠죠?</p><p>좀 더 자세하게 구현하기 위해서는 상태 메트릭뿐만 아니라 로깅과 다른 메트릭을 조합해서 구현해야 할 것 입니다. 그러나 시간 관계 상 구현하지 못했으며 추후 구현할 예정입니다.</p><h4 id=challenge-사용-패턴-확인>Challenge 사용 패턴 확인</h4><p>제가 상태 정보를 우선 제작한 이유이기도 합니다.</p><p>대회 이전에는 2가지 궁금증을 가지고 있었습니다. 아래의 질문들은 서버 메모리 용량을 산정할때 필요합니다.</p><ol><li>사람들은 한번에 몇개의 서버를 만들고 방치할까? -> 한 사람당 최대 몇개의 서버</li><li>문제 분야마다 푸는 패턴이 있을까? -> Challenge 리소스 양과 분야 별 비율</li></ol><p>사용 패턴은 현재보다는 미래를 위한 메트릭 지표라고 보면 됩니다.</p><blockquote><p><strong>여담</strong>
+글 작성 시점으로 대회를 성공적으로 마무리했습니다. 사용자 패턴에 대해서는 다른 글에서 뵙겠습니다.</p></blockquote><h3 id=어떤-메트릭을-활용할까>어떤 메트릭을 활용할까</h3><p><a class=link href=https://prometheus.io/docs/concepts/metric_types/ target=_blank rel=noopener>Prometheus 공식 문서</a>에 의하면 메트릭은 4개가 있습니다.</p><ul><li>Guage: 임의로 올라가거나 내려갈 수 있는 단일 숫자값을 나타내느 메트릭</li><li>Counter : 누적되는 메트릭 값. 감소가 없음</li><li>Histogram :지연 시간, 처리시간과 같이 연속형 값을 다룰때 사용</li><li>Summary : 연속적인 데이터 값의 분포를 측정</li></ul><h4 id=선택-기준은>선택 기준은?</h4><p>저는 최종적으로 <strong>Gauge</strong>를 선택하게 되었습니다.</p><ul><li>n시간 마다 수집되어야 함</li><li>Running, Deleted, Error 개수의 증감을 표현할 수 있어야 함</li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>var</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=nx>crStatusMetric</span> <span class=p>=</span> <span class=nx>prometheus</span><span class=p>.</span><span class=nf>NewGaugeVec</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>		<span class=nx>prometheus</span><span class=p>.</span><span class=nx>GaugeOpts</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>Name</span><span class=p>:</span> <span class=s>&#34;challenge_resource_status&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>			<span class=nx>Help</span><span class=p>:</span> <span class=s>&#34;Tracks the status of the custom resource&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=p>},</span>
+</span></span><span class=line><span class=cl>		<span class=p>[]</span><span class=kt>string</span><span class=p>{</span><span class=s>&#34;challeng_id&#34;</span><span class=p>,</span> <span class=s>&#34;challenge_name&#34;</span><span class=p>,</span> <span class=s>&#34;username&#34;</span><span class=p>,</span> <span class=s>&#34;namespace&#34;</span><span class=p>},</span>
+</span></span><span class=line><span class=cl>	<span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>init</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>metrics</span><span class=p>.</span><span class=nx>Registry</span><span class=p>.</span><span class=nf>MustRegister</span><span class=p>(</span><span class=nx>crStatusMetric</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=label은-어떻게-설정할까>Label은 어떻게 설정할까?</h3><p>Prometheus의 Label은 키-값 쌍으로 이뤄져 있으며, Proemtheus가 시계열 데이터를 식별하는데 메트릭 이름과 더불어서 사용합니다.</p><p>제가 원하는 상태 정보는 크게 세 가지 입니다. 제가 위해서 말한 2가지 목적에 대입하면 아래와 같습니다.</p><ul><li>상태별 Challenge 개수<ul><li>전체 Challenge 현황을 파악하기 위해</li></ul></li><li><strong>사용자, 문제 별</strong> Challenge 상태<ul><li>사용자 패턴 파악</li><li>Error 문제 발생 시 빠르게 문제를 대처하기 위해</li></ul></li><li>문제별 실행 중/에러 커스텀 리소스 수<ul><li>사용자 패턴 파악</li><li>오류 사항이 있는 Challenge를 찾기 위해</li></ul></li></ul><p>그렇다면 Label로 무조건 지정할 것은 <strong>사용자 식별자, 문제 식별자</strong>입니다. 이 두가지를 포함하여 Challenge 이름과 Namespace도 추가했습니다.</p><blockquote><p>본래 종류에 따라 Namespace를 분리할 예정이었습니다. 그러나 시간 관계 상 못하게 되어 코드에 남게 되었습니다.</p></blockquote><p>그리고 상태 정보를 값으로 설정했습니다. Gauge의 특징 중에 하나는 값을 증감할 수 있다고 했죠? 이 기능을 활용할 예정입니다.</p><ul><li>Running: 1</li><li>Deleted: 2</li><li>Error: 3</li></ul><p>실제 코드로 작성하면 아래와 같습니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>var</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=nx>crStatusMetric</span> <span class=p>=</span> <span class=nx>prometheus</span><span class=p>.</span><span class=nf>NewGaugeVec</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>		<span class=nx>prometheus</span><span class=p>.</span><span class=nx>GaugeOpts</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>Name</span><span class=p>:</span> <span class=s>&#34;challenge_resource_status&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>			<span class=nx>Help</span><span class=p>:</span> <span class=s>&#34;Tracks the status of the custom resource&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=p>},</span>
+</span></span><span class=line><span class=cl>		<span class=p>[]</span><span class=kt>string</span><span class=p>{</span><span class=s>&#34;challeng_id&#34;</span><span class=p>,</span> <span class=s>&#34;challenge_name&#34;</span><span class=p>,</span> <span class=s>&#34;username&#34;</span><span class=p>,</span> <span class=s>&#34;namespace&#34;</span><span class=p>},</span>
+</span></span><span class=line><span class=cl>	<span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>init</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>metrics</span><span class=p>.</span><span class=nx>Registry</span><span class=p>.</span><span class=nf>MustRegister</span><span class=p>(</span><span class=nx>crStatusMetric</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// ...</span>
+</span></span><span class=line><span class=cl><span class=nx>crStatusMetric</span><span class=p>.</span><span class=nf>WithLabelValues</span><span class=p>(</span><span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/challengeId&#34;</span><span class=p>],</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Name</span><span class=p>,</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/user&#34;</span><span class=p>],</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Namespace</span><span class=p>).</span><span class=nf>Set</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=추가-deleted-상태-정보는-언제까지-가지고-있어야-할까>추가: Deleted 상태 정보는 언제까지 가지고 있어야 할까?</h3><p>메트릭 구현 부분에서 &ldquo;Deleted 상태 정보는 언제까지 가지고 있어야 할까?&ldquo;가 난제이지 않을까 싶습니다.<br>Promethues는 기본적으로 30초 간격으로 <code>/metrics</code> 내용을 스크랩합니다.</p><p>저에게는 두 가지 고민이 있었습니다.</p><ol><li>삭제 요청 시 메트릭을 Deleted(3)로 설정 -> <code>/metrics</code>에 불필요한 데이터가 쌓임. 대회가 끝날때마다 주기적으로 삭제하는 작업이 필요</li><li>삭제 요청 시 메트릭을 Deleted 상태로 변경 후 <strong>즉시 삭제</strong> -> Prometheus가 Deleted 상태를 스크랩할 수 있도록 시간 조정이 필요</li></ol><p>대회 시기에는 Running, Error를 중점적으로 볼 예정이기 때문에 <strong>두 번째 방법</strong>을 선택하게 되었습니다.<br>다만 Prometheus가 Deleted 상태를 한번 스크랩하고 삭제되어야 하기 때문에 <strong>고루틴을 활용하여 1분 후에 메트릭이 삭제될 수 있도록 구현</strong>했습니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>r</span> <span class=o>*</span><span class=nx>ChallengeReconciler</span><span class=p>)</span> <span class=nf>handleDeletion</span><span class=p>(</span><span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>challenge</span> <span class=o>*</span><span class=nx>hexactfproj</span><span class=p>.</span><span class=nx>Challenge</span><span class=p>)</span> <span class=p>(</span><span class=nx>ctrl</span><span class=p>.</span><span class=nx>Result</span><span class=p>,</span> <span class=kt>error</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>log</span><span class=p>.</span><span class=nf>Info</span><span class=p>(</span><span class=s>&#34;Processing deletion&#34;</span><span class=p>,</span> <span class=s>&#34;challenge&#34;</span><span class=p>,</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>crStatusMetric</span><span class=p>.</span><span class=nf>WithLabelValues</span><span class=p>(</span><span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/challengeId&#34;</span><span class=p>],</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Name</span><span class=p>,</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/user&#34;</span><span class=p>],</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Namespace</span><span class=p>).</span><span class=nf>Set</span><span class=p>(</span><span class=mi>2</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// ...</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>go</span> <span class=kd>func</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>time</span><span class=p>.</span><span class=nf>Sleep</span><span class=p>(</span><span class=mi>1</span> <span class=o>*</span> <span class=nx>time</span><span class=p>.</span><span class=nx>Minute</span><span class=p>)</span> <span class=c1>// scrape_interval이 30초라면 1분 정도 기다리면 안전</span>
+</span></span><span class=line><span class=cl>		<span class=nx>crStatusMetric</span><span class=p>.</span><span class=nf>DeleteLabelValues</span><span class=p>(</span><span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/challengeId&#34;</span><span class=p>],</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Name</span><span class=p>,</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/user&#34;</span><span class=p>],</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Namespace</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>}()</span>
+</span></span><span class=line><span class=cl>	<span class=nx>log</span><span class=p>.</span><span class=nf>Info</span><span class=p>(</span><span class=s>&#34;Successfully completed deletion process&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// 이 시점에서 finalizers가 비어 있으므로, K8s가 오브젝트를 실제 삭제함</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nx>Result</span><span class=p>{},</span> <span class=kc>nil</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=challenge-operator-쿠버네티스에-배포하기>Challenge Operator 쿠버네티스에 배포하기</h2><h3 id=metrics-endpoint-설정>metrics endpoint 설정</h3><p>kubebuilder는 CNCF 프로젝트인만큼 <a class=link href=https://book.kubebuilder.io/reference/metrics target=_blank rel=noopener>프로메테우스 엔드포인트를 개방할 수 있는 ServiceMonitor를 자동으로 설정할 수 있습니다.</a> 단, <strong>kubebuilder에 내장되어 있는 kustomize를 활용해야 간단한 설정으로 사용할 수 있게 됩니다.</strong> 그러나 저는 kustomize를 활용하지 않을 예정이므로 다른 방법을 찾아봐야 합니다.</p><p>kustomize는 배포 도구일뿐 근본적으로 kubebuilder에는 메트릭을 export 해줄 수 있는 함수가 있다고 생각해도 될 것 같습니다.<br><code>main.go</code> 에 가보시면 metricServer의 속성을 프로그램 속성 값으로 받아서 설정하고 있습니다. 즉 프로그램 실행시킬때 적절한 속성값을 넣어주면 됩니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl>	<span class=kd>var</span> <span class=nx>metricsAddr</span> <span class=kt>string</span>
+</span></span><span class=line><span class=cl>	<span class=kd>var</span> <span class=nx>enableLeaderElection</span> <span class=kt>bool</span>
+</span></span><span class=line><span class=cl>	<span class=kd>var</span> <span class=nx>probeAddr</span> <span class=kt>string</span>
+</span></span><span class=line><span class=cl>	<span class=kd>var</span> <span class=nx>secureMetrics</span> <span class=kt>bool</span>
+</span></span><span class=line><span class=cl>	<span class=kd>var</span> <span class=nx>enableHTTP2</span> <span class=kt>bool</span>
+</span></span><span class=line><span class=cl>	<span class=kd>var</span> <span class=nx>tlsOpts</span> <span class=p>[]</span><span class=kd>func</span><span class=p>(</span><span class=o>*</span><span class=nx>tls</span><span class=p>.</span><span class=nx>Config</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flag</span><span class=p>.</span><span class=nf>StringVar</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>metricsAddr</span><span class=p>,</span> <span class=s>&#34;metrics-bind-address&#34;</span><span class=p>,</span> <span class=s>&#34;:8080&#34;</span><span class=p>,</span> <span class=s>&#34;The address the metrics endpoint binds to. &#34;</span><span class=o>+</span>
+</span></span><span class=line><span class=cl>		<span class=s>&#34;Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flag</span><span class=p>.</span><span class=nf>StringVar</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>probeAddr</span><span class=p>,</span> <span class=s>&#34;health-probe-bind-address&#34;</span><span class=p>,</span> <span class=s>&#34;:8081&#34;</span><span class=p>,</span> <span class=s>&#34;The address the probe endpoint binds to.&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flag</span><span class=p>.</span><span class=nf>BoolVar</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>enableLeaderElection</span><span class=p>,</span> <span class=s>&#34;leader-elect&#34;</span><span class=p>,</span> <span class=kc>false</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=s>&#34;Enable leader election for controller manager. &#34;</span><span class=o>+</span>
+</span></span><span class=line><span class=cl>			<span class=s>&#34;Enabling this will ensure there is only one active controller manager.&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Prometheus metrics http 사용</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flag</span><span class=p>.</span><span class=nf>BoolVar</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>secureMetrics</span><span class=p>,</span> <span class=s>&#34;metrics-secure&#34;</span><span class=p>,</span> <span class=kc>false</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=s>&#34;If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flag</span><span class=p>.</span><span class=nf>BoolVar</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>enableHTTP2</span><span class=p>,</span> <span class=s>&#34;enable-http2&#34;</span><span class=p>,</span> <span class=kc>false</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=s>&#34;If set, HTTP/2 will be enabled for the metrics and webhook servers&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>opts</span> <span class=o>:=</span> <span class=nx>zap</span><span class=p>.</span><span class=nx>Options</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>Development</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=nx>opts</span><span class=p>.</span><span class=nf>BindFlags</span><span class=p>(</span><span class=nx>flag</span><span class=p>.</span><span class=nx>CommandLine</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>flag</span><span class=p>.</span><span class=nf>Parse</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// ...</span>
+</span></span><span class=line><span class=cl>	<span class=nx>metricsServerOptions</span> <span class=o>:=</span> <span class=nx>metricsserver</span><span class=p>.</span><span class=nx>Options</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>BindAddress</span><span class=p>:</span>   <span class=nx>metricsAddr</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>SecureServing</span><span class=p>:</span> <span class=kc>false</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=helm-으로-배포하기>Helm 으로 배포하기</h3><p>위의 글에서 Kustomize를 활용하지 않을 것이라고 말씀 드렸습니다. 이유는 단순하게 <strong>Helm이 가장 익숙</strong>하기 때문입니다.<br>그래도 차이점은 확인해봐야겠죠? <a class=link href=https://www.gomgomshrimp.com/posts/k8s/helm-and-kustomize target=_blank rel=noopener>SEOWOO님의 블로그 - Helm과 Kustomize, 무엇을 쓸까?</a> 일부 참고해서 핵심적인 차이점을 설명하겠습니다.</p><ul><li>Helm<ul><li>여러 템플릿의 모음으로 구성할 수 있으며 values.yaml을 매개변수화하여 값을 전달</li><li>애플리케이션 전체 패키지 관리 및 배포에 더 중심</li></ul></li><li>Kustomize<ul><li>상속의 개념을 활용해서 필요한 부분만 작성할 수 있음</li><li>환경별 배포 구성 관리에 적합</li></ul></li></ul><p>Challenge Operator를 배포할때 Deployment를 활용했습니다. Operator의 철학에서도 Operator는 단일 Deployment로 배포되어야 한다고 설명했습니다.</p><blockquote><ol><li>Operators should install as a single deployment e.g. <code>kubectl create -f https://coreos.com/operators/etcd/latest/deployment.yaml</code> and take no additional action once installed.</li></ol><ul><li>출처: <a class=link href=https://www.redhat.com/en/blog/introducing-operators-putting-operational-knowledge-into-software target=_blank rel=noopener>Introducing Operators: Putting Operational Knowledge into Software</a></li></ul></blockquote><p>여기서 주목해야 할 부분은 <code>--metrics-bind-address=:8080</code> 부분입니다.
+앞서 말했듯이 kubebuilder는 내부적으로 메트릭 서버를 만들었습니다. 이를 외부에 접근할 수 있도록 <code>:8080(http)</code> 를 설정해야 합니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>apps/v1</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>Deployment</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span>{{<span class=w> </span><span class=l>.Release.Name }}-operator</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>annotations</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>&#34;helm.sh/hook-weight&#34;: </span><span class=s2>&#34;0&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>replicas</span><span class=p>:</span><span class=w> </span><span class=m>1</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>selector</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>matchLabels</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>challenge-operator</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>template</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>labels</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>        </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>challenge-operator</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>nodeSelector</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>        </span><span class=nt>hexactf/env</span><span class=p>:</span><span class=w> </span><span class=l>mgmt</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>serviceAccountName</span><span class=p>:</span><span class=w> </span>{{<span class=w> </span><span class=l>.Release.Name }}-operator</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>containers</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>        </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>operator</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>          </span><span class=nt>image</span><span class=p>:</span><span class=w> </span>{{<span class=w> </span><span class=l>.Values.operator.image.repository }}:{{ .Values.operator.image.tag }}</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>          </span><span class=nt>imagePullPolicy</span><span class=p>:</span><span class=w> </span>{{<span class=w> </span><span class=l>.Values.operator.image.pullPolicy }}</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>          </span><span class=nt>ports</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>            </span>- <span class=nt>containerPort</span><span class=p>:</span><span class=w> </span><span class=m>8080</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>          </span><span class=c># Add the args section here</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>          </span><span class=nt>args</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>            </span><span class=c># Use --metrics-bind-address and substitute the environment variable METRICS_ADDR</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>            </span>- <span class=s2>&#34;--metrics-bind-address=:8080&#34;</span><span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><h3 id=servicemonitor-설정하기>ServiceMonitor 설정하기</h3><p>Prometheus ServiceMonitor는 차례로 해당 엔드포인트를 검색하고 파드를 모니터링하도록 프로메테우스를 구성합니다. 어떤 엔드포인트의 어떤 포트를 통해 메트릭을 스크래핑하고 어떤 매개변수를 활용할지 구성하게 됩니다. 쉽게 말해 <strong>검색 대상을 Prometheus Operator가 일괄적으로 처리할 수 있도록 ServiceMonitor라는 리소스에 정의한 것입니다.</strong></p><p>Operator에 메트릭 서버의 포트를 열었다면 Helm에서 Port를 열어주고, Port를 연결해준 ServiceMonitor가 필요하겠죠?</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>v1</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>Service</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span>{{<span class=w> </span><span class=l>.Release.Name }}-operator-metrics</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>namespace</span><span class=p>:</span><span class=w> </span><span class=l>hexactf</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>labels</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>app.kubernetes.io/name</span><span class=p>:</span><span class=w> </span><span class=l>challenge-operator</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>app.kubernetes.io/instance</span><span class=p>:</span><span class=w> </span><span class=l>challenge-operator</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>app.kubernetes.io/component</span><span class=p>:</span><span class=w> </span><span class=l>metrics</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>selector</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>challenge-operator</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>ports</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>operator-metrics</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>protocol</span><span class=p>:</span><span class=w> </span><span class=l>TCP</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>port</span><span class=p>:</span><span class=w> </span><span class=m>8080</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>targetPort</span><span class=p>:</span><span class=w> </span><span class=m>8080</span><span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>monitoring.coreos.com/v1</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>ServiceMonitor</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span>{{<span class=w> </span><span class=l>.Release.Name }}-operator-monitor</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>namespace</span><span class=p>:</span><span class=w> </span><span class=l>monitoring </span><span class=w> </span><span class=c># Prometheus Operator가 설치된 ns</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>labels</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>release</span><span class=p>:</span><span class=w> </span><span class=l>prometheus </span><span class=w> </span><span class=c># Prometheus Operator의 label select</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>selector</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>matchLabels</span><span class=p>:</span><span class=w> </span><span class=c># Challenge Operator service matchlabel</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>app.kubernetes.io/name</span><span class=p>:</span><span class=w> </span><span class=l>challenge-operator</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>app.kubernetes.io/component</span><span class=p>:</span><span class=w> </span><span class=l>metrics</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>namespaceSelector</span><span class=p>:</span><span class=w> </span><span class=c># 스크랩할 ns</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>matchNames</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span>- <span class=l>hexactf</span><span class=w> </span><span class=c># Challenge Operator가 배포되는 ns</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span>- <span class=l>default</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>endpoints</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span>- <span class=nt>port</span><span class=p>:</span><span class=w> </span><span class=l>operator-metrics</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>interval</span><span class=p>:</span><span class=w> </span><span class=l>30s</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>scrapeTimeout</span><span class=p>:</span><span class=w> </span><span class=l>10s</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>path</span><span class=p>:</span><span class=w> </span><span class=l>/metrics</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>scheme</span><span class=p>:</span><span class=w> </span><span class=l>http</span><span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><p>프로메테우스를 확인하면 아래와 같이 서비스를 확인할 수 있습니다.</p><p><img src=/p/hexactf-9/image-2.png width=1007 height=292 srcset="/p/hexactf-9/image-2_hu_fc9af273d105a8c.png 480w, /p/hexactf-9/image-2_hu_141a1be2abc2d49b.png 1024w" loading=lazy alt="프로메테우스 대시보드에서 확인한 Challenge Operator metrics endpoint" class=gallery-image data-flex-grow=344 data-flex-basis=827px></p><h2 id=시각화>시각화</h2><p>저희가 시각화 할 목록은 크게 3가지입니다.</p><ul><li>상태별 Challenge 개수</li><li><strong>사용자, 문제 별</strong> Challenge 상태</li><li>문제별 실행 중/에러 커스텀 리소스 수</li></ul><p><img src=/p/hexactf-9/image-3.png width=1584 height=711 srcset="/p/hexactf-9/image-3_hu_424f59dbe6f2d08c.png 480w, /p/hexactf-9/image-3_hu_77e8732e558b4689.png 1024w" loading=lazy alt="실제 대회에서 사용한 대시보드" class=gallery-image data-flex-grow=222 data-flex-basis=534px></p><p>저는 그 중 상태별 Challenge 개수와 사용자, 문제 별 Challenge 상태를 보여드리겠습니다.</p><blockquote><p>자세한 사항은 <a class=link href=https://grafana.com/docs/grafana/latest/panels-visualizations/query-transform-data/transform-data/ target=_blank rel=noopener>Grafana 공식 문서</a>를 참고하시길 바랍니다.
+참고로 저는 하나하나씩 다 해봤습니다. 🥹</p></blockquote><h3 id=상태별-challenge-개수>상태별 Challenge 개수</h3><p>2시간 동안 가장 마지막 값이 1(Running)인 경우를 count 해주는 명령어를 사용했습니다.</p><blockquote><p>2시간은 임의의 숫자로 실제 대회에서는 6시간을 기준으로 집계했습니다.</p></blockquote><p><img src=/p/hexactf-9/image-4.png width=762 height=380 srcset="/p/hexactf-9/image-4_hu_cd8ed660c3f187e7.png 480w, /p/hexactf-9/image-4_hu_fe37b1a78922e555.png 1024w" loading=lazy alt="상태별 Challenge 개수 PromQL" class=gallery-image data-flex-grow=200 data-flex-basis=481px></p><p>하나의 패널에 2개 이상 메트릭을 설정하게 되면 Value에 알파벳이 붙습니다. 그러므로 맨 아래 Override를 활용하여 임의로 정해진 값을 수정합니다.
+더 나은 시각화를 위해 Color scheme을 통해 색도 설정했습니다.</p><p><img src=/p/hexactf-9/image-5.png width=354 height=586 srcset="/p/hexactf-9/image-5_hu_2586051c7b8f12f3.png 480w, /p/hexactf-9/image-5_hu_ca6eeda7c0e80c03.png 1024w" loading=lazy alt="Override를 활용하여 field name과 색 설정" class=gallery-image data-flex-grow=60 data-flex-basis=144px></p><p>그리고 설정한 색을 Background에 보일 수 있도록 Stat styles에 설정했습니다.</p><p><img src=/p/hexactf-9/image-6.png width=353 height=530 srcset="/p/hexactf-9/image-6_hu_e21a7d6750258aab.png 480w, /p/hexactf-9/image-6_hu_dc53968c972a7bc.png 1024w" loading=lazy alt="Stat styles 설정" class=gallery-image data-flex-grow=66 data-flex-basis=159px></p><p>아래와 같이 시각화를 할 수 있습니다.</p><p><img src=/p/hexactf-9/image-7.png width=1129 height=249 srcset="/p/hexactf-9/image-7_hu_219bfae10535345.png 480w, /p/hexactf-9/image-7_hu_923395d241e9dc6f.png 1024w" loading=lazy alt="상태별 Challenge 개수 최종" class=gallery-image data-flex-grow=453 data-flex-basis=1088px></p><h3 id=사용자-문제-별-challenge-상태>사용자, 문제 별 Challenge 상태</h3><p>위와 동일하게 최근 상태 정보만 가져오면 되기 때문에 집계 시간 중 가장 최신의 데이터를 가져옵니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>last_over_time(challenge_resource_status[2h])
+</span></span></code></pre></td></tr></table></div></div><p>Gauge는 숫자로 값을 설정합니다. 그러므로 Value mappings를 활용하여 문자로 변환합니다.</p><p><img src=/p/hexactf-9/image-8.png width=349 height=200 srcset="/p/hexactf-9/image-8_hu_764c9c7424de2d57.png 480w, /p/hexactf-9/image-8_hu_ef63f2cb567cfd98.png 1024w" loading=lazy alt="value mapping" class=gallery-image data-flex-grow=174 data-flex-basis=418px></p><p>PromQL은 쉬운 대신 Transform을 설정해야 합니다.</p><ol><li>Oragnaize field by name : challenge_id, username, status 값을 제외하고 전부 제거합니다.</li><li>Group by: Challenge_id, username을 그룹핑하여 중복을 없애고 Status는 가장 최신 값을 가져옵니다.</li><li>Grouping to Matrix: Grouping한 값을 가지고 새로운 Matrix를 활용합니다.</li></ol><p><img src=/p/hexactf-9/image-9.png width=927 height=304 srcset="/p/hexactf-9/image-9_hu_b4556438ba351c9e.png 480w, /p/hexactf-9/image-9_hu_6d345ca5c16779c1.png 1024w" loading=lazy alt="사용자, 문제 별 Challenge 상태-Transform" class=gallery-image data-flex-grow=304 data-flex-basis=731px></p><p>테이블 형태로 시각화 하면 아래와 같은 결과를 얻을 수 있습니다.</p><p><img src=/p/hexactf-9/image-10.png width=1106 height=115 srcset="/p/hexactf-9/image-10_hu_663245b90d615f75.png 480w, /p/hexactf-9/image-10_hu_923ae2d9817a3952.png 1024w" loading=lazy alt="사용자, 문제 별 Challenge 상태-최종" class=gallery-image data-flex-grow=961 data-flex-basis=2308px></p><h2 id=마치며>마치며</h2><p>Challenge Operator와 관련된 글을 모두 작성했습니다.</p><p>다음 글에서는 실질적으로 클라이언트가 요청을 보내는 Challenge Control API에 대해 설명하겠습니다.</p><h2 id=references>References</h2><ul><li><a class=link href=https://wlsdn3004.tistory.com/35 target=_blank rel=noopener>Prometheus 란?</a></li><li><a class=link href=https://prometheus.io/docs/concepts/metric_types/ target=_blank rel=noopener>Metric types | Prometheus</a></li><li><a class=link href=https://www.gomgomshrimp.com/posts/k8s/helm-and-kustomize target=_blank rel=noopener>Helm과 Kustomize, 무엇을 쓸까?</a></li><li><a class=link href=https://grafana.com/docs/grafana/latest/panels-visualizations/query-transform-data/transform-data/ target=_blank rel=noopener>Transform data | Grafana documentation</a></li><li>정현석, 진미란 . (2023). 모니터링의 새로운 미래 관측 가능성. 제이펍.</li></ul></section><footer class=article-footer><section class=article-tags><a href=/tags/kubernetes/>Kubernetes</a>
+<a href=/tags/prometheus/>Prometheus</a>
+<a href=/tags/grafana/>Grafana</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/p/hexactf-8/><div class=article-details><h2 class=article-title>HexaCTF 8. 커스텀 컨트롤러를 통한 Challenge 생성 및 삭제 구현</h2></div></a></article><article><a href=/p/hexactf2025-review/><div class=article-details><h2 class=article-title>HexaCTF2025 대회 운영 후기</h2></div></a></article><article><a href=/p/hexactf-7/><div class=article-details><h2 class=article-title>HexaCTF 7. Challenge CR 상태 정의와 Operator 개념 정리</h2></div></a></article><article><a href=/p/hexactf-6/><div class=article-details><h2 class=article-title>HexaCTF 6. Kubebuilder를 활용한 ChallengeDefinition&amp;Challenge Type 구현</h2></div></a></article><article><a href=/p/hexactf-5/><div class=article-details><h2 class=article-title>HexaCTF 5. Kubernetes CR를 활용한 Challenge 설계</h2></div></a></article></div></div></aside><footer class=site-footer><section class=copyright>&copy;
+2024 -
+2025 S0okJu.dev</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>
