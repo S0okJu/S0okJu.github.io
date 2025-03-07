@@ -9,6 +9,8 @@ tags:
   - Kubernetes
 ---
 
+- 2025-03-08 - 내용 수정
+
 이전 글에는 상태를 어떻게 정의했는지 설명했습니다. 지금부터 어떻게 Challenge를 생성, 삭제할 수 있는지 설명하겠습니다.
 
 ## 조건 생각하기
@@ -343,7 +345,7 @@ func (r *ChallengeReconciler) handleDeletion(ctx context.Context, challenge *hex
 }
 ```
 
-2. 이용 시간이 30분 이상이면 삭제를 요청한다.
+2. 이용 시간이 30분 이상이면 삭제를 요청한다.  
    Challenge 생성 부분에 실행 30분 후 삭제를 구현하기 위해 `startedAt` 를 설정한다고 말했죠? startedAt 기준으로 30분 후에 삭제되도록 구현했습니다.
 
 ```go
@@ -365,6 +367,49 @@ func (r *ChallengeReconciler) handleDeletion(ctx context.Context, challenge *hex
 			}
 		}
 ```
+
+만약 제한 시간 이내에 있다면 requeue를 합니다.  
+kube-apiserver를 통해 대상 리소스의 변경 사항 감지하면 이벤트를 work queue에 넣습니다. Controller가 시작되면 Watch 로직을 통해 큐에 있는 데이터를 구독하게 되고 Reconcile() 로직을 수행하게 됩니다.
+
+```go
+	case challenge.Status.CurrentStatus.IsRunning():
+		if err := r.Get(ctx, req.NamespacedName, &challenge); err != nil {
+			return r.handleError(ctx, &challenge, err)
+		}
+
+		// isOne이 false이면 일정 시간 내에만 작동
+		if !challenge.Status.IsOne && time.Since(challenge.Status.StartedAt.Time) > challengeDuration {
+
+			return r.handleDeletion(ctx, &challenge)
+		}
+
+		if !challenge.DeletionTimestamp.IsZero() {
+			return r.handleDeletion(ctx, &challenge)
+		}
+
+		// Running 메세지 전송
+		err := r.KafkaClient.SendStatusChange(challenge.Labels["apps.hexactf.io/user"], challenge.Labels["apps.hexactf.io/challengeId"], "Running")
+		if err != nil {
+			log.Error(err, "Failed to send status change message")
+			return r.handleError(ctx, &challenge, err)
+		}
+	}
+	return ctrl.Result{RequeueAfter: requeueInterval}, nil
+```
+
+프로젝트에 대입해보자면 제한 시간 내에 있으면 몇 분 간격으로 30분이 지났는지 확인한다는 것입니다.
+
+![출처 - https://nakamasato.medium.com/kubernetes-operator-series-6-controller-runtime-component-controller-604c8905a1e1](image-1.png)
+
+**requeue Interval에 대한 생각**
+
+기본적으로 쿠버네티스는 30초 간격으로 모든 리소스의 상태를 확인합니다. Operator 또한 work queue에 requeue하여 리소스 간격 시간을 설정할 수 있게 됩니다. 여기서 몇 초 간격으로 보는 것이 좋을까요?
+
+자주 리소스를 관찰하게 되면 큐에 많은 데이터가 쌓이게 되면서 최종적으로 시간 지연이 발생할 수 있습니다. 반면 큰 시간 간격으로 관찰하게 되면 "지속적으로 확인하여 상태 정보를 실시간으로 확인한다"라는 장점을 잃을 수 있습니다.
+저는 최종적으로 30초 간격으로 Challenge의 상태를 확인했습니다.
+
+> **여담** .  
+> 글로 정리하다보니 30초 간격으로 requeue할 필요가 없다고 생각했습니다. 초기에는 무슨일이 일어날지 모르니 30초 간격으로 확인하는게 좋겠다고 생각을 했습니다. 그러나 Challenge 하위 리소스에 변경사항이 감지되어 Reconcile를 수행한다면 30초 간격의 Requeue는 필요 없겠죠?
 
 ## 정리
 
