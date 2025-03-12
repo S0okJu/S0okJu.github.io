@@ -49,7 +49,7 @@ params:
 
     sidebar:
         emoji: 👾
-        subtitle: Hello, World!
+        subtitle: 경험으로 학습합니다. 
         avatar:
             enabled: true
             local: true
