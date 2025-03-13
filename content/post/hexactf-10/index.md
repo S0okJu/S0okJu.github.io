@@ -69,7 +69,7 @@ Challenge Controller 시스템의 전반적인 컨셉은 OpenStack의 Nova의 �
 
 ![출처 - https://www.oreilly.com/library/view/deploying-openstack/9781449311223/ch04.html](image-1.png)
 
-> "제어부와 리소스 처리부 분리" 관련 간단한 이야기
+> "제어부와 리소스 처리부 분리" 관련 간단한 이야기  
 > 무조건 Nova Architecture를 차용했다고 해서 Operator를 별도로 제작한 것은 아닙니다. 그저 분리하여 이벤트 처리 기반으로 시스템을 제어하는 것이 많이 활용되는 방식이라고만 인식했습니다. 즉, Operator를 별도로 제작하는 것이 기술적인 고난도 도전이 아닌 선택지 중 일부로 받아들인 것입니다.
 
 ## Control API 제작
