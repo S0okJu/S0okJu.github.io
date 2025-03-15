@@ -1,0 +1,180 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="Jenkins 환경 구성 어디에 젠킨스를 설치해야 할까? 쿠버네티스를 처음 공부했을때 “쿠버네티스 내에 데이터베이스를 운영하는 것이 과연 안전할까?”에 대해 의문점을 가지게 되었습니다. 데이터 손실이 우려된다는 과거의 의견과 달리 현재는 다양한 기업들이 DBaaS를 도입하고 있었습니다.12\n이런 흐름으로 젠킨스 또한 쿠버네티스 내에 운영할까요? 레딧과 같은 지식 공유 플랫폼을 종합해보면 쿠버네티스 내에 젠킨스를 운영하는 경우가 많이 보입니다.3\n그러나 저희 프로젝트는 CI를 담당하는 팀원은 따로 있습니다. 완전한 역할 분리를 위해 인스턴스에 따로 젠킨스를 설치하게 되었습니다.\n"><title>HexaCTF - 3. Jenkins를 활용한 CI 환경 구성하기</title>
+<link rel=canonical href=https://s0okju.github.io/p/hexactf-3/><link rel=stylesheet href=/scss/style.min.663803bebe609202d5b39d848f2d7c2dc8b598a2d879efa079fa88893d29c49c.css><meta property='og:title' content="HexaCTF - 3. Jenkins를 활용한 CI 환경 구성하기"><meta property='og:description' content="Jenkins 환경 구성 어디에 젠킨스를 설치해야 할까? 쿠버네티스를 처음 공부했을때 “쿠버네티스 내에 데이터베이스를 운영하는 것이 과연 안전할까?”에 대해 의문점을 가지게 되었습니다. 데이터 손실이 우려된다는 과거의 의견과 달리 현재는 다양한 기업들이 DBaaS를 도입하고 있었습니다.12\n이런 흐름으로 젠킨스 또한 쿠버네티스 내에 운영할까요? 레딧과 같은 지식 공유 플랫폼을 종합해보면 쿠버네티스 내에 젠킨스를 운영하는 경우가 많이 보입니다.3\n그러나 저희 프로젝트는 CI를 담당하는 팀원은 따로 있습니다. 완전한 역할 분리를 위해 인스턴스에 따로 젠킨스를 설치하게 되었습니다.\n"><meta property='og:url' content='https://s0okju.github.io/p/hexactf-3/'><meta property='og:site_name' content='S0okJu.dev'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='Openstack'><meta property='article:tag' content='Kubernetes'><meta property='article:published_time' content='2025-01-05T00:00:00+09:00'><meta property='article:modified_time' content='2025-01-05T00:00:00+09:00'><meta name=twitter:title content="HexaCTF - 3. Jenkins를 활용한 CI 환경 구성하기"><meta name=twitter:description content="Jenkins 환경 구성 어디에 젠킨스를 설치해야 할까? 쿠버네티스를 처음 공부했을때 “쿠버네티스 내에 데이터베이스를 운영하는 것이 과연 안전할까?”에 대해 의문점을 가지게 되었습니다. 데이터 손실이 우려된다는 과거의 의견과 달리 현재는 다양한 기업들이 DBaaS를 도입하고 있었습니다.12\n이런 흐름으로 젠킨스 또한 쿠버네티스 내에 운영할까요? 레딧과 같은 지식 공유 플랫폼을 종합해보면 쿠버네티스 내에 젠킨스를 운영하는 경우가 많이 보입니다.3\n그러나 저희 프로젝트는 CI를 담당하는 팀원은 따로 있습니다. 완전한 역할 분리를 위해 인스턴스에 따로 젠킨스를 설치하게 되었습니다.\n"><link rel="shortcut icon" href=/favicon.ico></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_c3a763b4e1e1539a.png width=300 height=248 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>👾</span></figure><div class=site-meta><h1 class=site-name><a href=/>S0okJu.dev</a></h1><h2 class=site-description>경험으로 학습합니다.</h2></div></header><ol class=menu-social><li><a href=https://github.com/S0okJu target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+<span>About</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>Links</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#jenkins-환경-구성>Jenkins 환경 구성</a><ol><li><a href=#어디에-젠킨스를-설치해야-할까>어디에 젠킨스를 설치해야 할까?</a></li><li><a href=#jenkins-배포>Jenkins 배포</a></li></ol></li><li><a href=#harbor>Harbor</a><ol><li><a href=#쿠버네티스-환경에서-ci>쿠버네티스 환경에서 CI</a></li><li><a href=#도커-레지스트리>도커 레지스트리</a></li><li><a href=#설치>설치</a></li></ol></li><li><a href=#jenkins--harbor-연결하기>Jenkins — Harbor 연결하기</a><ol><li><a href=#http로-연결하기>HTTP로 연결하기</a></li><li><a href=#jenkins-pipeline-설정>Jenkins Pipeline 설정</a></li></ol></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/hexactf/>HexaCTF</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/hexactf-3/>HexaCTF - 3. Jenkins를 활용한 CI 환경 구성하기</a></h2></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Jan 05, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>4 minute read</time></div></footer></div></header><section class=article-content><h2 id=jenkins-환경-구성>Jenkins 환경 구성</h2><h3 id=어디에-젠킨스를-설치해야-할까>어디에 젠킨스를 설치해야 할까?</h3><p>쿠버네티스를 처음 공부했을때 “쿠버네티스 내에 데이터베이스를 운영하는 것이 과연 안전할까?”에 대해 의문점을 가지게 되었습니다. 데이터 손실이 우려된다는 과거의 의견과 달리 현재는 다양한 기업들이 DBaaS를 도입하고 있었습니다.<sup id=fnref:1><a href=#fn:1 class=footnote-ref role=doc-noteref>1</a></sup><sup id=fnref:2><a href=#fn:2 class=footnote-ref role=doc-noteref>2</a></sup><br>이런 흐름으로 젠킨스 또한 쿠버네티스 내에 운영할까요? 레딧과 같은 지식 공유 플랫폼을 종합해보면 쿠버네티스 내에 젠킨스를 운영하는
+경우가 많이 보입니다.<sup id=fnref:3><a href=#fn:3 class=footnote-ref role=doc-noteref>3</a></sup><br>그러나 저희 프로젝트는 CI를 담당하는 팀원은 따로 있습니다. 완전한 역할 분리를 위해 인스턴스에 따로 젠킨스를 설치하게 되었습니다.</p><h3 id=jenkins-배포>Jenkins 배포</h3><p>아래는 대략적인 아키텍쳐입니다. 여기서 중요한 점은 Jenkins 인스턴스와 쿠버네티스 노드와 연결되어야 합니다. 각각의 서브넷이 라우터로 연결하여 서로 통신할 수 있도록 설정해야 합니다.</p><p><img src=/p/hexactf-3/image.png width=1100 height=287 srcset="/p/hexactf-3/image_hu_f06e3dff2c2ab5c8.png 480w, /p/hexactf-3/image_hu_9381f73eecfd8e3c.png 1024w" loading=lazy alt="간단한 구성도" class=gallery-image data-flex-grow=383 data-flex-basis=919px></p><p>Jenkins를 인스턴스로 배포하고 외부 IP(Floating IP)로 연결하는 부분은 생략하겠습니다.
+이전 글에서 언급한 것처럼 하나의 라우터에 여러 개의 포트를 연결하고 싶다면 openstack_networking_port_v2 함수를 활용해야 한다고 말했습니다. 이도 동일하게 Jenkins가 포함되어 있는 서브넷에 포트를 생성하여 쿠버네티스 라우터에 연결합니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-hcl data-lang=hcl><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;openstack_networking_port_v2&#34; &#34;devops_kubernetes_router_port&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  name</span>           <span class=o>=</span> <span class=s2>&#34;kubernetes-devops-port&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  network_id</span>     <span class=o>=</span> <span class=k>openstack_networking_network_v2</span><span class=p>.</span><span class=k>devops_network</span><span class=p>.</span><span class=k>id</span>
+</span></span><span class=line><span class=cl><span class=n>  admin_state_up</span> <span class=o>=</span> <span class=s2>&#34;true&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=k>fixed_ip</span> {
+</span></span><span class=line><span class=cl><span class=n>    subnet_id</span>  <span class=o>=</span> <span class=k>openstack_networking_subnet_v2</span><span class=p>.</span><span class=k>devops_subnet</span><span class=p>.</span><span class=k>id</span>
+</span></span><span class=line><span class=cl><span class=n>    ip_address</span> <span class=o>=</span> <span class=k>var</span><span class=p>.</span><span class=k>devops_port_address</span>
+</span></span><span class=line><span class=cl>  }
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;openstack_networking_router_interface_v2&#34; &#34;devops_kubernetes_interface&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  router_id</span> <span class=o>=</span> <span class=k>openstack_networking_router_v2</span><span class=p>.</span><span class=k>kubernetes_router</span><span class=p>.</span><span class=k>id</span>
+</span></span><span class=line><span class=cl><span class=n>  port_id</span>   <span class=o>=</span> <span class=k>openstack_networking_port_v2</span><span class=p>.</span><span class=k>devops_kubernetes_router_port</span><span class=p>.</span><span class=k>id</span>
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><p>배포를 모두 끝내면 아래와 같은 토폴로지를 확인할 수 있습니다.</p><p><img src=/p/hexactf-3/image-1.png width=1098 height=764 srcset="/p/hexactf-3/image-1_hu_72cf2be9378ebb5.png 480w, /p/hexactf-3/image-1_hu_5f6e1d81653f6735.png 1024w" loading=lazy alt="Openstack 네트워크 토폴로지" class=gallery-image data-flex-grow=143 data-flex-basis=344px></p><h2 id=harbor>Harbor</h2><h3 id=쿠버네티스-환경에서-ci>쿠버네티스 환경에서 CI</h3><p>쿠버네티스 환경에서 CI 과정은 컨테이너를 빌드하고 이미지를 저장하는 프로세스가 포함됩니다. 그 중 이미지를 저장하기 위해서는 도커 레지스트리가 필요합니다.</p><p><img src=/p/hexactf-3/image-2.png width=720 height=443 srcset="/p/hexactf-3/image-2_hu_307d455d43ccf37d.png 480w, /p/hexactf-3/image-2_hu_20a9e7be839d274b.png 1024w" loading=lazy alt="출처 - https://thenewstack.io/ci-cd-with-kubernetes-tools-and-practices/" class=gallery-image data-flex-grow=162 data-flex-basis=390px></p><h3 id=도커-레지스트리>도커 레지스트리</h3><p>도커 레지스트리는 도커 이미지를 관리하는 저장소 입니다. 저장소는 크게 public과 private이 있습니다. 내부적으로 사용할 예정이므로 private 레지스트리를 선택하게 되었습니다.</p><p>후보는 크게 두 가지입니다.</p><ul><li>Docker Registry</li><li>Harbor</li></ul><p>도커 레지스트리 선정 기준은 “깔끔한 UI를 가지고 있는가?” 입니다. 후보 중에는 기준에 부합한 플랫폼은 Harbor였습니다.</p><p><img src=/p/hexactf-3/image-3.png width=1100 height=313 srcset="/p/hexactf-3/image-3_hu_95b24d92b56a31b6.png 480w, /p/hexactf-3/image-3_hu_805930a03405b52f.png 1024w" loading=lazy alt="출처 - 공식 문서" class=gallery-image data-flex-grow=351 data-flex-basis=843px></p><h3 id=설치>설치</h3><p>공식 문서를 참고해서 helm 파일을 다운로드 받습니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl>helm repo add harbor https://helm.goharbor.io
+</span></span><span class=line><span class=cl>helm fetch harbor/harbor --untar
+</span></span></code></pre></td></tr></table></div></div><p>가장 먼저 해야하는 것은 Volume에 대한 설정입니다. Harbor는 다양한 PVC를 요청합니다. 프로젝트는 Dynamic Provisioning을 위한 NFS 환경을 구축했습니다. 그러므로 values.yaml 에 strageClass만 값을 입력하면 됩니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=nt>persistentVolumeClaim</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>registry</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=c># Use the existing PVC which must be created manually before bound,</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=c># and specify the &#34;subPath&#34; if the PVC is shared with other components</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>existingClaim</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=c># Specify the &#34;storageClass&#34; used to provision the volume. Or the default</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=c># StorageClass will be used (the default).</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=c># Set it to &#34;-&#34; to disable dynamic provisioning</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>storageClass</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;nfs-client&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>subPath</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>accessMode</span><span class=p>:</span><span class=w> </span><span class=l>ReadWriteOnce</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>size</span><span class=p>:</span><span class=w> </span><span class=l>5Gi</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>annotations</span><span class=p>:</span><span class=w> </span>{}<span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>jobservice</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>jobLog</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>existingClaim</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>storageClass</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;nfs-client&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>subPath</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;&#34;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>accessMode</span><span class=p>:</span><span class=w> </span><span class=l>ReadWriteOnce</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>size</span><span class=p>:</span><span class=w> </span><span class=l>1Gi</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span><span class=nt>annotations</span><span class=p>:</span><span class=w> </span>{}<span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><p>환경 설정을 다 하고 배포하면 정상적으로 작동됩니다.</p><h2 id=jenkins--harbor-연결하기>Jenkins — Harbor 연결하기</h2><h3 id=http로-연결하기>HTTP로 연결하기</h3><p>젠킨스 인스턴스가 쿠버네티스 내부에 있는 Harbor에 이미지를 저장해야 합니다. 저희 환경에서는 Harbor를 nodePort로 연결하여 도커 레지스트리에 연결할 수 있도록 설정하겠습니다.</p><p><img src=/p/hexactf-3/image-4.png width=582 height=282 srcset="/p/hexactf-3/image-4_hu_6b69d058954a6de0.png 480w, /p/hexactf-3/image-4_hu_7198799d8e08f5f2.png 1024w" loading=lazy alt="젠킨스 - 쿠버네티스 연결 흐름" class=gallery-image data-flex-grow=206 data-flex-basis=495px></p><p>Harbor와 같은 도커 레지스티의 경우 HTTPS로 연결하는 것을 권장합니다. 하지만 저희는 HTTP로 설정하겠습니다.
+Harbor의 우선 nodePort를 30002로 설정한 후 externalURL 에 http가 포함된 URL를 설정해야 합니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=nt>externalURL</span><span class=p>:</span><span class=w> </span><span class=l>http://10.0.10.156:30002</span><span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><p>젠킨스 인스턴스에서 <code>/etc/docker/daemon.json</code> 파일에 HTTP를 적용할 harbor의 host를 명시해줍니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl>{<span class=w> </span><span class=nt>&#34;insecure-registries&#34;: </span><span class=p>[</span><span class=s2>&#34;http://10.0.10.156:30002&#34;</span><span class=p>]</span><span class=w> </span>}<span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><p>도커를 재시작하면 위의 설정이 적용됩니다.</p><h3 id=jenkins-pipeline-설정>Jenkins Pipeline 설정</h3><p>Credential 설정등은 생략하겠습니다.
+도커를 빌드하기 위해서는 크게 3가지 과정이 필요합니다.</p><ol><li>도커 빌드</li><li>도커 이미지 Tagging</li><li>도커 이미지 Push</li></ol><p>젠킨스는 프로젝트 단위로 이미지를 관리합니다. 아래의 코드는 ubuntu 이미지를 빌드하여 test 프로젝트에 이미지를 push하는 것을 보여줍니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>pipeline {
+</span></span><span class=line><span class=cl>    agent any
+</span></span><span class=line><span class=cl>    environment {
+</span></span><span class=line><span class=cl>        DOCKER_REGISTRY = &#34;10.0.10.156:30002&#34;
+</span></span><span class=line><span class=cl>        IMAGE_NAME = &#34;ubuntu&#34;
+</span></span><span class=line><span class=cl>        TARGET_REPO = &#34;test/ubuntu&#34;
+</span></span><span class=line><span class=cl>    }
+</span></span><span class=line><span class=cl>    stages {
+</span></span><span class=line><span class=cl>        stage(&#39;Pull Ubuntu Image&#39;) {
+</span></span><span class=line><span class=cl>            steps {
+</span></span><span class=line><span class=cl>                echo &#34;Pulling the Ubuntu image from Docker Hub...&#34;
+</span></span><span class=line><span class=cl>                sh &#34;docker pull ${IMAGE_NAME}:latest&#34;
+</span></span><span class=line><span class=cl>            }
+</span></span><span class=line><span class=cl>        }
+</span></span><span class=line><span class=cl>        stage(&#39;Tag Image&#39;) {
+</span></span><span class=line><span class=cl>            steps {
+</span></span><span class=line><span class=cl>                echo &#34;Tagging the image for Harbor...&#34;
+</span></span><span class=line><span class=cl>                sh &#34;docker tag ${IMAGE_NAME}:latest ${DOCKER_REGISTRY}/${TARGET_REPO}:latest&#34;
+</span></span><span class=line><span class=cl>            }
+</span></span><span class=line><span class=cl>        }
+</span></span><span class=line><span class=cl>        stage(&#39;Push Image to Harbor&#39;) {
+</span></span><span class=line><span class=cl>            steps {
+</span></span><span class=line><span class=cl>                echo &#34;Pushing the image to Harbor...&#34;
+</span></span><span class=line><span class=cl>                withDockerRegistry([credentialsId: &#39;harbor-credentials&#39;, url: &#34;http://${DOCKER_REGISTRY}&#34;]) {
+</span></span><span class=line><span class=cl>                    sh &#34;docker push ${DOCKER_REGISTRY}/${TARGET_REPO}:latest&#34;
+</span></span><span class=line><span class=cl>                }
+</span></span><span class=line><span class=cl>            }
+</span></span><span class=line><span class=cl>        }
+</span></span><span class=line><span class=cl>    }
+</span></span><span class=line><span class=cl>    post {
+</span></span><span class=line><span class=cl>        always {
+</span></span><span class=line><span class=cl>            echo &#34;Cleaning up Docker images...&#34;
+</span></span><span class=line><span class=cl>            sh &#34;docker rmi ${IMAGE_NAME}:latest || true&#34;
+</span></span><span class=line><span class=cl>            sh &#34;docker rmi ${DOCKER_REGISTRY}/${TARGET_REPO}:latest || true&#34;
+</span></span><span class=line><span class=cl>        }
+</span></span><span class=line><span class=cl>    }
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><p>이미지를 push하면 정상적으로 작동됨을 확인할 수 있습니다.</p><p><img src=/p/hexactf-3/image-5.png width=1100 height=222 srcset="/p/hexactf-3/image-5_hu_f0c8cfc782bec904.png 480w, /p/hexactf-3/image-5_hu_bca97cd70a32e092.png 1024w" loading=lazy alt="자동화 빌드 결과" class=gallery-image data-flex-grow=495 data-flex-basis=1189px></p><div class=footnotes role=doc-endnotes><hr><ol><li id=fn:1><p><a class=link href=https://sungchul-p.github.io/db-on-k8s-case-study target=_blank rel=noopener>https://sungchul-p.github.io/db-on-k8s-case-study</a>&#160;<a href=#fnref:1 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li><li id=fn:2><p><a class=link href=https://engineering.linecorp.com/ko/blog/declarative-cloud-db-service-using-kubernetes target=_blank rel=noopener>https://engineering.linecorp.com/ko/blog/declarative-cloud-db-service-using-kubernetes</a>&#160;<a href=#fnref:2 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li><li id=fn:3><p><a class=link href=https://www.reddit.com/r/devops/comments/m3lc3r/jenkins_inside_kubernetes_or_not/ target=_blank rel=noopener>https://www.reddit.com/r/devops/comments/m3lc3r/jenkins_inside_kubernetes_or_not/</a>&#160;<a href=#fnref:3 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li></ol></div></section><footer class=article-footer><section class=article-tags><a href=/tags/openstack/>Openstack</a>
+<a href=/tags/kubernetes/>Kubernetes</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/p/hexactf-8/><div class=article-details><h2 class=article-title>HexaCTF 8. 커스텀 컨트롤러를 통한 Challenge 생성 및 삭제 구현</h2></div></a></article><article><a href=/p/hexactf-7/><div class=article-details><h2 class=article-title>HexaCTF 7. Challenge CR 상태 정의와 Operator 개념 정리</h2></div></a></article><article><a href=/p/hexactf-6/><div class=article-details><h2 class=article-title>HexaCTF 6. Kubebuilder를 활용한 ChallengeDefinition&amp;Challenge Type 구현</h2></div></a></article><article><a href=/p/hexactf-5/><div class=article-details><h2 class=article-title>HexaCTF 5. Kubernetes CR를 활용한 Challenge 설계</h2></div></a></article><article><a href=/p/hexactf-4/><div class=article-details><h2 class=article-title>HexaCTF 4. Docker를 활용한 Challenge 설계 및 한계점</h2></div></a></article></div></div></aside><footer class=site-footer><section class=copyright>&copy;
+2024 -
+2025 S0okJu.dev</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

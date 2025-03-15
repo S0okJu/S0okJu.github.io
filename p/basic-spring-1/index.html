@@ -1,0 +1,213 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="스프링 부트 스프링 부트의 특징은 아래의 문장으로 정리 가능하다.\n스프링 프레임워크는 IoC/DI를 통해 객체 간의 의존 관계를 설정하고, AOP를 통해 핵심 관점과 부가 관점을 분리해 개발하며, PSA를 통해 추상화된 다양한 서비스들을 일관된 방식으로 사용하도록 한다.\n"><title>Spring - Spring Boot 간략하게 알아보기</title>
+<link rel=canonical href=https://s0okju.github.io/p/basic-spring-1/><link rel=stylesheet href=/scss/style.min.663803bebe609202d5b39d848f2d7c2dc8b598a2d879efa079fa88893d29c49c.css><meta property='og:title' content="Spring - Spring Boot 간략하게 알아보기"><meta property='og:description' content="스프링 부트 스프링 부트의 특징은 아래의 문장으로 정리 가능하다.\n스프링 프레임워크는 IoC/DI를 통해 객체 간의 의존 관계를 설정하고, AOP를 통해 핵심 관점과 부가 관점을 분리해 개발하며, PSA를 통해 추상화된 다양한 서비스들을 일관된 방식으로 사용하도록 한다.\n"><meta property='og:url' content='https://s0okju.github.io/p/basic-spring-1/'><meta property='og:site_name' content='S0okJu.dev'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='SpringBoot'><meta property='article:tag' content='Web'><meta property='article:published_time' content='2024-02-03T00:00:00+09:00'><meta property='article:modified_time' content='2024-02-03T00:00:00+09:00'><meta name=twitter:title content="Spring - Spring Boot 간략하게 알아보기"><meta name=twitter:description content="스프링 부트 스프링 부트의 특징은 아래의 문장으로 정리 가능하다.\n스프링 프레임워크는 IoC/DI를 통해 객체 간의 의존 관계를 설정하고, AOP를 통해 핵심 관점과 부가 관점을 분리해 개발하며, PSA를 통해 추상화된 다양한 서비스들을 일관된 방식으로 사용하도록 한다.\n"><link rel="shortcut icon" href=/favicon.ico></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_c3a763b4e1e1539a.png width=300 height=248 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>👾</span></figure><div class=site-meta><h1 class=site-name><a href=/>S0okJu.dev</a></h1><h2 class=site-description>경험으로 학습합니다.</h2></div></header><ol class=menu-social><li><a href=https://github.com/S0okJu target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+<span>About</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>Links</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#스프링-부트>스프링 부트</a><ol><li><a href=#의존성-주입>의존성 주입</a></li></ol></li><li><a href=#스프링-웹-계층>스프링 웹 계층</a><ol><li><a href=#presentation>Presentation</a></li><li><a href=#service>Service</a></li><li><a href=#repository>Repository</a></li><li><a href=#dto>DTO</a></li></ol></li><li><a href=#테스트>테스트</a></li><li><a href=#데이터베이스>데이터베이스</a><ol><li><a href=#jpajava-persistent-api>JPA(Java Persistent API)</a></li><li><a href=#앤티티>앤티티</a><ol><li><a href=#영속성-컨텍스트>영속성 컨텍스트</a></li></ol></li><li><a href=#spring-data-api>Spring data api</a></li></ol></li><li><a href=#reference>Reference</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/p/basic-spring-1/>Spring - Spring Boot 간략하게 알아보기</a></h2></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Feb 03, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>6 minute read</time></div></footer></div></header><section class=article-content><h2 id=스프링-부트>스프링 부트</h2><p>스프링 부트의 특징은 아래의 문장으로 정리 가능하다.</p><blockquote><p>스프링 프레임워크는 IoC/DI를 통해 객체 간의 의존 관계를 설정하고, AOP를 통해 핵심 관점과 부가 관점을 분리해 개발하며, PSA를 통해 추상화된 다양한 서비스들을 일관된 방식으로 사용하도록 한다.</p></blockquote><ul><li>IoC : 객체의 생성과 관리를 개발자가 하는 것이 아니라 프레임워크가 대신하는 것</li><li>DI : 외부에서 객체를 주입받아 사용하는 것</li><li>AOP : 프로그래밍을 할 때 핵심 관점과 부가 관점을 나누어서 개발하는 것</li><li>PSA : 어느 기술을 사용하던 일관된 방식으로 처리하는 것</li></ul><p>IoC/DI를 통해 객체 간의 의존 관계를 설정하고, AOP를 통해 핵심 관점(service)과 부가 관점(Repository)를 분리해 개발하며, PSA(JpaRepository)를 통해 추상화된 다양한 서비스들을 일관된 방식으로 사용하도록 한다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-java data-lang=java><span class=line><span class=cl><span class=c1>// Service</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=kd>public</span><span class=w> </span><span class=kd>interface</span> <span class=nc>UserService</span><span class=w> </span><span class=p>{</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>	</span><span class=kt>void</span><span class=w> </span><span class=nf>createUser</span><span class=p>(</span><span class=n>UserRegisterCommand</span><span class=w> </span><span class=n>command</span><span class=p>);</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>User</span><span class=w> </span><span class=nf>getUserById</span><span class=p>(</span><span class=n>Long</span><span class=w> </span><span class=n>userId</span><span class=p>);</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>UserLoginResponse</span><span class=w> </span><span class=nf>loginUserByEmail</span><span class=p>(</span><span class=n>String</span><span class=w> </span><span class=n>email</span><span class=p>);</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>Boolean</span><span class=w> </span><span class=nf>logoutById</span><span class=p>(</span><span class=n>String</span><span class=w> </span><span class=n>userId</span><span class=p>);</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=p>}</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nd>@Service</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=kd>public</span><span class=w> </span><span class=kd>class</span> <span class=nc>UserServiceImp</span><span class=w> </span><span class=kd>implements</span><span class=w> </span><span class=n>UserService</span><span class=p>{</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nd>@Autowired</span><span class=w> </span><span class=c1>// IoC/DI</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=kd>private</span><span class=w> </span><span class=n>UserRepository</span><span class=w> </span><span class=n>userRepository</span><span class=p>;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nd>@Autowired</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=kd>private</span><span class=w> </span><span class=n>UserMapper</span><span class=w> </span><span class=n>userMapper</span><span class=p>;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nd>@Override</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=kd>public</span><span class=w> </span><span class=kt>void</span><span class=w> </span><span class=nf>createUser</span><span class=p>(</span><span class=n>UserRegisterCommand</span><span class=w> </span><span class=n>command</span><span class=p>)</span><span class=w> </span><span class=p>{</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>        </span><span class=k>try</span><span class=w> </span><span class=p>{</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>            </span><span class=n>userRepository</span><span class=p>.</span><span class=na>save</span><span class=p>(</span><span class=k>new</span><span class=w> </span><span class=n>UserEntity</span><span class=p>(</span><span class=n>command</span><span class=p>.</span><span class=na>getEmail</span><span class=p>(),</span><span class=w> </span><span class=n>command</span><span class=p>.</span><span class=na>getPassword</span><span class=p>(),</span><span class=w> </span><span class=n>command</span><span class=p>.</span><span class=na>getUsername</span><span class=p>()));</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>        </span><span class=p>}</span><span class=k>catch</span><span class=w> </span><span class=p>(</span><span class=n>DataAccessException</span><span class=w> </span><span class=n>e</span><span class=p>){</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>            </span><span class=k>throw</span><span class=w> </span><span class=k>new</span><span class=w> </span><span class=n>DefaultException</span><span class=p>(</span><span class=n>ResponseMessage</span><span class=p>.</span><span class=na>DATA_ACCESS_ERROR</span><span class=p>,</span><span class=s>&#34;user&#34;</span><span class=p>);</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>        </span><span class=p>}</span><span class=k>catch</span><span class=w> </span><span class=p>(</span><span class=n>Exception</span><span class=w> </span><span class=n>e</span><span class=p>){</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>            </span><span class=k>throw</span><span class=w> </span><span class=k>new</span><span class=w> </span><span class=n>DefaultException</span><span class=p>(</span><span class=n>ResponseMessage</span><span class=p>.</span><span class=na>DB_UNEXPECTED_ERROR</span><span class=p>,</span><span class=s>&#34;user&#34;</span><span class=p>);</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>        </span><span class=p>}</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=p>}</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=p>}</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=c1>// UserRepository</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=c1>// Crud에서 인터페이스 구현체가 자동으로 만들어진다.</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=c1>// PSA</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=kd>public</span><span class=w> </span><span class=kd>interface</span> <span class=nc>UserRepository</span><span class=w> </span><span class=kd>extends</span><span class=w> </span><span class=n>JpaRepository</span><span class=o>&lt;</span><span class=n>UserEntity</span><span class=p>,</span><span class=n>Long</span><span class=o>&gt;</span><span class=p>,</span><span class=n>UserCustomRepository</span><span class=p>{</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=p>}</span><span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><h3 id=의존성-주입>의존성 주입</h3><p>의존성 주입은 스프링 컨테이너가 생성한 객체(빈)을 주입받는 것을 의미한다. 이때 빈은 스프링 컨테이너가 생성하고 관리하는 객체를 의미한다.</p><p>주입을 받을때는 @Autowired를 사용하고, 빈을 등록하고 싶으면 @Component를 선언하면 된다. 프레임워크에 사용되는 대부분의 핵심 어노테이션은(@Repository, @Service 등) @Component가 포함되어 있다.</p><p>의존성 주입에 대해서는 <a class=link href=https://velog.io/@ung6860/Spring%EC%8A%A4%ED%94%84%EB%A7%81-%EA%B8%B0%EC%B4%88-DIDependency-Injection target=_blank rel=noopener>inung_92님의 velog, [Spring]스프링 기초 - DI</a>을 참고하길 바란다.</p><h2 id=스프링-웹-계층>스프링 웹 계층</h2><p><img src=/p/basic-spring-1/spring_layered_arch.png width=1280 height=854 srcset="/p/basic-spring-1/spring_layered_arch_hu_9919e5ca10691c1d.png 480w, /p/basic-spring-1/spring_layered_arch_hu_ec27588164d36eb0.png 1024w" loading=lazy alt=출처-https://devlog-wjdrbs96.tistory.com/209 class=gallery-image data-flex-grow=149 data-flex-basis=359px></p><ul><li>presentation 계층<ul><li>HTTP 요청 및 응답 처리</li></ul></li><li>비즈니스 계층<ul><li>비즈니스 로직 구현</li></ul></li><li>퍼시스턴트 계층<ul><li>스토리지 관련 로직 추가</li></ul></li></ul><p>위와 같은 구조는 Layered Architecture라고 한다. 이때 레이어 간 응집성을 높이고 의존도를 낮추기 위해서는 계층 간 호출 시 인터페이스를 통해 호출해야 한다. 즉, 상위 계층은 직접적으로 하위 계층을 호출하지 않고 추상적인 인터페이스에 의존한다.</p><blockquote><p>Q. 응집도란?</p><p>응집도란 한 모듈 내부의 처리 요소들이 서로 관련되어 있는 정도를 말한다. 즉, 모듈이 독립적인 기능을 수행하지 또는 하나의 기능을 중심으로 책임이 잘 뭉쳐있는지를 나타내며 모듈이 높은 응집도를 가질수록 좋다.</p><p>출처 - <a class=link href=https://madplay.github.io/post/coupling-and-cohesion-in-software-engineering target=_blank rel=noopener>https://madplay.github.io/post/coupling-and-cohesion-in-software-engineering</a></p></blockquote><blockquote><p>Q. 의존성을 왜 낮춰야 하는 걸까?</p><p>A. 의존성이란 다른 객체의 영향을 받고, 다른 객체에 따라 결과가 좌우되는 것이다. 의존성을 낮춰 객체들 간 전파되는 변경에 대한 영향을 최소화 시켜, 유지보수 시 원활하게 하기 위해서이다.</p><p>출처 - <a class=link href=https://velog.io/@ung6860/Spring%EC%8A%A4%ED%94%84%EB%A7%81-%EA%B8%B0%EC%B4%88-DIDependency-Injection target=_blank rel=noopener></a><a class=link href=https://velog.io/@ung6860/Spring%EC%8A%A4%ED%94%84%EB%A7%81-%EA%B8%B0%EC%B4%88-DIDependency-Injection target=_blank rel=noopener>https://velog.io/@ung6860/Spring스프링-기초-DIDependency-Injection</a></p></blockquote><blockquote><p>Q. 의존성을 낮추는 방법?</p><p>A. 기본적으로 의존성을 클래스 내부에서 new 연산자를 사용하는 것이 아닌 외부로부터 객체의 의존성을 주입받아야한다. 외부로부터 의존성을 주입받는 것의 의미는 &lsquo;의존성 주입&rsquo;에 초점을 맞추는게 아니라 &lsquo;의존성 탈피를 위하여 외부로부터 주입&rsquo;이라는 부가적인 설명에 초점을 맞추어야한다.</p></blockquote><h3 id=presentation>Presentation</h3><p>웹 클라이언트의 요청 및 응답 처리한다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-python data-lang=python><span class=line><span class=cl><span class=nd>@RestController</span>
+</span></span><span class=line><span class=cl><span class=nd>@RequestMapping</span><span class=p>(</span><span class=s2>&#34;/membership/&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=n>public</span> <span class=k>class</span> <span class=nc>RegisterMembershipController</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=nd>@Autowired</span>
+</span></span><span class=line><span class=cl>	<span class=n>private</span> <span class=n>MembershipService</span> <span class=n>membershipService</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nd>@PostMapping</span><span class=p>(</span><span class=n>path</span> <span class=o>=</span> <span class=s2>&#34;register&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=n>public</span> <span class=n>Membership</span> <span class=n>createmembership</span><span class=p>(</span><span class=nd>@RequestBody</span> <span class=n>MembershipRequest</span> <span class=n>request</span><span class=p>){</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=n>MembershipCommand</span> <span class=n>command</span> <span class=o>=</span> <span class=n>MembershipCommand</span><span class=o>.</span><span class=n>builder</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>			<span class=o>.</span><span class=n>name</span><span class=p>(</span><span class=s2>&#34;hello&#34;</span><span class=p>)</span><span class=o>.</span><span class=n>builder</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=k>return</span> <span class=n>membershipService</span><span class=o>.</span><span class=n>createMembership</span><span class=p>(</span><span class=n>command</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>보통은 @Controller를 통해 controller를 지정해줄 수 있다. rest api를 구현했는데, 이에 적합한 @RestController가 있다. <code>@RestController</code>는 @Controller + @ResponseBody라고 보면 된다. 자세한 사항은 <a class=link href=https://mangkyu.tistory.com/49 target=_blank rel=noopener>망나니 개발자님의 블로그</a>를 참고하길 바란다.</p><h3 id=service>Service</h3><p>비즈니스 로직을 처리하는 계층이다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-java data-lang=java><span class=line><span class=cl><span class=kd>public</span><span class=w> </span><span class=kd>interface</span> <span class=nc>MembershipService</span><span class=p>{</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>Membership</span><span class=w> </span><span class=nf>createMembership</span><span class=p>(</span><span class=n>MembershipCommand</span><span class=w> </span><span class=n>command</span><span class=p>);</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=p>}</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nd>@Service</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=kd>public</span><span class=w> </span><span class=kd>class</span> <span class=nc>MembershipServiceImp</span><span class=w> </span><span class=kd>implements</span><span class=w> </span><span class=n>MembershipService</span><span class=p>{</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nd>@Autowired</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>MembershipRepository</span><span class=w> </span><span class=n>membershipRepository</span><span class=p>;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nd>@Override</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>Membership</span><span class=w> </span><span class=nf>createMembership</span><span class=p>(</span><span class=n>MembershipCommand</span><span class=w> </span><span class=n>command</span><span class=p>){</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>        </span><span class=n>membershipRepository</span><span class=p>.</span><span class=na>save</span><span class=p>(</span><span class=n>command</span><span class=p>);</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=p>}</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=p>}</span><span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><p>핵심 비즈니스 로직은 연산으로 구성된 인터페이스를 정의하고 그에 대한 구현을 따로 작성하는 것이 좋다. 그래서 컨트롤러가 인터페이스에 의존하게 되는데, 나중에서 서비스 구현이 변경되더라도 인터페이스에 의존돼 컨트롤러를 변경할 필요가 없다는 것이다.</p><h3 id=repository>Repository</h3><p>저장소에 접근하는 영역으로 DAO(Data Access Object) 영역이라고 부른다. @Repository를 사용하여 Spring repository를 지정해준다. 주목할 점은 인터페이스 내용이 비어 있더라도 스프링 데이터가 JPA 런타임에 인터페이스 구현체를 자동으로 만들어준다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-java data-lang=java><span class=line><span class=cl><span class=nd>@Repository</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=kd>public</span><span class=w> </span><span class=kd>interface</span> <span class=nc>MembershipRepository</span><span class=w> </span><span class=kd>extends</span><span class=w> </span><span class=n>CrudRepository</span><span class=o>&lt;</span><span class=n>Membership</span><span class=p>,</span><span class=n>Long</span><span class=o>&gt;</span><span class=w> </span><span class=p>{</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=p>}</span><span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><h3 id=dto>DTO</h3><p>계층 간에 데이터 교환을 위한 객체를 의미한다.</p><p><img src=/p/basic-spring-1/dto.png width=1280 height=299 srcset="/p/basic-spring-1/dto_hu_9bdd09df8d75677e.png 480w, /p/basic-spring-1/dto_hu_464793c2f7413ee6.png 1024w" loading=lazy alt=출처-https://loosie.tistory.com/296 class=gallery-image data-flex-grow=428 data-flex-basis=1027px></p><p>처음 공부 했을 때 “Dto 다 똑같은 객체겠군… 오류 발생하면 난리나겠네”라고 생각했다. <strong>각 계층마다 Dto가 다를 수 있다.</strong>
+아래의 예시를 보면 Controller → Service에서는 Dto가 Membership 객체를 사용했다. 하지만 Membership 도메인과 실제 엔티티와 다를 경우라면 어떨까? Service → Repository에서는 Dto가 MembershipEntity가 되는 것이다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-java data-lang=java><span class=line><span class=cl><span class=c1>// Controller</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=n>membershipService</span><span class=p>.</span><span class=na>createMembership</span><span class=p>(</span><span class=n>member</span><span class=p>);</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=c1>// MembershipService</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=kd>public</span><span class=w> </span><span class=kd>interface</span> <span class=nc>MembershipService</span><span class=p>{</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>Membership</span><span class=w> </span><span class=nf>createMembership</span><span class=p>(</span><span class=n>Membership</span><span class=w> </span><span class=n>member</span><span class=p>);</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=p>}</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nd>@Component</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=kd>public</span><span class=w> </span><span class=kd>class</span> <span class=nc>MembershipMapper</span><span class=w> </span><span class=p>{</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>	</span><span class=n>MembershipEntity</span><span class=w> </span><span class=nf>MapToEntity</span><span class=p>(</span><span class=n>Membership</span><span class=w> </span><span class=n>member</span><span class=p>){</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>		</span><span class=k>return</span><span class=w> </span><span class=k>new</span><span class=w> </span><span class=n>MembershipEntity</span><span class=p>(</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>			 </span><span class=c1>// ... 생략</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>			</span><span class=p>);</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>	</span><span class=p>}</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=p>}</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=nd>@Service</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=kd>public</span><span class=w> </span><span class=kd>class</span> <span class=nc>MembershipServiceImp</span><span class=w> </span><span class=kd>implements</span><span class=w> </span><span class=n>MembershipService</span><span class=p>{</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nd>@Autowired</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>MembershipRepository</span><span class=w> </span><span class=n>MembershipRepository</span><span class=p>;</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nd>@Override</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=n>Membership</span><span class=w> </span><span class=nf>createMembership</span><span class=p>(</span><span class=n>Membership</span><span class=w> </span><span class=n>membership</span><span class=p>){</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>        </span><span class=n>MembershipRepository</span><span class=p>.</span><span class=na>save</span><span class=p>(</span><span class=n>MembershipMapper</span><span class=p>.</span><span class=na>MapToEntity</span><span class=p>(</span><span class=n>membership</span><span class=p>));</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=p>}</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w></span><span class=p>}</span><span class=w>
+</span></span></span></code></pre></td></tr></table></div></div><h2 id=테스트>테스트</h2><p>소프트웨어 개발 시 테스트 단계는 필수다. 이 단계에서는 작성한 코드를 기반으로 검증한다. 테스트는 크게 단위 테스트와 통합 테스트가 존재한데, 단위 테스트를 집중적으로 설명하고자 한다.</p><p>단위 테스트란 하나의 모듈을 기준으로 독립적으로 진행되는 가장 작은 단위의 테스트이다. 특정 부분만 독립적으로 테스트하기 때문에 빠르게 문제 여부를 확인할 수 있게 된다.</p><p>자세한 사항은 <a class=link href=https://mangkyu.tistory.com/143 target=_blank rel=noopener>망나니 개발자님의 블로그</a>를 참고하길 바란다.</p><h2 id=데이터베이스>데이터베이스</h2><p><img src=/p/basic-spring-1/spring_database.png width=1992 height=1312 srcset="/p/basic-spring-1/spring_database_hu_f73f6818d466242d.png 480w, /p/basic-spring-1/spring_database_hu_a931ad1adb03e26c.png 1024w" loading=lazy alt=출처-https://velog.io/@murphytklee/Spring-ORM-JPA-Hibernate-JDBC-%EC%B4%9D%EC%A0%95%EB%A6%AC/ class=gallery-image data-flex-grow=151 data-flex-basis=364px></p><h3 id=jpajava-persistent-api>JPA(Java Persistent API)</h3><p>관계형 데이터베이스를 사용하는 방식을 정의한 인터페이스이다. 이를 구현한 ORM 프레임워크로는 hibernate가 있다.</p><p>JPA는 다양한 쿼리 방법을 지원한다.</p><ul><li>JPQL</li><li>QueryDSL</li><li>Native SQL</li><li>JDBC API 직접 사용</li></ul><blockquote><p>요즘은 QueryDSL를 사용하는 추세라고 한다.</p></blockquote><h3 id=앤티티>앤티티</h3><p>DB의 테이블과 매핑되는 객체로 DB 테이블과 직접 연결된다.</p><h4 id=영속성-컨텍스트>영속성 컨텍스트</h4><p>엔티티를 관리하는 가상 공간이다.</p><ul><li>1차 캐시<ul><li>캐시키는 엔티티의 키로 둬서, 조회시 1차적으로 영속성 컨텍스트 내에 있는 값을 반환한다.</li></ul></li><li>쓰기 지연<ul><li>빈번한 context swtiching에 대한 overhead를 줄여주기 위해 한꺼번에 모았다가 처리한다.</li></ul></li><li>변경 감지<ul><li>영속성 컨텍스트 내에 있는 캐시와 변경된 entity값을 비교해서 엔티티 변경 감지 후 DB에 자동 반영</li><li>비즈니스 로직, DB 상에 있는 로직의 꼬이는 것을 방지</li></ul></li></ul><blockquote><p>Q. 왜 영속성 테스트를 사용하는 것인가?</p><p>A. 트랜잭션의 횟수나 방식을 효율적으로 관리해 서버의 속도를 늘리고, 중복되는 쿼리를 줄일 수 있다.</p></blockquote><p>WAS가 시작되면 EntityMangerFactory가 생성되고, 트랜잭션마다 생성되는 EntityManager를 관리한다. 이때 EntityManager는 Entity의 생명 주기를 관리한다.(관리 상태, 비영속 상태, 삭제된 상태)</p><blockquote><p>스프링 부트는 EntityManagerFactory를 하나만 생성해서 관리하고, 의존성 주입해서 사용함. 빈을 하나만 생성해서 동시성 문제를 해소했다.</p></blockquote><p><img src=/p/basic-spring-1/persistenceContext.png width=705 height=441 srcset="/p/basic-spring-1/persistenceContext_hu_63628c5a23c51f8d.png 480w, /p/basic-spring-1/persistenceContext_hu_70f34aeb41a49d73.png 1024w" loading=lazy alt=출처-https://iyoungman.github.io/jpa/EntityManagerFactory-EntityManager-PersistenceContext/ class=gallery-image data-flex-grow=159 data-flex-basis=383px></p><h3 id=spring-data-api>Spring data api</h3><p>인터페이스 및 주석 세트를 제공해서 데이터 액세스 계층을 쉽게 구축할 수 있도록 한다. JPA를 한 단계 추상화시킨 Repository라는 인터페이스를 제공함으로써 이뤄진다.</p><p>스프링 데이터의 공통적인 기능에서 JPA의 유용한 기술이 추가 (스프링 데이터 인터페이스를 상속받아서 간단한 트랜잭션 처리 가능)</p><h2 id=reference>Reference</h2><ul><li><a class=link href=https://velog.io/@murphytklee/Spring-ORM-JPA-Hibernate-JDBC-%EC%B4%9D%EC%A0%95%EB%A6%AC target=_blank rel=noopener>Spring - ORM, JPA, Hibernate, JDBC 총정리</a></li><li><a class=link href=https://ict-nroo.tistory.com/116 target=_blank rel=noopener>[JPA] 객체지향 쿼리, JPQL</a></li><li><a class=link href=https://mangkyu.tistory.com/143 target=_blank rel=noopener>[TDD] 단위 테스트(Unit Test) 작성의 필요성 (1/3)</a></li><li><a class=link href=https://velog.io/@ung6860/Spring%EC%8A%A4%ED%94%84%EB%A7%81-%EA%B8%B0%EC%B4%88-DIDependency-Injection target=_blank rel=noopener>[Spring]스프링 기초 - DI(Dependency Injection)</a></li></ul></section><footer class=article-footer><section class=article-tags><a href=/tags/springboot/>SpringBoot</a>
+<a href=/tags/web/>Web</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/p/moarium-backend-1/><div class=article-details><h2 class=article-title>모아리움 백엔드 - API 개발 시 마주한 문제들</h2></div></a></article></div></div></aside><footer class=site-footer><section class=copyright>&copy;
+2024 -
+2025 S0okJu.dev</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

@@ -1,0 +1,483 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content=" 2025-03-07 - 내용 수정 이전 글에는 상태를 어떻게 정의했는지 설명했습니다. 지금부터 어떻게 Challenge를 생성, 삭제할 수 있는지 설명하겠습니다.\n조건 생각하기 우선 생성과 삭제 로직을 설명하기 이전에 생성과 삭제 시 무조건 수행되어야 하는 조건을 정리해야 합니다.\n"><title>HexaCTF 8. 커스텀 컨트롤러를 통한 Challenge 생성 및 삭제 구현</title>
+<link rel=canonical href=https://s0okju.github.io/p/hexactf-8/><link rel=stylesheet href=/scss/style.min.663803bebe609202d5b39d848f2d7c2dc8b598a2d879efa079fa88893d29c49c.css><meta property='og:title' content="HexaCTF 8. 커스텀 컨트롤러를 통한 Challenge 생성 및 삭제 구현"><meta property='og:description' content=" 2025-03-07 - 내용 수정 이전 글에는 상태를 어떻게 정의했는지 설명했습니다. 지금부터 어떻게 Challenge를 생성, 삭제할 수 있는지 설명하겠습니다.\n조건 생각하기 우선 생성과 삭제 로직을 설명하기 이전에 생성과 삭제 시 무조건 수행되어야 하는 조건을 정리해야 합니다.\n"><meta property='og:url' content='https://s0okju.github.io/p/hexactf-8/'><meta property='og:site_name' content='S0okJu.dev'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='Openstack'><meta property='article:tag' content='Kubernetes'><meta property='article:published_time' content='2025-03-04T00:00:00+09:00'><meta property='article:modified_time' content='2025-03-04T00:00:00+09:00'><meta name=twitter:title content="HexaCTF 8. 커스텀 컨트롤러를 통한 Challenge 생성 및 삭제 구현"><meta name=twitter:description content=" 2025-03-07 - 내용 수정 이전 글에는 상태를 어떻게 정의했는지 설명했습니다. 지금부터 어떻게 Challenge를 생성, 삭제할 수 있는지 설명하겠습니다.\n조건 생각하기 우선 생성과 삭제 로직을 설명하기 이전에 생성과 삭제 시 무조건 수행되어야 하는 조건을 정리해야 합니다.\n"><link rel="shortcut icon" href=/favicon.ico></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_c3a763b4e1e1539a.png width=300 height=248 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>👾</span></figure><div class=site-meta><h1 class=site-name><a href=/>S0okJu.dev</a></h1><h2 class=site-description>경험으로 학습합니다.</h2></div></header><ol class=menu-social><li><a href=https://github.com/S0okJu target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+<span>About</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>Links</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#조건-생각하기>조건 생각하기</a></li><li><a href=#builder를-통해-controller를-설정한다>Builder를 통해 Controller를 설정한다.</a></li><li><a href=#controller는-reconciler를-통해-reconcile를-실행한다>Controller는 Reconciler를 통해 Reconcile()를 실행한다.</a></li><li><a href=#challenge-리소스-생성>Challenge 리소스 생성</a><ol><li><a href=#쉽게-삭제할-수-있도록-challenge를-만들자>쉽게 삭제할 수 있도록 Challenge를 만들자!</a><ol><li><a href=#구현>구현</a></li></ol></li><li><a href=#상태를-감지하고-변경하는-방법>상태를 감지하고 변경하는 방법</a></li><li><a href=#컨트롤러-구현에-중요한-것은---멱등성>컨트롤러 구현에 중요한 것은? - 멱등성</a></li></ol></li><li><a href=#challenge-리소스-삭제>Challenge 리소스 삭제</a><ol><li><a href=#삭제-상태를-알리기-위한-finalizer-이용>삭제 상태를 알리기 위한 Finalizer 이용</a></li><li><a href=#리소스가-삭제되는-2가지-방법>리소스가 삭제되는 2가지 방법</a></li></ol></li><li><a href=#정리>정리</a></li><li><a href=#마치며>마치며</a></li><li><a href=#참고>참고</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/hexactf/>HexaCTF</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/hexactf-8/>HexaCTF 8. 커스텀 컨트롤러를 통한 Challenge 생성 및 삭제 구현</a></h2></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Mar 04, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>11 minute read</time></div></footer></div></header><section class=article-content><ul><li>2025-03-07 - 내용 수정</li></ul><p>이전 글에는 상태를 어떻게 정의했는지 설명했습니다. 지금부터 어떻게 Challenge를 생성, 삭제할 수 있는지 설명하겠습니다.</p><h2 id=조건-생각하기>조건 생각하기</h2><p>우선 생성과 삭제 로직을 설명하기 이전에 생성과 삭제 시 무조건 수행되어야 하는 조건을 정리해야 합니다.</p><ul><li>생성<ul><li>Deployment, Service 생성</li></ul></li><li>삭제<ul><li>조건에 따라 30분 후 삭제 -> 생성일 기준으로 종료일 지정</li><li>Challenge 삭제 시 관련 Deployment, Service 삭제 -> 무언가를 통해 연결되어야 함</li></ul></li></ul><p>주로 <strong>삭제 로직을 중심</strong>으로 컨트롤러를 구현했습니다. 삭제를 제대로 제어하지 않으면 고아 리소스가 생기는 문제가 발생하기 때문입니다.</p><h2 id=builder를-통해-controller를-설정한다>Builder를 통해 Controller를 설정한다.</h2><p>공식 문서에 의하면 Builder는 controller-runtime을 감싸며, 일반적인 controller를 구축하기 위한 패턴을 제공한다고 합니다.</p><p>이전 글에서 제가 했던 이야기 생각 나시나요? <strong>오퍼레이터를 만든다는 것은 대상 리소스를 제어하는 controller와 Controller를 관리하는 Mananger를 만든다</strong>는 것이고, <strong>Kubebuilder는 controller를 빌드하는 프로그램</strong>이라고 말했습니다.</p><blockquote><p><strong>Manager</strong>
+controller를 제작하는데 필요하며 client, caches, schemes등 의 공유 디펜던시를 제공한다. 컨트롤러는 Manager.Start를 호출하여 시작되어야 한다.
+<a class=link href=https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/manager target=_blank rel=noopener>공식 문서</a></p></blockquote><p>실제 코드 상에서는 kubebuilder가 Manager라는 객체 생성해줍니다.(<code>cmd/main.go</code>)</p><blockquote><p>Manager는 고가용성을 위해 Controller들의 leader election도 수행합니다.</p></blockquote><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl>	<span class=nx>mgr</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nf>NewManager</span><span class=p>(</span><span class=nx>ctrl</span><span class=p>.</span><span class=nf>GetConfigOrDie</span><span class=p>(),</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nx>Options</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>Scheme</span><span class=p>:</span>                 <span class=nx>scheme</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>Metrics</span><span class=p>:</span>                <span class=nx>metricsServerOptions</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>WebhookServer</span><span class=p>:</span>          <span class=nx>webhookServer</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>HealthProbeBindAddress</span><span class=p>:</span> <span class=nx>probeAddr</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>LeaderElection</span><span class=p>:</span>         <span class=nx>enableLeaderElection</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>LeaderElectionID</span><span class=p>:</span>       <span class=s>&#34;958dbbf6.hexactf.io&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// when the Manager ends. This requires the binary to immediately end when the</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// speeds up voluntary leader transitions as the new leader don&#39;t have to wait</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// LeaseDuration time first.</span>
+</span></span><span class=line><span class=cl>		<span class=c1>//</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// In the default scaffold provided, the program ends immediately after</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// the manager stops, so would be fine to enable this option. However,</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// if you are doing or is intended to do any operation such as perform cleanups</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// after the manager stops then its usage might be unsafe.</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// LeaderElectionReleaseOnCancel: true,</span>
+</span></span><span class=line><span class=cl>	<span class=p>})</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>setupLog</span><span class=p>.</span><span class=nf>Error</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=s>&#34;unable to start manager&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=nx>os</span><span class=p>.</span><span class=nf>Exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>요구사항에 따라서 하나의 프로젝트에 2개 이상의 controller를 생성할 수 있습니다. 현재 저희 대회에서는 Challenge Controller 하나만 필요하기 때문에 하나만 만든 것 뿐입니다.
+Manager는 Controller를 제어하는 역할을 가진다고 설명했죠? <strong>처음 Mananger가 여러개의 controller를 제어하기 위해서는 Manager에 Controller 등록 작업이 필요합니다.</strong> 그리고 이 부분은 라이브러리가 controller 파일 생성 시 자동으로 제공합니다.</p><p>다시 돌아와서 Builder는 Challenge Controller를 생성하기 위해 어떤 정보가 필요할까요?</p><ul><li>Controller를 제어할 Manager</li><li>Controller 대상 리소스</li><li>Controller에 삽입할 Reconcile 함수</li></ul><p>kubebuilder를 통해 자동으로 controller를 생성하면 아래와 같이 빌드 로직을 확인할 수 있습니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// SetupWithManager sets up the controller with the Manager.</span>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>r</span> <span class=o>*</span><span class=nx>ChallengeReconciler</span><span class=p>)</span> <span class=nf>SetupWithManager</span><span class=p>(</span><span class=nx>mgr</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nx>Manager</span><span class=p>)</span> <span class=kt>error</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Builder 초기화</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nf>NewControllerManagedBy</span><span class=p>(</span><span class=nx>mgr</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// Challenge라는 대상 리소스</span>
+</span></span><span class=line><span class=cl>		<span class=nf>For</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>hexactfproj</span><span class=p>.</span><span class=nx>Challenge</span><span class=p>{}).</span>
+</span></span><span class=line><span class=cl>		<span class=nf>Owns</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>appsv1</span><span class=p>.</span><span class=nx>Deployment</span><span class=p>{}).</span>
+</span></span><span class=line><span class=cl>		<span class=nf>Owns</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>corev1</span><span class=p>.</span><span class=nx>Service</span><span class=p>{}).</span><span class=o>/</span>
+</span></span><span class=line><span class=cl>		<span class=nf>Named</span><span class=p>(</span><span class=s>&#34;challenge&#34;</span><span class=p>).</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// Controller에 ChallengeReconciler를 삽입</span>
+</span></span><span class=line><span class=cl>		<span class=nf>Complete</span><span class=p>(</span><span class=nx>r</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=controller는-reconciler를-통해-reconcile를-실행한다>Controller는 Reconciler를 통해 Reconcile()를 실행한다.</h2><p>Controller는 타겟 리소스(Challenge)를 모니터링하고 변경 시 <code>Reconciler</code> 함수를 실행시킵니다. Reconciler 함수는 kube-apiserver를 통해 대상 리소스의 변경 사항을 확인합니다. 만약에 변경 사항이 감지가 되었다면 <code>Reconcile</code> 함수를 실행시킵니다.</p><p>맨 첫부분에 말한 조건은 모두 <code>Reconcile</code> 함수 내에 구현하게 됩니다.</p><blockquote><p>구체적인 내용은 <a class=link href=https://nakamasato.medium.com/kubernetes-operator-series-6-controller-runtime-component-controller-604c8905a1e1 target=_blank rel=noopener>Kubernetes Operator series 6 — controller-runtime component — Controller | by Masato Naka | Medium</a> 읽는 것을 추천드립니다.</p></blockquote><h2 id=challenge-리소스-생성>Challenge 리소스 생성</h2><h3 id=쉽게-삭제할-수-있도록-challenge를-만들자>쉽게 삭제할 수 있도록 Challenge를 만들자!</h3><p>Challenge는 Deployment, Service를 하나의 컴포넌트로 구성하여 생성하게 됩니다. <strong>삭제 시 고아 리소스가 발생하지 않도록 생성하는 것이 중요합니다.</strong>
+위의 과제를 달성하기 위해서 Challenge-Deployment, Service간 부모-자식 관계를 지정했습니다.</p><blockquote><p>Owns에 대해서 소유 관계라고 말하는 사람이 있고, 어느 책에서는 부모-자식 관계라고 설명하기도 했습니다. 저는 상하 관계를 뚜렷하게 표현할 수 있어 <strong>부모-자식 관계</strong>로 설명하겠습니다.</p></blockquote><p>쉽게 말해 커스텀 리소스(Challenge) 부모이고 Deployment, Service 자식 관계라고 생각하시면 됩니다. Challenge가 Deployment과 연관된다는 것은 Deployment에 변경 사항 발생 시 Reconcile()이 발생한다는 것입니다.</p><p>부모-자식 관계를 사용한 이유는 삭제 시 편리하기 때문입니다. 구체적으로 말하자면 <strong>자식 리소스가 부모 리소스에 소속된 것으로 설정되어 있다면 부모 리소스 삭제 쿠버네티스의 가비지 컬렉션은 모든 자식 리소스를 자동으로 정리</strong>합니다.</p><h4 id=구현>구현</h4><p>생성 시 아래의 로직을 따릅니다.</p><ol><li>Challenge 객체 초기화</li><li>LoadDefinition을 로드</li><li>LoadDefinition 기반으로 Deployment, Service를 생성(부모-자식 관계)</li><li>Challenge에 필요 레이블을 추가</li></ol><p>여기서 초기화 부분에 <code>challenge.Status.StartedAt</code> 를 현재 시간으로 저장했습니다. 이 속성값은 초기화 혹은 추후 30분 후에 삭제하기 위해 비교값으로 활용됩니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// 처음 생성 시 StartedAt 등 Status 초기화</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Status</span><span class=p>.</span><span class=nx>StartedAt</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>.</span><span class=nx>NamespacedName</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleError</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>		<span class=nx>now</span> <span class=o>:=</span> <span class=nx>metav1</span><span class=p>.</span><span class=nf>Now</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>		<span class=nx>challenge</span><span class=p>.</span><span class=nx>Status</span><span class=p>.</span><span class=nx>StartedAt</span> <span class=p>=</span> <span class=o>&amp;</span><span class=nx>now</span>
+</span></span><span class=line><span class=cl>		<span class=nx>challenge</span><span class=p>.</span><span class=nx>Status</span><span class=p>.</span><span class=nx>CurrentStatus</span> <span class=p>=</span> <span class=o>*</span><span class=nx>hexactfproj</span><span class=p>.</span><span class=nf>NewCurrentStatus</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>Status</span><span class=p>().</span><span class=nf>Update</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>log</span><span class=p>.</span><span class=nf>Error</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=s>&#34;Failed to initialize status&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleError</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// 최신 상태로 갱신</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>.</span><span class=nx>NamespacedName</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// NotFound 에러 등은 무시</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleError</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// 현재 상태에 따라 분기</span>
+</span></span><span class=line><span class=cl>	<span class=k>switch</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=k>case</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Status</span><span class=p>.</span><span class=nx>CurrentStatus</span><span class=p>.</span><span class=nf>IsNone</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// ...</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>.</span><span class=nx>NamespacedName</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleError</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// 실제 Challenge에 필요한 리소스들(Deployment, Service 등) 생성 로직</span>
+</span></span><span class=line><span class=cl>		<span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>loadChallengeDefinition</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleError</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=c1>// 한 번 더 재큐(Requeue)하여 바로 다음 단계 확인</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nx>Result</span><span class=p>{</span><span class=nx>Requeue</span><span class=p>:</span> <span class=kc>true</span><span class=p>},</span> <span class=kc>nil</span>
+</span></span></code></pre></td></tr></table></div></div><p>Deployment, Service 생성 시 Challenge에 대한 <code>SetControllerReference</code> 를 설정합니다. 그리고 <code>Client.Create</code>를 통해 Deployment,Service를 생성합니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl>	<span class=c1>// Deployment가 존재하는지 확인</span>
+</span></span><span class=line><span class=cl>	<span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>client</span><span class=p>.</span><span class=nx>ObjectKey</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>Namespace</span><span class=p>:</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Namespace</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=nx>Name</span><span class=p>:</span>      <span class=nx>deploy</span><span class=p>.</span><span class=nx>Name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=p>},</span> <span class=nx>deploy</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>errors</span><span class=p>.</span><span class=nf>IsNotFound</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>log</span><span class=p>.</span><span class=nf>Info</span><span class=p>(</span><span class=s>&#34;Creating Deployment&#34;</span><span class=p>,</span> <span class=s>&#34;Deployment.Namespace&#34;</span><span class=p>,</span> <span class=nx>deploy</span><span class=p>.</span><span class=nx>Namespace</span><span class=p>,</span> <span class=s>&#34;Deployment.Name&#34;</span><span class=p>,</span> <span class=nx>deploy</span><span class=p>.</span><span class=nx>Name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>			<span class=c1>// Owner Reference 설정</span>
+</span></span><span class=line><span class=cl>			<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nf>SetControllerReference</span><span class=p>(</span><span class=nx>challenge</span><span class=p>,</span> <span class=nx>deploy</span><span class=p>,</span> <span class=nx>r</span><span class=p>.</span><span class=nx>Scheme</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>				<span class=nx>log</span><span class=p>.</span><span class=nf>Error</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=s>&#34;failed to set controller reference&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>				<span class=k>return</span> <span class=nx>err</span>
+</span></span><span class=line><span class=cl>			<span class=p>}</span>
+</span></span><span class=line><span class=cl>			<span class=c1>// Deployment 생성</span>
+</span></span><span class=line><span class=cl>			<span class=nx>err</span> <span class=p>=</span> <span class=nx>r</span><span class=p>.</span><span class=nx>Client</span><span class=p>.</span><span class=nf>Create</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>deploy</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>				<span class=nx>log</span><span class=p>.</span><span class=nf>Error</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=s>&#34;failed to create Deployment&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>				<span class=k>return</span> <span class=nx>err</span>
+</span></span><span class=line><span class=cl>			<span class=p>}</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>log</span><span class=p>.</span><span class=nf>Error</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=s>&#34;failed to get Deployment&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=nx>err</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>그리고 컨트롤러 Builder 초기화 부분에서 소유 관계를 명확히 구현하시면 됩니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// SetupWithManager sets up the controller with the Manager.</span>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>r</span> <span class=o>*</span><span class=nx>ChallengeReconciler</span><span class=p>)</span> <span class=nf>SetupWithManager</span><span class=p>(</span><span class=nx>mgr</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nx>Manager</span><span class=p>)</span> <span class=kt>error</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Builder를 초기화</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nf>NewControllerManagedBy</span><span class=p>(</span><span class=nx>mgr</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// Challenge(부모 리소스)</span>
+</span></span><span class=line><span class=cl>		<span class=nf>For</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>hexactfproj</span><span class=p>.</span><span class=nx>Challenge</span><span class=p>{}).</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// Deployment(자식 리소스)</span>
+</span></span><span class=line><span class=cl>		<span class=nf>Owns</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>appsv1</span><span class=p>.</span><span class=nx>Deployment</span><span class=p>{}).</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// Service(자식 리소스)</span>
+</span></span><span class=line><span class=cl>		<span class=nf>Owns</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>corev1</span><span class=p>.</span><span class=nx>Service</span><span class=p>{}).</span><span class=o>/</span>
+</span></span><span class=line><span class=cl>		<span class=nf>Named</span><span class=p>(</span><span class=s>&#34;challenge&#34;</span><span class=p>).</span>
+</span></span><span class=line><span class=cl>		<span class=c1>// Controller에 ChallengeReconciler를 삽입</span>
+</span></span><span class=line><span class=cl>		<span class=nf>Complete</span><span class=p>(</span><span class=nx>r</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=상태를-감지하고-변경하는-방법>상태를 감지하고 변경하는 방법</h3><p>완전 새로운 Challenge라면 상태 값과 같은 기타 정보를 초기화하여 필요 리소스를 생성합니다. 이 과정에서 None -> Running 상태로 변경하게 되는데, 코드 상에서 참조하고 있는 challenge의 status 값을 Running를 변경하여 새로운 상태를 쿠버네티스에 업데이트합니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl>		<span class=nx>challenge</span><span class=p>.</span><span class=nx>Status</span><span class=p>.</span><span class=nx>CurrentStatus</span><span class=p>.</span><span class=nf>SetRunning</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>		<span class=nx>now</span> <span class=o>:=</span> <span class=nx>metav1</span><span class=p>.</span><span class=nf>Now</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>		<span class=nx>challenge</span><span class=p>.</span><span class=nx>Status</span><span class=p>.</span><span class=nx>StartedAt</span> <span class=p>=</span> <span class=o>&amp;</span><span class=nx>now</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>Status</span><span class=p>().</span><span class=nf>Update</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleError</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=컨트롤러-구현에-중요한-것은---멱등성>컨트롤러 구현에 중요한 것은? - 멱등성</h3><p>컨트롤러에서 말하는 <strong>멱등성</strong>은 변경 되지 않는 리소스의 조정 요청이 여러번 있더라도 <strong>매번 동일한 결과</strong>를 가져와야 한다는 의미입니다. 만약에 하나의 부모 리소스에 Deployment 1개로 구성된 자식 리소스를 가져야 한다고 가정해봅시다. 무슨 일이 발생하더라도 하나의 부모 리소스에 무조건 하나의 Deployment를 가져야 합니다. 중간에 추가적인 요청이 발생하여 Deployment가 2개 생성된다면 이것은 멱등성이 깨진 것입니다.</p><p>멱등성은 Challenge Controller를 구현하면서 현재까지도 가장 어려워하는 부분이기도 합니다.
+Challenge는 쿠버네티스의 기본 리소스를 가지고 있지만 절차에 따라 레이블, 상태 값이 업데이트 됩니다. 변경 사항이 많은 탓에 <strong>Reconcile 로직을 구현할 때는 최신의 Challenge를 불러오도록 구현</strong>해야 합니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>.</span><span class=nx>NamespacedName</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleError</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>그렇지 않으면 Kubernetes Client가 이용하는 Kubernetes Cache에 있는 상태 값과 실제 데이터에 불일치가 발생해 문제가 발생하게 됩니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-json data-lang=json><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;controller&#34;</span><span class=p>:</span> <span class=s2>&#34;challenge&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;controllerGroup&#34;</span><span class=p>:</span> <span class=s2>&#34;apps.hexactf.io&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;controllerKind&#34;</span><span class=p>:</span> <span class=s2>&#34;Challenge&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;Challenge&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;name&#34;</span><span class=p>:</span> <span class=s2>&#34;challenge-59-sample&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;namespace&#34;</span><span class=p>:</span> <span class=s2>&#34;default&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=p>},</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;namespace&#34;</span><span class=p>:</span> <span class=s2>&#34;default&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;name&#34;</span><span class=p>:</span> <span class=s2>&#34;challenge-59-sample&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;reconcileID&#34;</span><span class=p>:</span> <span class=s2>&#34;bf0eee44-a54d-417d-8322-7dc81e52152e&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>  <span class=nt>&#34;error&#34;</span><span class=p>:</span> <span class=s2>&#34;Operation cannot be fulfilled on challenges.apps.hexactf.io \&#34;challenge-59-sample\&#34;: the object has been modified; please apply your changes to the latest version and try again&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=challenge-리소스-삭제>Challenge 리소스 삭제</h2><h3 id=삭제-상태를-알리기-위한-finalizer-이용>삭제 상태를 알리기 위한 Finalizer 이용</h3><p>상황에 따라 특별한 정리 로직이 필요한 경우가 있습니다. 이럴 경우 Finzliazer를 통해 리소스를 삭제하지 못하게 할 수 있습니다. 대표적인 예시로 pvc-protection가 있으며 이상 파드가 적극적으로 사용되지 않을때까지 pvc의 삭제가 연기됩니다.</p><blockquote><p>실제로 Finalizer를 사용하지 않으면 삭제는 빠르게 발생됩니다.</p></blockquote><p>프로젝트에서는 리소스 간 종속적인 관계를 가지지 않고 모두 독립적으로 사용됩니다. 그러므로 pvc 사례처럼 Finalizer가 필요 없다고 생각할 수 있습니다.
+그러나 저희 프로젝트는 삭제 상태 정보를 설정하여 외부에 보내야 합니다. 뒤에서 말씀하겠지만 상태 정보를 큐를 통해 전송하게 되는데, 이때 삭제 요청 -> 상태 메세지 전송 -> 삭제 로직이 구현이 되어야 합니다. 결국 리소스 정리가 아니더라도 <strong>삭제가 되었다는 상태 정보를 다른 애플리케이션에게 알려줘야 하는 시간이 필요하게 됩니다.</strong>
+저는 이러한 로직을 구현하기 위해 Finalizer를 사용하게 되었습니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>const</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=nx>challengeFinalizer</span> <span class=p>=</span> <span class=s>&#34;challenge.hexactf.io/finalizer&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>r</span> <span class=o>*</span><span class=nx>ChallengeReconciler</span><span class=p>)</span> <span class=nf>addFinalizer</span><span class=p>(</span><span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>challenge</span> <span class=o>*</span><span class=nx>hexactfproj</span><span class=p>.</span><span class=nx>Challenge</span><span class=p>)</span> <span class=p>(</span><span class=nx>ctrl</span><span class=p>.</span><span class=nx>Result</span><span class=p>,</span> <span class=kt>error</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>challenge</span><span class=p>.</span><span class=nx>Finalizers</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>challenge</span><span class=p>.</span><span class=nx>Finalizers</span><span class=p>,</span> <span class=nx>challengeFinalizer</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>Update</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>challenge</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=k>return</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nx>Result</span><span class=p>{},</span> <span class=nx>fmt</span><span class=p>.</span><span class=nf>Errorf</span><span class=p>(</span><span class=s>&#34;failed to add finalizer: %w&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nx>Result</span><span class=p>{},</span> <span class=kc>nil</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=리소스가-삭제되는-2가지-방법>리소스가 삭제되는 2가지 방법</h3><p>리소스가 삭제되는 방법은 크게 두 가지입니다.</p><ol><li>사용자가 삭제를 요청한다.</li><li>이용 시간이 30분 이상이면 삭제를 요청한다.</li></ol><p>삭제 요청은 &ldquo;삭제 요청하겠습니다!&rdquo; 라는 <code>deletionTimestamp </code>속성만 기록되는 것 뿐입니다. 실제로는 <code>deletionTimestamp</code>가 설정된 것을 확인하고 Finalizer가 제거된 후에 대상 리소스가 삭제된 것입니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>r</span> <span class=o>*</span><span class=nx>ChallengeReconciler</span><span class=p>)</span> <span class=nf>handleDeletion</span><span class=p>(</span><span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>challenge</span> <span class=o>*</span><span class=nx>hexactfproj</span><span class=p>.</span><span class=nx>Challenge</span><span class=p>)</span> <span class=p>(</span><span class=nx>ctrl</span><span class=p>.</span><span class=nx>Result</span><span class=p>,</span> <span class=kt>error</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>log</span><span class=p>.</span><span class=nf>Info</span><span class=p>(</span><span class=s>&#34;Processing deletion&#34;</span><span class=p>,</span> <span class=s>&#34;challenge&#34;</span><span class=p>,</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>crStatusMetric</span><span class=p>.</span><span class=nf>WithLabelValues</span><span class=p>(</span><span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/challengeId&#34;</span><span class=p>],</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Name</span><span class=p>,</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/user&#34;</span><span class=p>],</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Namespace</span><span class=p>).</span><span class=nf>Set</span><span class=p>(</span><span class=mi>2</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// Finalizer가 남아있는지 확인</span>
+</span></span><span class=line><span class=cl>	<span class=k>if</span> <span class=nx>controllerutil</span><span class=p>.</span><span class=nf>ContainsFinalizer</span><span class=p>(</span><span class=nx>challenge</span><span class=p>,</span> <span class=s>&#34;challenge.hexactf.io/finalizer&#34;</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=c1>// 파이널라이저 제거</span>
+</span></span><span class=line><span class=cl>		<span class=nx>controllerutil</span><span class=p>.</span><span class=nf>RemoveFinalizer</span><span class=p>(</span><span class=nx>challenge</span><span class=p>,</span> <span class=s>&#34;challenge.hexactf.io/finalizer&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=c1>// 메타데이터 업데이트</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>Update</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>challenge</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>log</span><span class=p>.</span><span class=nf>Error</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=s>&#34;Failed to remove finalizer&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=c1>// 재시도 위해 Requeue</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nx>Result</span><span class=p>{</span><span class=nx>RequeueAfter</span><span class=p>:</span> <span class=nx>time</span><span class=p>.</span><span class=nx>Second</span> <span class=o>*</span> <span class=mi>5</span><span class=p>},</span> <span class=nx>err</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=c1>// 필요하다면 Deleted 이벤트 전송</span>
+</span></span><span class=line><span class=cl>		<span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nx>KafkaClient</span><span class=p>.</span><span class=nf>SendStatusChange</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>			<span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/user&#34;</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>			<span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/challengeId&#34;</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>			<span class=s>&#34;Deleted&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>		<span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>log</span><span class=p>.</span><span class=nf>Error</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=s>&#34;Failed to send status change message&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=c1>// 여기서도 에러 시 재시도</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nx>Result</span><span class=p>{},</span> <span class=nx>err</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=k>go</span> <span class=kd>func</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>		<span class=nx>time</span><span class=p>.</span><span class=nf>Sleep</span><span class=p>(</span><span class=mi>1</span> <span class=o>*</span> <span class=nx>time</span><span class=p>.</span><span class=nx>Minute</span><span class=p>)</span> <span class=c1>// scrape_interval이 30초라면 1분 정도 기다리면 안전</span>
+</span></span><span class=line><span class=cl>		<span class=nx>crStatusMetric</span><span class=p>.</span><span class=nf>DeleteLabelValues</span><span class=p>(</span><span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/challengeId&#34;</span><span class=p>],</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Name</span><span class=p>,</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/user&#34;</span><span class=p>],</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Namespace</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=p>}()</span>
+</span></span><span class=line><span class=cl>	<span class=nx>log</span><span class=p>.</span><span class=nf>Info</span><span class=p>(</span><span class=s>&#34;Successfully completed deletion process&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// 이 시점에서 finalizers가 비어 있으므로, K8s가 오브젝트를 실제 삭제함</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nx>Result</span><span class=p>{},</span> <span class=kc>nil</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><ol><li>사용자가 삭제를 요청한다.
+사용자가 삭제를 요청하는 것은 사용자가 삭제 이벤트를 직접 하는 것과 같습니다. 요청 이후에는 자동으로 deletionTimestamp가 기록될 것 입니다.</li></ol><p>아래 Reconcile() 로직에 의해서 삭제를 수행할 것입니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl> <span class=k>if</span> <span class=p>!</span><span class=nx>challenge</span><span class=p>.</span><span class=nx>DeletionTimestamp</span><span class=p>.</span><span class=nf>IsZero</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleDeletion</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><ol start=2><li>이용 시간이 30분 이상이면 삭제를 요청한다.<br>Challenge 생성 부분에 실행 30분 후 삭제를 구현하기 위해 <code>startedAt</code> 를 설정한다고 말했죠? startedAt 기준으로 30분 후에 삭제되도록 구현했습니다.</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>time</span><span class=p>.</span><span class=nf>Since</span><span class=p>(</span><span class=nx>challenge</span><span class=p>.</span><span class=nx>Status</span><span class=p>.</span><span class=nx>StartedAt</span><span class=p>.</span><span class=nx>Time</span><span class=p>)</span> <span class=p>&gt;</span> <span class=nx>challengeDuration</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=c1>// 아직 DeletionTimestamp가 없다면 Delete 요청</span>
+</span></span><span class=line><span class=cl>			<span class=k>if</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>DeletionTimestamp</span><span class=p>.</span><span class=nf>IsZero</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>				<span class=nx>log</span><span class=p>.</span><span class=nf>Info</span><span class=p>(</span><span class=s>&#34;Time exceeded; issuing a Delete request&#34;</span><span class=p>,</span> <span class=s>&#34;challenge&#34;</span><span class=p>,</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Name</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>				<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>Delete</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>					<span class=nx>log</span><span class=p>.</span><span class=nf>Error</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=s>&#34;Failed to delete challenge&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>					<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleError</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>				<span class=p>}</span>
+</span></span><span class=line><span class=cl>				<span class=c1>// Delete 요청 후에는 Kubernetes가 DeletionTimestamp를 설정하고</span>
+</span></span><span class=line><span class=cl>				<span class=c1>// 다시 Reconcile이 호출되면 handleDeletion()이 수행됨</span>
+</span></span><span class=line><span class=cl>				<span class=k>return</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nx>Result</span><span class=p>{},</span> <span class=kc>nil</span>
+</span></span><span class=line><span class=cl>			<span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>				<span class=c1>// 이미 Delete 진행중이면 handleDeletion으로</span>
+</span></span><span class=line><span class=cl>				<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleDeletion</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=p>}</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>만약 제한 시간 이내에 있다면 requeue를 합니다.<br>kube-apiserver를 통해 대상 리소스의 변경 사항 감지하면 이벤트를 work queue에 넣습니다. Controller가 시작되면 Watch 로직을 통해 큐에 있는 데이터를 구독하게 되고 Reconcile() 로직을 수행하게 됩니다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl>	<span class=k>case</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Status</span><span class=p>.</span><span class=nx>CurrentStatus</span><span class=p>.</span><span class=nf>IsRunning</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>req</span><span class=p>.</span><span class=nx>NamespacedName</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleError</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=c1>// isOne이 false이면 일정 시간 내에만 작동</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=p>!</span><span class=nx>challenge</span><span class=p>.</span><span class=nx>Status</span><span class=p>.</span><span class=nx>IsOne</span> <span class=o>&amp;&amp;</span> <span class=nx>time</span><span class=p>.</span><span class=nf>Since</span><span class=p>(</span><span class=nx>challenge</span><span class=p>.</span><span class=nx>Status</span><span class=p>.</span><span class=nx>StartedAt</span><span class=p>.</span><span class=nx>Time</span><span class=p>)</span> <span class=p>&gt;</span> <span class=nx>challengeDuration</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleDeletion</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=p>!</span><span class=nx>challenge</span><span class=p>.</span><span class=nx>DeletionTimestamp</span><span class=p>.</span><span class=nf>IsZero</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleDeletion</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>		<span class=c1>// Running 메세지 전송</span>
+</span></span><span class=line><span class=cl>		<span class=nx>err</span> <span class=o>:=</span> <span class=nx>r</span><span class=p>.</span><span class=nx>KafkaClient</span><span class=p>.</span><span class=nf>SendStatusChange</span><span class=p>(</span><span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/user&#34;</span><span class=p>],</span> <span class=nx>challenge</span><span class=p>.</span><span class=nx>Labels</span><span class=p>[</span><span class=s>&#34;apps.hexactf.io/challengeId&#34;</span><span class=p>],</span> <span class=s>&#34;Running&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>			<span class=nx>log</span><span class=p>.</span><span class=nf>Error</span><span class=p>(</span><span class=nx>err</span><span class=p>,</span> <span class=s>&#34;Failed to send status change message&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>			<span class=k>return</span> <span class=nx>r</span><span class=p>.</span><span class=nf>handleError</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>challenge</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>		<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=p>}</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=nx>ctrl</span><span class=p>.</span><span class=nx>Result</span><span class=p>{</span><span class=nx>RequeueAfter</span><span class=p>:</span> <span class=nx>requeueInterval</span><span class=p>},</span> <span class=kc>nil</span>
+</span></span></code></pre></td></tr></table></div></div><p>프로젝트에 대입해보자면 제한 시간 내에 있으면 몇 분 간격으로 30분이 지났는지 확인한다는 것입니다.</p><p><img src=/p/hexactf-8/image-1.png width=720 height=340 srcset="/p/hexactf-8/image-1_hu_70aac238b179c19.png 480w, /p/hexactf-8/image-1_hu_25498fcfb3aa3dca.png 1024w" loading=lazy alt="출처 - https://nakamasato.medium.com/kubernetes-operator-series-6-controller-runtime-component-controller-604c8905a1e1" class=gallery-image data-flex-grow=211 data-flex-basis=508px></p><p><strong>requeue Interval에 대한 생각</strong></p><p>기본적으로 쿠버네티스는 30초 간격으로 모든 리소스의 상태를 확인합니다. Operator 또한 work queue에 requeue하여 리소스 간격 시간을 설정할 수 있게 됩니다. 여기서 몇 초 간격으로 보는 것이 좋을까요?</p><p>자주 리소스를 관찰하게 되면 큐에 많은 데이터가 쌓이게 되면서 최종적으로 시간 지연이 발생할 수 있습니다. 반면 큰 시간 간격으로 관찰하게 되면 &ldquo;지속적으로 확인하여 상태 정보를 실시간으로 확인한다"라는 장점을 잃을 수 있습니다.
+저는 최종적으로 30초 간격으로 Challenge의 상태를 확인했습니다.</p><blockquote><p><strong>여담</strong> .<br>글로 정리하다보니 30초 간격으로 requeue할 필요가 없다고 생각했습니다. 초기에는 무슨일이 일어날지 모르니 30초 간격으로 확인하는게 좋겠다고 생각을 했습니다. 그러나 Challenge 하위 리소스에 변경사항이 감지되어 Reconcile를 수행한다면 30초 간격의 Requeue는 필요 없겠죠?</p></blockquote><h2 id=정리>정리</h2><p>위의 내용을 흐름도로 정리하면 아래와 같습니다.</p><p><img src=/p/hexactf-8/image.png width=919 height=652 srcset="/p/hexactf-8/image_hu_a34d715bd16cc892.png 480w, /p/hexactf-8/image_hu_d1ab6704279ab332.png 1024w" loading=lazy alt="Challenge Operator 흐름도" class=gallery-image data-flex-grow=140 data-flex-basis=338px></p><h2 id=마치며>마치며</h2><p>글로 정리하다보니 스스로 잘못 생각한 부분을 찾게 되었습니다. 대표적인 예로 Requeue(재시도) 할 필요 없는데 구현한 것처럼 말이죠. 이건 다음에 수정해야 할 것 같습니다.</p><p>이번 글을 끝으로 로직 부분 설명은 끝난 것 같습니다. 다음 글에서는 어떻게 커스텀 메트릭을 통해 Challenge를 시각화할 수 있는지 설명하겠습니다.</p><h2 id=참고>참고</h2><ul><li><a class=link href=https://kmaster.tistory.com/106 target=_blank rel=noopener>Finalizers, ownerReferences</a></li><li><a class=link href=https://togomi.tistory.com/28 target=_blank rel=noopener>Kubernetes operator 메커니즘</a></li><li><a class=link href=https://nakamasato.medium.com/kubernetes-operator-series-5-controller-runtime-component-reconciler-501f71b7397a target=_blank rel=noopener>Kubernetes Operator series 5— controller-runtime component — Reconciler | by Masato Naka | Medium</a></li><li><a class=link href=https://nakamasato.medium.com/kubernetes-operator-series-6-controller-runtime-component-controller-604c8905a1e1 target=_blank rel=noopener>Kubernetes Operator series 6 — controller-runtime component — Controller | by Masato Naka | Medium</a></li><li>제시슨 제시슨, 조슈아 우드. (2021). 쿠버네티스 오퍼레이터. 에이콘.</li></ul></section><footer class=article-footer><section class=article-tags><a href=/tags/openstack/>Openstack</a>
+<a href=/tags/kubernetes/>Kubernetes</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/p/hexactf-7/><div class=article-details><h2 class=article-title>HexaCTF 7. Challenge CR 상태 정의와 Operator 개념 정리</h2></div></a></article><article><a href=/p/hexactf-6/><div class=article-details><h2 class=article-title>HexaCTF 6. Kubebuilder를 활용한 ChallengeDefinition&amp;Challenge Type 구현</h2></div></a></article><article><a href=/p/hexactf-5/><div class=article-details><h2 class=article-title>HexaCTF 5. Kubernetes CR를 활용한 Challenge 설계</h2></div></a></article><article><a href=/p/hexactf-4/><div class=article-details><h2 class=article-title>HexaCTF 4. Docker를 활용한 Challenge 설계 및 한계점</h2></div></a></article><article><a href=/p/hexactf-3/><div class=article-details><h2 class=article-title>HexaCTF - 3. Jenkins를 활용한 CI 환경 구성하기</h2></div></a></article></div></div></aside><footer class=site-footer><section class=copyright>&copy;
+2024 -
+2025 S0okJu.dev</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>AWS on S0okJu.dev</title><link>https://s0okju.github.io/categories/aws/</link><description>Recent content in AWS on S0okJu.dev</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Wed, 01 May 2024 00:00:00 +0900</lastBuildDate><atom:link href="https://s0okju.github.io/categories/aws/index.xml" rel="self" type="application/rss+xml"/><item><title>AWS - EKS란 무엇인가</title><link>https://s0okju.github.io/p/what-is-eks/</link><pubDate>Wed, 01 May 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/what-is-eks/</guid><description>&lt;h2 id="eks">EKS
+&lt;/h2>&lt;p>Amazon Web Services(AWS)에 Kubernetes 컨트롤 플레인을 설치, 운영 및 유지 관리할 필요가 없는 관리형 서비스이다&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>.&lt;/p>
+&lt;h2 id="ecs-vs-eks">ECS vs EKS
+&lt;/h2>&lt;ul>
+&lt;li>둘 다 컨테이너 오케스트레이션이라는 점에서 공통점을 가짐&lt;/li>
+&lt;li>ECS는 AWS가 만든 자체적인 오케스트레이션 구조로 K8S 구조와 완전 다름&lt;/li>
+&lt;li>K8S는 오픈소스가 크게 활성화되어 있고, 다양한 플러그를 사용할 수 있음&lt;/li>
+&lt;li>ECS는 오픈소스가 크게 활성화되어 있지 않음.&lt;/li>
+&lt;li>Auto-scaling 측면에서 EKS는 수동 및 자동 배포가 가능하지만 ECS는 수동으로만 가능하다.&lt;/li>
+&lt;li>오류 수정하는데 ECS는 전문가가 필요함&lt;/li>
+&lt;/ul>
+&lt;p>📌 자세한 사항은 &lt;a class="link" href="https://timewizhan.tistory.com/entry/AWS-ECS-vs-Kubernetes" target="_blank" rel="noopener"
+>물통꿀꿀이님의 블로그, [AWS] ECS vs Kubernetes&lt;/a>를 참고하길 바람.&lt;/p>
+&lt;p>🤔 EKS가 무조건 정답은 아니다. 프로젝트에 따라서는 ECS가 더 적합한 선택지일 수 있다.&lt;/p>
+&lt;ul>
+&lt;li>&lt;a class="link" href="https://velog.io/@tanggu01/%EB%B0%8D%EA%B8%80-ECS-vs-EKS-EC2-vs-Fargate-%EB%B0%B0%ED%8F%AC-%EC%84%9C%EB%B9%84%EC%8A%A4-%EB%B9%84%EA%B5%90%ED%95%B4%EB%B3%B4%EA%B8%B0" target="_blank" rel="noopener"
+>ECS 적용 사례 - 밍글&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h3 id="왜-eks-설치는-어려운가">왜 EKS 설치는 어려운가?
+&lt;/h3>&lt;p>우리가 알고 있는 쿠버네티스 구조와 달리 쿠버네티스는 일부 도구만 제공하고, 나머지는 별도의 설치가 필요하다. 이런 이유로 버전 관리가 어려워지기도 한다.&lt;/p>
+&lt;ul>
+&lt;li>쿠버네티스 제공 : kube-proxy, kubelet&lt;/li>
+&lt;/ul>
+&lt;blockquote>
+&lt;p>&lt;a class="link" href="https://www.cncf.io/projects/" target="_blank" rel="noopener"
+>CNCF Graduated Project&lt;/a>를 보면 etcd, coreDNS 등을 볼 수 있다.&lt;/p>&lt;/blockquote>
+&lt;h2 id="eks-구조">EKS 구조
+&lt;/h2>&lt;p>앞서 말했듯이 직접 구축하게 되면, 관리해야 하는 요소들이 많다. 이러한 어려움을 덜어내고자 EKS를 사용할 수 있다. EKS는 관리형 서비스로서 Control Plane를 직접 구성하지 않고 K8S를 사용할 수 있다.
+&lt;img src="https://s0okju.github.io/p/what-is-eks/image1.png"
+width="1402"
+height="882"
+srcset="https://s0okju.github.io/p/what-is-eks/image1_hu_192188864fc4e2da.png 480w, https://s0okju.github.io/p/what-is-eks/image1_hu_f3c2449e1f271682.png 1024w"
+loading="lazy"
+alt="출처 - https://kubernetes.io/docs/concepts/architecture/"
+class="gallery-image"
+data-flex-grow="158"
+data-flex-basis="381px"
+>&lt;/p>
+&lt;h2 id="eks-특징">EKS 특징
+&lt;/h2>&lt;ul>
+&lt;li>EKS CNI를 활용하여 VPC 네트워크 상에서 파드간 통신 가능&lt;/li>
+&lt;li>IAM을 활용하여 권한 설정 가능&lt;/li>
+&lt;li>AWS가 가용 영역별 API Server ,etcd 배포하여 고가용성 보장&lt;/li>
+&lt;li>eksctl를 활용하여 워커노드를 custom할 수 있음.&lt;/li>
+&lt;/ul>
+&lt;p>📌 자세한 사항은 &lt;a class="link" href="https://nearhome.tistory.com/128" target="_blank" rel="noopener"
+>Jaden Park님의 블로그, Amazon EKS 란?&lt;/a>를 참고하길 바란다.&lt;/p>
+&lt;h2 id="aws-side-workflow">AWS Side Workflow
+&lt;/h2>&lt;p>&lt;img src="https://s0okju.github.io/p/what-is-eks/image2.png"
+width="684"
+height="235"
+srcset="https://s0okju.github.io/p/what-is-eks/image2_hu_adfb476cc471dd6a.png 480w, https://s0okju.github.io/p/what-is-eks/image2_hu_1e1db08b4ac86f7e.png 1024w"
+loading="lazy"
+alt="출처- https://nearhome.tistory.com/128"
+class="gallery-image"
+data-flex-grow="291"
+data-flex-basis="698px"
+>&lt;/p>
+&lt;ul>
+&lt;li>쿠버네티스의 api 서버를 각 가용영역에 배포&lt;/li>
+&lt;li>api 데이터, 쿠버네티스의 상태 데이터를 확인하기 위해 etcd를 같이 배포&lt;/li>
+&lt;li>쿠버네티스에서 오는 call 에 대한 IAM 구성&lt;/li>
+&lt;li>쿠버네티스 마스터 노드의 오토스케일링 설정&lt;/li>
+&lt;li>클러스터가 안정적으로 구현하도록 여기에 연결할 수 있는 로드밸런서를 구성&lt;/li>
+&lt;/ul>
+&lt;h2 id="reference">Reference
+&lt;/h2>&lt;ul>
+&lt;li>&lt;a class="link" href="https://devocean.sk.com/blog/techBoardDetail.do?ID=163578" target="_blank" rel="noopener"
+>초보자를 위한 EKS 맛 보기&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://timewizhan.tistory.com/entry/AWS-ECS-vs-Kubernetes" target="_blank" rel="noopener"
+>ECS vs Kubernetes&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://docs.aws.amazon.com/ko_kr/eks/latest/userguide/what-is-eks.html" target="_blank" rel="noopener"
+>https://docs.aws.amazon.com/ko_kr/eks/latest/userguide/what-is-eks.html&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>AWS - IAM 그리고 Profile</title><link>https://s0okju.github.io/p/iam-and-profile/</link><pubDate>Tue, 16 Apr 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/iam-and-profile/</guid><description>&lt;h2 id="introduction">Introduction
+&lt;/h2>&lt;p>Terraform 코드를 분석하고 있었다. 어디에서는 IAM을 쓰고, 어디에서는 Profile을 쓴다. 과연 그 둘의 차이점은 무엇일까? 알아보도록 하자!&lt;/p>
+&lt;h2 id="profile">Profile
+&lt;/h2>&lt;p>Amazon Ec2는 IAM role을 가진 profile을 사용하게 된다.&lt;/p>
+&lt;h3 id="질문-1-awscli를-통해-profile을-지정할-수-있는데-이것도-instance-profile인가">질문 1. awscli를 통해 profile을 지정할 수 있는데, 이것도 Instance Profile인가?
+&lt;/h3>&lt;blockquote>
+&lt;p>If you use the AWS CLI, API, or an AWS SDK to create a role, you create the role and instance profile as separate actions, with potentially different names. If you then use the AWS CLI, API, or an AWS SDK to launch an instance with an IAM role or to attach an IAM role to an instance, specify the instance profile name.
+출처 - &lt;a class="link" href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html" target="_blank" rel="noopener"
+>공식 문서&lt;/a>&lt;/p>&lt;/blockquote>
+&lt;ul>
+&lt;li>질문이 잘못되었다. EC2는 해당 IAM Role을 가진 Profile을 사용한다. 그래서 awscli의 경우 &amp;ndash;profile을 통해 직접 profile 이름을 지정할 수 있다.&lt;/li>
+&lt;/ul>
+&lt;h2 id="왜-필요할까">왜 필요할까?
+&lt;/h2>&lt;blockquote>
+&lt;p>aws cli를 사용할 때 profile 기능을 이용하면 여러개의 자격 증명을 등록하고 스위칭해서 효율적으로 사용할 수 있습니다.&lt;/p>
+&lt;p>출처 - &lt;a class="link" href="https://cloudest.oopy.io/posting/101" target="_blank" rel="noopener"
+>https://cloudest.oopy.io/posting/101&lt;/a>&lt;/p>&lt;/blockquote>
+&lt;h3 id="질문-2-iam-role과의-차이점은">질문 2. IAM Role과의 차이점은?
+&lt;/h3>&lt;p>Profile이 필요한 이유는 여러개의 자격 증명을 등록하고 스위칭해서 효율적으로 사용하기 위함이라고 했다. 특징을 봤을때 IAM의 Role과 비슷해 보였다.&lt;/p>
+&lt;blockquote>
+&lt;p>&lt;strong>Roles are designed to be “assumed” by other principals&lt;/strong> which do define “who am I?”, such as users, Amazon services, and EC2 instances
+&lt;strong>An instance profile, on the other hand, defines “who am I?”&lt;/strong> Just like an IAM user represents a person, an instance profile represents EC2 instances. The only permissions an EC2 instance profile has is the power to assume a role.&lt;/p>
+&lt;p>출처 - &lt;a class="link" href="https://www.quora.com/In-AWS-what-is-the-difference-between-a-role-and-an-instance-profile" target="_blank" rel="noopener"
+>https://www.quora.com/In-AWS-what-is-the-difference-between-a-role-and-an-instance-profile&lt;/a>&lt;/p>&lt;/blockquote>
+&lt;p>IAM Role은 무엇을 할 수 있는지에 대한 행위를 정의하는 것이라면 &lt;mark class="hltr-dark-green">Profile Instance는 &amp;ldquo;누가 만들었는지를 정의하기&amp;rdquo; 위함&lt;/mark>이라면 보면 된다.&lt;/p>
+&lt;h2 id="conclusion">Conclusion
+&lt;/h2>&lt;ul>
+&lt;li>내가 이러한 궁금증을 가지게 된 것은 IAM을 한사람에게만 부여된다고 생각했기 때문이었다. 그런 맥락에서는 profile이 필요 없기 때문이다.&lt;/li>
+&lt;/ul>
+&lt;h2 id="reference">Reference
+&lt;/h2>&lt;ul>
+&lt;li>&lt;a class="link" href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html" target="_blank" rel="noopener"
+>https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html" target="_blank" rel="noopener"
+>https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html&lt;/a>&lt;/li>
+&lt;/ul></description></item></channel></rss>

@@ -1,0 +1,186 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="Terraform 이란 HashiCorp에서 오픈소스로 개발중인, 클라우드 및 온프로미스 인프라를 코드로 관리할 수 있는 코드이다. 인프라 환경 구성 시 선언적 코드형식을 사용하여 리소스를 생성, 수정, 삭제하여 관리가 가능한 laC(Infrastructure as Code) 프로비저닝 도구이다.\n"><title>Terraform - 기본 문법 익히기</title>
+<link rel=canonical href=https://s0okju.github.io/p/basic-terraform-1/><link rel=stylesheet href=/scss/style.min.663803bebe609202d5b39d848f2d7c2dc8b598a2d879efa079fa88893d29c49c.css><meta property='og:title' content="Terraform - 기본 문법 익히기"><meta property='og:description' content="Terraform 이란 HashiCorp에서 오픈소스로 개발중인, 클라우드 및 온프로미스 인프라를 코드로 관리할 수 있는 코드이다. 인프라 환경 구성 시 선언적 코드형식을 사용하여 리소스를 생성, 수정, 삭제하여 관리가 가능한 laC(Infrastructure as Code) 프로비저닝 도구이다.\n"><meta property='og:url' content='https://s0okju.github.io/p/basic-terraform-1/'><meta property='og:site_name' content='S0okJu.dev'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='Terraform'><meta property='article:tag' content='AWS'><meta property='article:published_time' content='2024-01-25T00:00:00+09:00'><meta property='article:modified_time' content='2024-01-25T00:00:00+09:00'><meta name=twitter:title content="Terraform - 기본 문법 익히기"><meta name=twitter:description content="Terraform 이란 HashiCorp에서 오픈소스로 개발중인, 클라우드 및 온프로미스 인프라를 코드로 관리할 수 있는 코드이다. 인프라 환경 구성 시 선언적 코드형식을 사용하여 리소스를 생성, 수정, 삭제하여 관리가 가능한 laC(Infrastructure as Code) 프로비저닝 도구이다.\n"><link rel="shortcut icon" href=/favicon.ico></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_c3a763b4e1e1539a.png width=300 height=248 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>👾</span></figure><div class=site-meta><h1 class=site-name><a href=/>S0okJu.dev</a></h1><h2 class=site-description>경험으로 학습합니다.</h2></div></header><ol class=menu-social><li><a href=https://github.com/S0okJu target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+<span>About</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>Links</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#terraform-이란>Terraform 이란</a></li><li><a href=#terraform-작동-방식>Terraform 작동 방식</a></li><li><a href=#연습>연습</a><ol><li><a href=#시나리오>시나리오</a></li><li><a href=#구현>구현</a></li></ol></li><li><a href=#terraform-도입과-관련된-기술-블로그>Terraform 도입과 관련된 기술 블로그</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/iac/>IaC</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/basic-terraform-1/>Terraform - 기본 문법 익히기</a></h2></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Jan 25, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>3 minute read</time></div></footer></div></header><section class=article-content><h2 id=terraform-이란>Terraform 이란</h2><p>HashiCorp에서 오픈소스로 개발중인, 클라우드 및 온프로미스 인프라를 코드로 관리할 수 있는 코드이다. 인프라 환경 구성 시 선언적 코드형식을 사용하여 리소스를 생성, 수정, 삭제하여 관리가 가능한 laC(Infrastructure as Code) 프로비저닝 도구이다.</p><h2 id=terraform-작동-방식>Terraform 작동 방식</h2><p>주로 Write, Plan, Apply 절차로 이뤄진다.</p><ol><li>Write : Hashicorp에서 자체 개발한 HCL 언어로 스크립트 작성</li><li>Plan : 상태를 비교하며 변경점을 사용자에게 보여줌</li><li>Apply : 실행하는 단계, 순차적으로 실행<ol><li>의존 관계에 따라 순서를 명시할 수 있다.</li></ol></li></ol><p>상태 비교를 통해 휴먼 에러를 줄일 수 있다. 그러나 코드의 무게가 무거워지면, 실행하는데 오래걸리는 원인이 될 수 있다. 그 외에도 다양한 단점이 존재할 것이다. 그럼에도 불구하고 생산성 측면, 종속성 그래프 등 장점들이 더 크기 때문에 사용하는 것이다.</p><blockquote><p>클라우드 컴퓨팅 환경은 참조된 리소스가 처음의 리소스를 참조하는 순환루프 문제를 지니고 있다. 무한한 반복으로 인해 시스템이 빠르게 고갈되고, 성능이 저하된다. Terraform에서는 리소스의 참조 내용을 그래프로 보여주는 Resource Graph를 제공해주는데, 이를 활용해 순환루프 문제를 예방할 수 있다.</p></blockquote><h2 id=연습>연습</h2><blockquote><p>자세한 문법은 <strong><a class=link href=https://developer.hashicorp.com/terraform/language target=_blank rel=noopener>Terraform Language Documentation</a>을 참고하길 바란다.</strong></p></blockquote><h3 id=시나리오>시나리오</h3><ol><li>AWS를 활용한다.</li><li>개발, 운영 VPC를 구축한다.<ul><li>각 VPC에서 private, public subnet이 존재한다.</li><li>외부와 통신을 위해 internet gateway와 내부 리소스끼리만 통신할 수 있는 NAT gateway를 설치한다.</li></ul></li></ol><p><img src=/p/basic-terraform-1/20240128_aws.png width=361 height=331 srcset="/p/basic-terraform-1/20240128_aws_hu_1644083ee8167cb1.png 480w, /p/basic-terraform-1/20240128_aws_hu_9458ba6fde0152aa.png 1024w" loading=lazy alt="출처 - 저자" class=gallery-image data-flex-grow=109 data-flex-basis=261px></p><h3 id=구현>구현</h3><ol><li>AWS를 활용한다.</li></ol><p><a class=link href=https://registry.terraform.io/providers/hashicorp/aws/latest/docs target=_blank rel=noopener><strong>Terraform AWS Registry</strong></a>에서 제공해주는 코드를 그대로 사용한다. 나의 경우 region을 <code>ap-northeast-2</code> 로 설정했다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-hcl data-lang=hcl><span class=line><span class=cl><span class=k>terraform</span> {
+</span></span><span class=line><span class=cl>  <span class=k>required_providers</span> {
+</span></span><span class=line><span class=cl><span class=n>    aws</span> <span class=o>=</span> {
+</span></span><span class=line><span class=cl><span class=n>      source</span>  <span class=o>=</span> <span class=s2>&#34;hashicorp/aws&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>      version</span> <span class=o>=</span> <span class=s2>&#34;~&gt; 5.0&#34;</span>
+</span></span><span class=line><span class=cl>    }
+</span></span><span class=line><span class=cl>  }
+</span></span><span class=line><span class=cl>}<span class=c1>
+</span></span></span><span class=line><span class=cl><span class=c1>
+</span></span></span><span class=line><span class=cl><span class=c1># Configure the AWS Provider
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>provider</span> <span class=s2>&#34;aws&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  region</span> <span class=o>=</span> <span class=s2>&#34;ap-northeast-2&#34;</span>
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><ol><li>개발 운영 vpc를 구축한다.</li></ol><p>vpc 모듈을 별도로 만들어 코드를 재사용했고, env를 변수로 삼아 리소스의 이름에 개발 환경을 명시하도록 했다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-hcl data-lang=hcl><span class=line><span class=cl><span class=err>//</span> <span class=k>For</span> <span class=k>Dev</span>
+</span></span><span class=line><span class=cl><span class=k>module</span> <span class=s2>&#34;dev_vpc&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  source</span> <span class=o>=</span> <span class=s2>&#34;./vpc.d&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  env</span> <span class=o>=</span> <span class=s2>&#34;dev&#34;</span>
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=err>//</span> <span class=k>For</span> <span class=k>Production</span>
+</span></span><span class=line><span class=cl><span class=k>module</span> <span class=s2>&#34;prd_vpc&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  source</span> <span class=o>=</span> <span class=s2>&#34;./vpc.d&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  env</span> <span class=o>=</span> <span class=s2>&#34;prd&#34;</span>
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><p>모듈의 main.tf에는 public, private Subnet 그리고 NAT gateway, Internet gateway를 생성하는 코드를 작성했다.</p><p>Private Subnet을 구성하기 위해서는 라우팅 테이블이 필요하지만, 임시이므로 Private NAT Gateway만 작성했다. 여기서 <strong>주목해야 할 점은 NAT, Internet Gateway의 경우 Subnet이 우선적으로 만들어져야 실행된다</strong>.(만약에 그러지 않는다면 오류가 뜬다.) 그러므로 코드를 작성할때 각 리소스의 의존성을 고려해서 작성해야 한다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-hcl data-lang=hcl><span class=line><span class=cl><span class=k>terraform</span> {
+</span></span><span class=line><span class=cl>  <span class=k>required_providers</span> {
+</span></span><span class=line><span class=cl><span class=n>    aws</span> <span class=o>=</span> {
+</span></span><span class=line><span class=cl><span class=n>      source</span>  <span class=o>=</span> <span class=s2>&#34;hashicorp/aws&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>      version</span> <span class=o>=</span> <span class=s2>&#34;~&gt; 5.0&#34;</span>
+</span></span><span class=line><span class=cl>    }
+</span></span><span class=line><span class=cl>  }
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=err>//</span> <span class=k>Configure</span> <span class=k>the</span> <span class=k>AWS</span> <span class=k>Provider</span>
+</span></span><span class=line><span class=cl><span class=k>provider</span> <span class=s2>&#34;aws&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  region</span> <span class=o>=</span> <span class=s2>&#34;ap-northeast-2&#34;</span>
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=err>//</span> <span class=k>Create</span> <span class=k>a</span> <span class=k>VPC</span>
+</span></span><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;aws_vpc&#34; &#34;default&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  cidr_block</span> <span class=o>=</span> <span class=s2>&#34;10.0.0.0/16&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  tags</span> <span class=o>=</span> {
+</span></span><span class=line><span class=cl><span class=n>    Name</span> <span class=o>=</span> <span class=s2>&#34;terraform_default_vpc_${var.env}&#34;</span>
+</span></span><span class=line><span class=cl>  }
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=err>//</span> <span class=k>public</span> <span class=k>subnet</span>
+</span></span><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;aws_subnet&#34; &#34;public_subnet_1&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  vpc_id</span>     <span class=o>=</span> <span class=k>aws_vpc</span><span class=p>.</span><span class=k>default</span><span class=p>.</span><span class=k>id</span>
+</span></span><span class=line><span class=cl><span class=n>  cidr_block</span> <span class=o>=</span> <span class=s2>&#34;10.0.0.0/24&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  tags</span> <span class=o>=</span> {
+</span></span><span class=line><span class=cl><span class=n>    Name</span> <span class=o>=</span> <span class=s2>&#34;terraform_public_subnet_1_${var.env}&#34;</span>
+</span></span><span class=line><span class=cl>  }
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=err>//</span> <span class=k>private</span> <span class=k>subnet</span>
+</span></span><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;aws_subnet&#34; &#34;private_subnet_1&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  vpc_id</span>     <span class=o>=</span> <span class=k>aws_vpc</span><span class=p>.</span><span class=k>default</span><span class=p>.</span><span class=k>id</span>
+</span></span><span class=line><span class=cl><span class=n>  cidr_block</span> <span class=o>=</span> <span class=s2>&#34;10.0.10.0/24&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>  tags</span> <span class=o>=</span> {
+</span></span><span class=line><span class=cl><span class=n>    Name</span> <span class=o>=</span> <span class=s2>&#34;terraform_private_subnet_1_${var.env}&#34;</span>
+</span></span><span class=line><span class=cl>  }
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=err>//</span> <span class=k>private</span> <span class=k>NAT</span>
+</span></span><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;aws_nat_gateway&#34; &#34;private_nat&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  connectivity_type</span> <span class=o>=</span> <span class=s2>&#34;private&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>  subnet_id</span>         <span class=o>=</span> <span class=k>aws_subnet</span><span class=p>.</span><span class=k>private_subnet_1</span><span class=p>.</span><span class=k>id</span>
+</span></span><span class=line><span class=cl><span class=n>  tags</span> <span class=o>=</span> {
+</span></span><span class=line><span class=cl><span class=n>    Name</span> <span class=o>=</span> <span class=s2>&#34;terraform_nat_${var.env}&#34;</span>
+</span></span><span class=line><span class=cl>  }
+</span></span><span class=line><span class=cl>}
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=err>//</span> <span class=k>Internet</span> <span class=k>gateway</span>
+</span></span><span class=line><span class=cl><span class=k>resource</span> <span class=s2>&#34;aws_internet_gateway&#34; &#34;igw&#34;</span> {
+</span></span><span class=line><span class=cl><span class=n>  vpc_id</span> <span class=o>=</span> <span class=k>aws_vpc</span><span class=p>.</span><span class=k>default</span><span class=p>.</span><span class=k>id</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>  tags</span> <span class=o>=</span> {
+</span></span><span class=line><span class=cl><span class=n>    Name</span> <span class=o>=</span> <span class=s2>&#34;terraform_igw_${var.env}&#34;</span>
+</span></span><span class=line><span class=cl>  }
+</span></span><span class=line><span class=cl>}
+</span></span></code></pre></td></tr></table></div></div><h2 id=terraform-도입과-관련된-기술-블로그>Terraform 도입과 관련된 기술 블로그</h2><ul><li><a class=link href=https://techblog.woowahan.com/2646/ target=_blank rel=noopener>좌충우돌 Terraform 입문기, 우아한형제들 기술블로그</a></li><li><a class=link href=https://helloworld.kurly.com/blog/terraform-adventure/ target=_blank rel=noopener>DevOps팀의 Terraform 모험</a></li><li><a class=link href=https://saramin.github.io/2022-10-21-terraform/ target=_blank rel=noopener>Terraform IaC 도구를 활용한 AWS 웹콘솔 클릭 노가다 해방기</a></li></ul><p>→ 다들 웹콘솔에서의 해방을 외치고 있었다..</p></section><footer class=article-footer><section class=article-tags><a href=/tags/terraform/>Terraform</a>
+<a href=/tags/aws/>AWS</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/p/terraform-workspace/><div class=article-details><h2 class=article-title>Terraform - Workspace</h2></div></a></article><article><a href=/p/terraform-backend/><div class=article-details><h2 class=article-title>Terraform - Backend</h2></div></a></article></div></div></aside><footer class=site-footer><section class=copyright>&copy;
+2024 -
+2025 S0okJu.dev</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>
