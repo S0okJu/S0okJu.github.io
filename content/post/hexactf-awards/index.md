@@ -1,6 +1,6 @@
 ---
 title: "HexaCTF Awards. 12개의 HexaCTF 글에게 상을 줍시다."
-date: 2025-03-16
+date: 2025-03-16T11:00:00+09:00
 slug: hexactf-awards
 categories:
   - HexaCTF
