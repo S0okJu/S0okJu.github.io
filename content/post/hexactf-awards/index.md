@@ -4,6 +4,7 @@ date: 2025-03-16
 slug: hexactf-awards
 categories:
   - HexaCTF
+  - Review
 tags:
   - 회고
 ---
