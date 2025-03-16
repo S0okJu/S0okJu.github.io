@@ -7,17 +7,9 @@
         <generator>Hugo -- gohugo.io</generator>
         <language>en</language>
         <lastBuildDate>Sun, 16 Mar 2025 00:00:00 +0900</lastBuildDate><atom:link href="http://localhost:1313/categories/index.xml" rel="self" type="application/rss+xml" /><item>
-        <title>HexaCT영</title>
-        <link>http://localhost:1313/categories/hexact%EC%98%81/</link>
-        <pubDate>Sun, 16 Mar 2025 00:00:00 +0900</pubDate>
-        
-        <guid>http://localhost:1313/categories/hexact%EC%98%81/</guid>
-        <description></description>
-        </item>
-        <item>
         <title>HexaCTF</title>
         <link>http://localhost:1313/categories/hexactf/</link>
-        <pubDate>Fri, 14 Mar 2025 00:00:00 +0900</pubDate>
+        <pubDate>Sun, 16 Mar 2025 00:00:00 +0900</pubDate>
         
         <guid>http://localhost:1313/categories/hexactf/</guid>
         <description></description>
