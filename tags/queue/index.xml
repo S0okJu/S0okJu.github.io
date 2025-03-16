@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Queue on S0okJu.dev</title><link>https://s0okju.github.io/tags/queue/</link><description>Recent content in Queue on S0okJu.dev</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Wed, 12 Mar 2025 00:00:00 +0900</lastBuildDate><atom:link href="https://s0okju.github.io/tags/queue/index.xml" rel="self" type="application/rss+xml"/><item><title>HexaCTF 10. 아키텍쳐 설계 및 Challenge Control API 제작</title><link>https://s0okju.github.io/p/hexactf-10/</link><pubDate>Wed, 12 Mar 2025 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/hexactf-10/</guid><description>&lt;ul>
+&lt;li>2025-03-13 일부 내용 수정&lt;/li>
+&lt;/ul>
+&lt;p>이전까지 Challenge Operator 관련된 글만 작성했습니다. Challenge의 라이프 사이클을 전반적으로 설명해야 하는 만큼 많은 분량을 할애했습니다. 이번 Challenge Control API 부분은 이번 글로 모두 정리하고자 합니다.&lt;/p>
+&lt;h2 id="아키텍쳐-설계">아키텍쳐 설계
+&lt;/h2>&lt;h3 id="아케텍쳐">아케텍쳐
+&lt;/h3>&lt;p>전반적인 아키텍쳐는 아래와 같습니다.&lt;/p>
+&lt;h4 id="ctf-web">CTF-WEB
+&lt;/h4>&lt;p>그림에 클라이언트 부분이 없다고 생각할 수 있는데 CTF-WEB의 경우 Flask Server로 이뤄져 있으나 html을 리다이렉트 하는 구조이기 때문에 하나로 표현했습니다.&lt;/p>
+&lt;h4 id="container-control-api">Container Control API
+&lt;/h4>&lt;p>본래 CTF-WEB 하나로 병합하여 사용할 예정이었습니다. 그러나 &lt;strong>Control API가 처리해야 하는 다른 플랫폼(Queue, Kubernetes)가 많다는 점과 비교적 에러 사항이 많다는 점&lt;/strong>을 감안하여 다른 서비스 형태로 분리하기로 했습니다. 즉, &lt;strong>불필요한 오류 확산을 막기 위해 분리&lt;/strong>했다고 보시면 됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-10/image.png"
+width="591"
+height="201"
+srcset="https://s0okju.github.io/p/hexactf-10/image_hu_a22f182b0acfb63c.png 480w, https://s0okju.github.io/p/hexactf-10/image_hu_1c6c3563af715315.png 1024w"
+loading="lazy"
+alt="시스템 구성도"
+class="gallery-image"
+data-flex-grow="294"
+data-flex-basis="705px"
+>&lt;/p>
+&lt;h3 id="왜-control-api는-필요한가">왜 Control API는 필요한가?
+&lt;/h3>&lt;p>우선 &lt;strong>사용자와 상호작용&lt;/strong>을 해야 하기 때문에 명령어를 받는 서비스가 필요합니다. 클라이언트는 &lt;code>kubectl apply &lt;/code> 에 해당되는 명령어를 쿠버네티스 서버에 전송해야 합니다. 클라이언트에서 쿠버네티스 명령어를 실행시킨다는 것은 쿠버네티스 마스터 노드에 대한 엔드 포인트가 그대로 노출된다는 것과 같습니다. 즉, 치명적인 보안 문제로 이뤄지지 않을까요?&lt;/p>
+&lt;blockquote>
+&lt;p>쿠버네티스는 &lt;code>.kube&lt;/code> 라는 config 파일을 통해 쿠버네티스 클러스터를 관리하게 됩니다. 여기에 쿠버네티스 클러스터의 엔드포인트를 확인할 수 있습니다.&lt;/p>&lt;/blockquote>
+&lt;h3 id="control-api-operator-사이에-큐를-둔-이유">Control API-Operator 사이에 큐를 둔 이유
+&lt;/h3>&lt;blockquote>
+&lt;p>이번 글에서는 지속해서 Control API 입장에서 작성할 것입니다.&lt;/p>&lt;/blockquote>
+&lt;p>Control API 입장에서는 &lt;strong>어떠한 절차를 통해 Challenge의 상태 변화를 얻어서 데이터베이스에 저장&lt;/strong>해야 합니다. Control API가 할 수 있는 방법은 크게 두 가지입니다.&lt;/p>
+&lt;ol>
+&lt;li>Control API가 지속해서 쿠버네티스에게 Challenge 상태 여부를 물어본다.&lt;/li>
+&lt;li>쿠버네티스가 상태가 변할때마다 Control API에게 물어본다.&lt;/li>
+&lt;/ol>
+&lt;p>결국 누가 먼저 물어볼 것인가를 선정해야 합니다. 선정 기준이 프로젝트마다 다르겠으나 저는 &lt;strong>구현 난이도&lt;/strong>를 고려했을때 2번인 &amp;ldquo;쿠버네티스가 상태가 변할때마다 Control API에게 물어본다.&amp;ldquo;를 선택했습니다.&lt;/p>
+&lt;p>이전 편에서도 제가 쿠버네티스를 선택한 이유는 컨테이너를 비동기적으로 탐색하여 실시간으로 상태 정보를 가져오기 어려움을 겪었기 때문입니다. 이와 유사한 문제의 늪에 빠지게 됩니다. 클라이언트는 Challenge가 무슨 상태인지 모르기 때문에 지속적으로 쿠버네티스에게 물어볼 것이고, 동기적으로 처리하면 속도가 느려질 것이니 비동기적으로 처리해야 할 것입니다.&lt;/p>
+&lt;p>Operator는 내부적으로 Challenge의 상태 정보를 관리합니다. 그러므로 Challenge의 상태가 변경될때마다 Control API에게 보내는 방법은 어떨까요? 이러한 방식은 하나의 문제점을 가지게 됩니다. 동기로 처리를 하면 응답값이 올때까지 기다려야 하기 때문에 Operator의 속도가 느려질 가능성이 있습니다. 또한 Opeator 내부에는 비동기로 처리되기 때문에 무슨 문제가 발생할지 예상이 가지 않습니다.&lt;br>
+그러나 해결 방법은 있습니다. Operator와 Control API 사이에 큐를 둠으로써 데이터 누락 문제도 해결하고 속도도 향상시킬 수 있습니다. 예로 Operator가 None -&amp;gt; Running 상태로 변경시켰을때 Queue에 Running으로 변경했다는 메세지만 전송한 후 Operator의 나머지 로직을 처리하게 됩니다. 즉, 응답이 올때까지 기다릴 필요가 없겠죠?&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-10/image.png"
+width="591"
+height="201"
+srcset="https://s0okju.github.io/p/hexactf-10/image_hu_a22f182b0acfb63c.png 480w, https://s0okju.github.io/p/hexactf-10/image_hu_1c6c3563af715315.png 1024w"
+loading="lazy"
+alt="시스템 구성도"
+class="gallery-image"
+data-flex-grow="294"
+data-flex-basis="705px"
+>&lt;/p>
+&lt;h4 id="challenge-controller의-스터디-케이스-nova-architecture">Challenge Controller의 스터디 케이스: Nova Architecture
+&lt;/h4>&lt;p>Challenge Controller 시스템의 전반적인 컨셉은 OpenStack의 Nova의 아키텍쳐를 많이 활용했습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>Nova는 AWS의 EC2라고 생각하시면 됩니다.&lt;/p>&lt;/blockquote>
+&lt;p>저희 프로젝트는 쿠버네티스 리소스를 활용한다는 점에서 Nova와 확실히 다르겠으나 &lt;strong>API를 통해 컴퓨팅 리소스를 제어한다는 컨셉은 동일하니까요.&lt;/strong>&lt;/p>
+&lt;p>제가 활용한 컨셉은 아래와 같습니다.&lt;/p>
+&lt;ol>
+&lt;li>제어부(api)와 리소스 처리부(nova-compute, nova-volume &amp;hellip;) 분리&lt;/li>
+&lt;li>제어부와 리소스 처리부 사이 이벤트 기반 처리 - Queue 배치&lt;/li>
+&lt;/ol>
+&lt;p>저희 프로젝트에서는 Control API가 nova-api에 해당되는 것이고, Operator가 nova-compute라고 생각하시면 됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-10/image-1.png"
+width="582"
+height="656"
+srcset="https://s0okju.github.io/p/hexactf-10/image-1_hu_ab243a49b712ac62.png 480w, https://s0okju.github.io/p/hexactf-10/image-1_hu_6c9e5f7672b5874f.png 1024w"
+loading="lazy"
+alt="출처 - https://www.oreilly.com/library/view/deploying-openstack/9781449311223/ch04.html"
+class="gallery-image"
+data-flex-grow="88"
+data-flex-basis="212px"
+>&lt;/p>
+&lt;blockquote>
+&lt;p>&amp;ldquo;제어부와 리소스 처리부 분리&amp;rdquo; 관련 간단한 이야기&lt;br>
+무조건 Nova Architecture를 차용했다고 해서 Operator를 별도로 제작한 것은 아닙니다. 그저 분리하여 이벤트 처리 기반으로 시스템을 제어하는 것이 많이 활용되는 방식이라고만 인식했습니다. 즉, Operator를 별도로 제작하는 것이 기술적인 고난도 도전이 아닌 선택지 중 일부로 받아들인 것입니다.&lt;/p>&lt;/blockquote>
+&lt;h2 id="control-api-제작">Control API 제작
+&lt;/h2>&lt;blockquote>
+&lt;p>자세한 사항은 HexaCTF 6. Kubebuilder를 활용한 ChallengeDefinition&amp;amp;Challenge Type 구현를 참고하시길 바랍니다.&lt;/p>&lt;/blockquote>
+&lt;p>커스텀 리소스인 ChallengeDefinition과 Challenge를 확인해볼까요?&lt;/p>
+&lt;ul>
+&lt;li>ChallengeDefinition : 문제 상세 정보를 나타내며 챌린지 정보, 구성 리소스를 컴포넌트 단위로 정의한다.&lt;/li>
+&lt;li>Challenge : 사용자(문제 풀이자)가 생성하는 문제의 단위로 참조된 ChallengeDefinition을 기반으로 리소스를 생성하고 삭제한다.&lt;/li>
+&lt;/ul>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-10/image-2.png"
+width="862"
+height="492"
+srcset="https://s0okju.github.io/p/hexactf-10/image-2_hu_8aa7f99b6fd840b5.png 480w, https://s0okju.github.io/p/hexactf-10/image-2_hu_dc443c05dda744a.png 1024w"
+loading="lazy"
+alt="ChallengeDefinition-Challenge 구조"
+class="gallery-image"
+data-flex-grow="175"
+data-flex-basis="420px"
+>&lt;/p>
+&lt;p>사용자가 생성하는 문제를 Challenge 단위로 정의함으로써 &lt;strong>사용자 요청에 대한 형식이 간소화되고, 사용자 명령을 제어한다는 역할에 충실할 수 있게 됩니다.&lt;/strong>&lt;br>
+사용자는 요청 시 사용자 정보와 문제를 전송하게 됩니다. 이러한 고유한 정보를 조합하여 Challenge 이름을 생성(&lt;code>challenge-{challenge_id}-{username}&lt;/code>)했으며 쿠버네티스 python sdk를 통해 쉽게 추가하고 삭제할 수 있습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-python" data-lang="python">&lt;span class="line">&lt;span class="cl"> &lt;span class="n">user_challenge_repo&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">UserChallengesRepository&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># Challenge definition 조회&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">challenge_definition&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">ChallengeRepository&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">get_challenge_name&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">challenge_id&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="ow">not&lt;/span> &lt;span class="n">challenge_definition&lt;/span>&lt;span class="p">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">raise&lt;/span> &lt;span class="n">ChallengeNotFound&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">error_msg&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="sa">f&lt;/span>&lt;span class="s2">&amp;#34;Challenge definition not found for ID: &lt;/span>&lt;span class="si">{&lt;/span>&lt;span class="n">challenge_id&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># Challenge name 생성 및 검증&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">challenge_name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="sa">f&lt;/span>&lt;span class="s2">&amp;#34;challenge-&lt;/span>&lt;span class="si">{&lt;/span>&lt;span class="n">challenge_id&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-&lt;/span>&lt;span class="si">{&lt;/span>&lt;span class="n">username&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="ow">not&lt;/span> &lt;span class="bp">self&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">_is_valid_k8s_name&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">challenge_name&lt;/span>&lt;span class="p">):&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">raise&lt;/span> &lt;span class="n">UserChallengeCreationError&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">error_msg&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="sa">f&lt;/span>&lt;span class="s2">&amp;#34;Invalid challenge name: &lt;/span>&lt;span class="si">{&lt;/span>&lt;span class="n">challenge_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># ...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># Challenge manifest 생성&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">challenge_manifest&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;apiVersion&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s2">&amp;#34;apps.hexactf.io/v1alpha1&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;kind&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s2">&amp;#34;Challenge&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;metadata&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">challenge_name&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;labels&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;apps.hexactf.io/challengeId&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nb">str&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">challenge_id&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;apps.hexactf.io/user&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">username&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;spec&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;namespace&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">namespace&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;definition&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">challenge_definition&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">challenge&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="bp">self&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">custom_api&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">create_namespaced_custom_object&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">group&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;apps.hexactf.io&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">version&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;v1alpha1&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">namespace&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="n">namespace&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">plural&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;challenges&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">body&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="n">challenge_manifest&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="포트-번호는-challenge-상태-정보에-있다">포트 번호는 Challenge 상태 정보에 있다.
+&lt;/h3>&lt;p>Challenge API는 생성을 요청하면 커스텀 리소스인 Challenge의 포트 번호를 가져와야 합니다. 이 과정을 어떻게 해결했는지 설명하겠습니다.&lt;/p>
+&lt;p>Operator 부분으로 돌아와 Challenge는 Deployment, Service로 구성되어 있으며 Service는 NodePort를 통해 외부로 노출합니다. 그렇다면 &lt;strong>Control API가 요구하는 포트 번호는 Service에서 노출한 NodePort일 것입니다.&lt;/strong>&lt;/p>
+&lt;blockquote>
+&lt;p>Challenge는 외부에 노출되는 엔드 포인트는 단 하나 뿐입니다.&lt;/p>&lt;/blockquote>
+&lt;p>여기서 Control API는 쿠버네티스를 Service를 조회하도록 구현하는 것이 좋을까요? 아니면 Challenge에 정보가 포함되는 것이 좋을까요? 당연히 &lt;strong>Challenge 정보에 포트 정보가 포함되는 것이 Control API의 역할에 충실하게 구현할 수 있는 방법일 것입니다.&lt;/strong>&lt;/p>
+&lt;p>Operator에서는 Service가 생성이 완료되면 Challenge 상태값에 저장할 수 있도록 구현했습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-go" data-lang="go">&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Service가 존재하는지 확인&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">err&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Get&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">ctx&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">types&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">NamespacedName&lt;/span>&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Name&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">identifier&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">GetServicePrefix&lt;/span>&lt;span class="p">(),&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">Namespace&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="nx">challenge&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Namespace&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">},&lt;/span> &lt;span class="nx">service&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="nx">err&lt;/span> &lt;span class="o">!=&lt;/span> &lt;span class="kc">nil&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="nx">errors&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">IsNotFound&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">err&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">log&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Info&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Creating new service&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">identifier&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">GetServicePrefix&lt;/span>&lt;span class="p">(),&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;namespace&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">challenge&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Namespace&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// ...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="nx">err&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Create&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">ctx&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">service&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="nx">err&lt;/span> &lt;span class="o">!=&lt;/span> &lt;span class="kc">nil&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">log&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Error&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">err&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;Failed to create Service&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nx">err&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">log&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Info&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Successfully created service&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">identifier&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">GetServicePrefix&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="nx">service&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Spec&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Type&lt;/span> &lt;span class="o">==&lt;/span> &lt;span class="nx">corev1&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">ServiceTypeNodePort&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">challenge&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Status&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Endpoint&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="nb">int&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">service&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Spec&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Ports&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="nx">NodePort&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">log&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Info&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;NodePort created&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;port&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">service&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Spec&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">Ports&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="mi">0&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="nx">NodePort&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="nx">err&lt;/span> &lt;span class="o">:=&lt;/span> &lt;span class="nx">r&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Status&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="nf">Update&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">ctx&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nx">challenge&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="nx">err&lt;/span> &lt;span class="o">!=&lt;/span> &lt;span class="kc">nil&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">log&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Error&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">err&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;Failed to update Challenge status with NodePort information&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nx">err&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="kc">nil&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">log&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nf">Error&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="nx">err&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;Failed to get Service&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="nx">err&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Control API에서는 Challenge 생성 요청을 하면 Challenge의 상태값에서 포트 번호를 가져오기만 하면 됩니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-python" data-lang="python">&lt;span class="line">&lt;span class="cl"> &lt;span class="n">challenge&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="bp">self&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">custom_api&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">create_namespaced_custom_object&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">group&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;apps.hexactf.io&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">version&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;v1alpha1&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">namespace&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="n">namespace&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">plural&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;challenges&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">body&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="n">challenge_manifest&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="언제-컨테이너-빌드가-끝날-것인가--언제-포트-번호가-설정될-것인가">&amp;ldquo;언제&amp;rdquo; 컨테이너 빌드가 끝날 것인가? = &amp;ldquo;언제&amp;rdquo; 포트 번호가 설정될 것인가?
+&lt;/h3>&lt;p>Control API가 Service를 조회를 하든, Operator가 포트 번호를 상태값으로 저장을 하든 똑같은 문제점이 있습니다. 바로 &lt;strong>포트 번호가 생성되는 시점이 컨테이너 빌드 시간에 영향을 크게 받는다는 의미입니다.&lt;/strong> 포트번호 생성 시간이 컨테이너 빌드 시간과 같다고 봐도 무방합니다.&lt;/p>
+&lt;p>프로젝트에 대해 간단하게 설명하자면 해킹 문제는 출제자, 문제 유형에 따라 다른 플랫폼을 활용합니다.&lt;br>
+시스템 문제는 대부분 리눅스 기반 베이스 이미지를 활용합니다. 어떤 리눅스 이미지를 사용하더라도 빌드 시간이 비슷하다는 특징을 가지고 있습니다.&lt;br>
+그러나 웹은 상황이 다릅니다. 출제자에 따라서 SpringBoot, Flask 등 다양한 빌드 시간을 가진 플랫폼을 사용하기도 합니다.&lt;br>
+위의 내용을 하나로 정리하자면 &lt;strong>&amp;ldquo;문제에 따라서 빌드 시간이 다르다.&amp;ldquo;는 의미이며 이는 &amp;ldquo;문제마다 포트번호를 반환하는 시간이 다르다&amp;quot;라고 해석하셔도 됩니다.&lt;/strong>&lt;/p>
+&lt;h4 id="해결-방안---5초-sleep">해결 방안 - 5초 sleep
+&lt;/h4>&lt;p>Control API에서 Challenge 요청 이후에 5초 sleep하는 방식을 채택했습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-10/image-3.png"
+width="741"
+height="342"
+srcset="https://s0okju.github.io/p/hexactf-10/image-3_hu_3f80406606f1e488.png 480w, https://s0okju.github.io/p/hexactf-10/image-3_hu_8d2bb29ce87516c1.png 1024w"
+loading="lazy"
+alt="Challenge 요청에 따른 포트 번호 반환 순서 다이어그램"
+class="gallery-image"
+data-flex-grow="216"
+data-flex-basis="520px"
+>&lt;/p>
+&lt;p>채택 이유는 &lt;strong>구현하기 쉬웠고, 5초라는 기간은 대부분의 문제의 포트번호를 반환하기 충분했기 때문입니다.&lt;/strong> 다만 부족할 수 있으므로 재시도 로직을 넣었습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-python" data-lang="python">&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">challenge&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="bp">self&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">custom_api&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">create_namespaced_custom_object&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">group&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;apps.hexactf.io&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">version&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;v1alpha1&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">namespace&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="n">namespace&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">plural&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;challenges&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">body&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="n">challenge_manifest&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">time&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">sleep&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">5&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># status 값 가져오기&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">status&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">challenge&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">get&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;status&amp;#39;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">{})&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">endpoint&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">status&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">get&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;endpoint&amp;#39;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># status가 아직 설정되지 않았을 수 있으므로, 필요한 경우 다시 조회&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="ow">not&lt;/span> &lt;span class="n">status&lt;/span>&lt;span class="p">:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">time&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">sleep&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">3&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">challenge&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="bp">self&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">custom_api&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">get_namespaced_custom_object&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">group&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;apps.hexactf.io&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">version&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;v1alpha1&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">namespace&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="n">namespace&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">plural&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;challenges&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">name&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="n">challenge&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s1">&amp;#39;metadata&amp;#39;&lt;/span>&lt;span class="p">][&lt;/span>&lt;span class="s1">&amp;#39;name&amp;#39;&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">status&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">challenge&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">get&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;status&amp;#39;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">{})&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">endpoint&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="n">status&lt;/span>&lt;span class="o">.&lt;/span>&lt;span class="n">get&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;endpoint&amp;#39;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="위의-해결-방안은-최선이-아니다">위의 해결 방안은 최선이 아니다.
+&lt;/h4>&lt;blockquote>
+&lt;p>5초라는 기간은 &lt;strong>대부분&lt;/strong>의 문제의 포트번호를 반환하기 충분했기 때문입니다.&lt;/p>&lt;/blockquote>
+&lt;p>위의 대부분이라는 의미는 5초 + 재시도를 하더라도 포트번호가 반환되지 않은 문제가 있을 수 있다는 의미입니다. 실제 저희 프로젝트에서 9개의 문제 중 단 한 해킹 문제가 빌드 시간이 sleep+재시도 기간보다 길어서 포트번호가 바로 반환되지 않는 문제가 발생하기도 했습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>빌드 시간이 긴 컨테이너는 대부분 스프링 부트입니다. ^ㅇ^&lt;/p>&lt;/blockquote>
+&lt;p>&lt;strong>결국 포트번호 제때 얻기 위해서는 실시간 처리가 필요하게 됩니다.&lt;/strong>&lt;/p>
+&lt;blockquote>
+&lt;p>다만 이 문제는 CTF-WEB 팀과 상의해야 하는 부분이 많기 때문에 보류하기로 했습니다.&lt;/p>&lt;/blockquote>
+&lt;h2 id="마치며">마치며
+&lt;/h2>&lt;p>Control API는 단순히 클라이언트 명령어만 제어하기 위해 제작되었습니다. 그러나 실시간으로 사용자에게 포트번호를 전송하지 못한 점이 아쉽기도 했습니다. 이는 협의 후 수정될 예정이며, 문제가 해결되면 다른 글로 찾아 뵙겠습니다.&lt;/p>
+&lt;h2 id="다음-글은">다음 글은&amp;hellip;
+&lt;/h2>&lt;p>다음 글은 전체적인 인프라를 어떻게 구성했으며, 쿠버네티스에 어떻게 애플리케이션을 배치했는지 설명하겠습니다.&lt;/p></description></item></channel></rss>

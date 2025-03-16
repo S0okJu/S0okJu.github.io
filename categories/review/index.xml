@@ -1,0 +1,512 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Review on S0okJu.dev</title><link>https://s0okju.github.io/categories/review/</link><description>Recent content in Review on S0okJu.dev</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Sun, 16 Mar 2025 11:00:00 +0900</lastBuildDate><atom:link href="https://s0okju.github.io/categories/review/index.xml" rel="self" type="application/rss+xml"/><item><title>HexaCTF Awards. 12개의 HexaCTF 글에게 상을 줍시다.</title><link>https://s0okju.github.io/p/hexactf-awards/</link><pubDate>Sun, 16 Mar 2025 11:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/hexactf-awards/</guid><description>&lt;blockquote>
+&lt;p>해당 게시글은 재미를 위해 각종 밈이 포함되어 있습니다.&lt;/p>&lt;/blockquote>
+&lt;h2 id="인사말">인사말
+&lt;/h2>&lt;p>안녕하세요.&lt;br>
+2024년 11월부터 2025년 3월까지 5개월이라는 긴 시간 동안 HexaCTF 시리즈 글이 마무리 되었습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/IMG_0416.gif"
+width="480"
+height="368"
+srcset="https://s0okju.github.io/p/hexactf-awards/IMG_0416_hu_3307d5066aefec83.gif 480w, https://s0okju.github.io/p/hexactf-awards/IMG_0416_hu_fc88ab29be023705.gif 1024w"
+loading="lazy"
+alt="인사"
+class="gallery-image"
+data-flex-grow="130"
+data-flex-basis="313px"
+>&lt;/p>
+&lt;p>취업하기 전에 글을 마무리하는 것이 목표였는데 달성했네요. 🥹
+HexaCTF 시리즈는 제가 프로젝트를 하면서 작성한 글입니다. 그래서 대회를 마친 시점에서 보면 색다르게 느껴집니다. 제 감상을 기반으로 상을 주려고 합니다.&lt;/p>
+&lt;h2 id="수상-목록">수상 목록
+&lt;/h2>&lt;ul>
+&lt;li>설명하기 난감해상&lt;/li>
+&lt;li>혼란상&lt;/li>
+&lt;li>구성이 아쉽상&lt;/li>
+&lt;li>아이디어 실천상&lt;/li>
+&lt;li>최선의 선택상&lt;/li>
+&lt;/ul>
+&lt;h2 id="수상-발표">수상 발표
+&lt;/h2>&lt;h3 id="설명하기-난감해상">설명하기 난감해상
+&lt;/h3>&lt;p>글로 풀어 쓰기 어려운 글에게 주는 상입니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image.png"
+width="150"
+height="150"
+srcset="https://s0okju.github.io/p/hexactf-awards/image_hu_c601999445bb2067.png 480w, https://s0okju.github.io/p/hexactf-awards/image_hu_b86e8f5e00828358.png 1024w"
+loading="lazy"
+alt="메모장을 열때마다 취하는 행동"
+class="gallery-image"
+data-flex-grow="100"
+data-flex-basis="240px"
+>&lt;/p>
+&lt;ul>
+&lt;li>👑 Top 1. &lt;a class="link" href="https://s0okju.github.io/p/hexactf-8/" target="_blank" rel="noopener"
+>HexaCTF 8. 커스텀 컨트롤러를 통한 Challenge 생성 및 삭제 구현&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>이 부분에서 잠깐 글쓰기를 포기할 뻔 했습니다. Operator 패턴은 클라우드 네이티브 환경에서 많이 쓰이면서 정작 로직 관련 글이 많이 없었습니다. 그래서 제한된 정보를 가지고 글을 써야 했습니다. 확신도 많이 없었구요&amp;hellip; 일단 제가 이해한 내용 기반으로 작성하긴 했지만 나중에 더 깊게 공부하면 수정해야 할 것 같습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>저에게 정말 큰 좌절감을 안겨줬기 때문에 설명하기 난감해상 1등 자리를 줬습니다.&lt;/p>&lt;/blockquote>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-1.png"
+width="283"
+height="262"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-1_hu_11142bd9200d6409.png 480w, https://s0okju.github.io/p/hexactf-awards/image-1_hu_ac2b7f94ef5e16b1.png 1024w"
+loading="lazy"
+alt="눈물이 끊이지 않음"
+class="gallery-image"
+data-flex-grow="108"
+data-flex-basis="259px"
+>&lt;/p>
+&lt;ul>
+&lt;li>Top 2. &lt;a class="link" href="https://s0okju.github.io/p/hexactf-11/" target="_blank" rel="noopener"
+>HexaCTF 11. 오픈 스택 서버 네트워크 개선기 - 서버에 NIC 2개 삽입한 이유&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>머리 속으로는 그림이 그려지는데 글로 절대 안써집니다. 네트워크 인터페이스인데 NIC로 연결해서 생성된 네트워크 인터페이스와 가상 네트워크 인터페이스도 분리해서 써줘야 합니다.&lt;br>
+제일 머리 아픈 것은 같은 사설 IP인데 라우터에서 스위치를 통해 할당받은 IP인지 아니면 가상 네트워크 인터페이스에서 할당된 IP인지 구분하는 것입니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-2.png"
+width="600"
+height="327"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-2_hu_5b2c33093b26f54e.png 480w, https://s0okju.github.io/p/hexactf-awards/image-2_hu_4015f5f913a180cf.png 1024w"
+loading="lazy"
+alt="너무 다양하게 있는거 아니니…"
+class="gallery-image"
+data-flex-grow="183"
+data-flex-basis="440px"
+>&lt;/p>
+&lt;p>그래서 네트워크 관련 글에는 예시가 들어가 있습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>동일한 네트워크 대역을 가지기 위해 NIC는 &lt;strong>모두 동일한 스위치에 연결&lt;/strong>됩니다. 192.168.50.1/24 대역이라면 서버는 192.168.50.27로 할당받고 Floating IP로도 192.168.50.122 이런 식으로 할당받는 것이죠. 이처럼 &lt;strong>Provider Network는 서버와 동일한 대역의 IP를 가지게 됩니다.&lt;/strong>&lt;/p>&lt;/blockquote>
+&lt;p>제가 글을 쓰면서 느끼는 것은 네트워크 분야는 글이 아니라 그림으로 표현하는게 훨씬 효율적이라는 것입니다. 왜냐하면 블록(범위) 단위로 시스템을 바라보기 때문이죠.&lt;/p>
+&lt;blockquote>
+&lt;p>머리 속 그림은 그려지지만 적절한 단어 선정과 손이 따라주지 않아서 설명하기 난감해상 2등 자리를 줬습니다.(이게 1등보다 더 열받는 부분일지도&amp;hellip;)&lt;/p>&lt;/blockquote>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-3.png"
+width="2560"
+height="1888"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-3_hu_3ab63752428c4920.png 480w, https://s0okju.github.io/p/hexactf-awards/image-3_hu_16e77917b3c0eeb1.png 1024w"
+loading="lazy"
+alt="마음 속으로는 분노가 차오름"
+class="gallery-image"
+data-flex-grow="135"
+data-flex-basis="325px"
+>&lt;/p>
+&lt;h3 id="혼란상">혼란상
+&lt;/h3>&lt;p>글 쓰는 당시에도 지금도 혼란스러운 글에게 주는 상입니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-4.png"
+width="600"
+height="412"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-4_hu_180309076887bb79.png 480w, https://s0okju.github.io/p/hexactf-awards/image-4_hu_f2e64749b4039e.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="145"
+data-flex-basis="349px"
+>&lt;/p>
+&lt;ul>
+&lt;li>👑 Top 1. &lt;a class="link" href="https://s0okju.github.io/p/hexactf-8/" target="_blank" rel="noopener"
+>HexaCTF 8. 커스텀 컨트롤러를 통한 Challenge 생성 및 삭제 구현&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>설명하기 난감해 상과 똑같은 이유입니다. 정보가 많이 없습니다. Kubebuilder 공식 문서에는 &amp;ldquo;너 Operator 패턴 알지?&amp;rdquo; 와 같이 교수님 마인드로 작성되어 있습니다.&lt;br>
+그래서 Kubebuilder에서 제시된 키워드를 일리리 검색해서 각각의 컴포넌트가 무슨 역할을 하는지 다 찾아봐야 합니다.&lt;/p>
+&lt;p>정보를 찾고 나서 하나로 정리하는 작업이 필요한데, 여기서 머리가 어지러웠습니다.&lt;/p>
+&lt;ul>
+&lt;li>&amp;ldquo;원래는 Builder가 있는데 Kubebuilder 공식 사이트에는 왜 Builder가 없는거지?&amp;rdquo;&lt;/li>
+&lt;li>&amp;ldquo;Manager는 어떻게 Controller를 만드는거야? 이게 코드로 구현이 가능해?&amp;rdquo;&lt;/li>
+&lt;li>&amp;ldquo;왜 누군가는 Operator로 말하고 누군가는 Controller라고 부르는 거야?&amp;rdquo;&lt;/li>
+&lt;/ul>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-5.png"
+width="637"
+height="480"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-5_hu_b8f5b703d06583e0.png 480w, https://s0okju.github.io/p/hexactf-awards/image-5_hu_f6c5743565bc062d.png 1024w"
+loading="lazy"
+alt="뇌세포가 혼란스러워 하는 중"
+class="gallery-image"
+data-flex-grow="132"
+data-flex-basis="318px"
+>&lt;/p>
+&lt;p>원래 시스템 그림을 보고 구현 방식을 어렴풋이 파악하는 편인데, 이번에는 하나도 파악하지 못했습니다. 실제로 KubeBuilder 소스코드 분석을 도전했습니다. 그러나 Go를 제대로 사용한 경험이 없어서 실패하게 되었습니다. Go 공부를 다시 해야겠군요.&lt;/p>
+&lt;blockquote>
+&lt;p>저에게 영원한 혼란스러움을 안겨줘 혼란상 1등을 줬습니다.&lt;/p>&lt;/blockquote>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-6.png"
+width="200"
+height="200"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-6_hu_7153e300deb96637.png 480w, https://s0okju.github.io/p/hexactf-awards/image-6_hu_43e187b49bc013bf.png 1024w"
+loading="lazy"
+alt="벙~~"
+class="gallery-image"
+data-flex-grow="100"
+data-flex-basis="240px"
+>&lt;/p>
+&lt;h3 id="구성이-아쉽상">구성이 아쉽상
+&lt;/h3>&lt;p>구성이 아쉬운 글에게 주는 상입니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-7.png"
+width="430"
+height="357"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-7_hu_7368ce7e47bc2039.png 480w, https://s0okju.github.io/p/hexactf-awards/image-7_hu_d9fc037330dae8ad.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="120"
+data-flex-basis="289px"
+>&lt;/p>
+&lt;ul>
+&lt;li>👑 Top 1. &lt;a class="link" href="https://s0okju.github.io/p/hexactf-1/" target="_blank" rel="noopener"
+>HexaCTF - 1. 인프라 플랫폼 선정과 서버 이전 시 마주한 문제&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>vlan 네트워크 구성한 이유와 실패했지만 그 대신 어떻게 했는지 설명했으면 괜찮은 글이라고 생각합니다. 그러나 글만 보면 선택의 이유가 명확해 보이지 않습니다.&lt;br>
+글 작성 시점이 5개월 전이라 저때 당시 무슨 기준점을 가지고 저런 선택을 했는지 기억이 나지 않습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>대체 내가 무슨 생각으로 저 글을 썼는지 의문이 가서 구성이 아쉽상 1등을 드립니다.&lt;/p>&lt;/blockquote>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-8.png"
+width="529"
+height="320"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-8_hu_c66d84551a2613e3.png 480w, https://s0okju.github.io/p/hexactf-awards/image-8_hu_298408eaad98a39f.png 1024w"
+loading="lazy"
+alt="어?"
+class="gallery-image"
+data-flex-grow="165"
+data-flex-basis="396px"
+>&lt;/p>
+&lt;ul>
+&lt;li>Top 2. &lt;a class="link" href="https://s0okju.github.io/p/hexactf-3/" target="_blank" rel="noopener"
+>HexaCTF - 3. Jenkins를 활용한 CI 환경 구성하기&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>저희 프로젝트에서는 Jenkins를 두 가지 이유로 사용됩니다. 하나는 CTF에 출제할 문제의 이미지를 빌드하기 위해 하나는 CTF 웹 애플리케이션 이미지를 빌드하기 위해 사용됩니다. 글 작성 당시에는 저것까지 생각을 안하고 글을 쓴 것 같다는 생각이 듭니다.&lt;/p>
+&lt;blockquote>
+&lt;p>젠킨스 사용 목적에 대해 명확하게 작성하지 않았으므로 구성이 아쉽상 2등을 드립니다.&lt;/p>&lt;/blockquote>
+&lt;ul>
+&lt;li>Top 3. &lt;a class="link" href="https://s0okju.github.io/p/hexactf-7/" target="_blank" rel="noopener"
+>HexaCTF 7. Challenge CR 상태 정의와 Operator 개념 정리&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>Challenge CR 글을 작성하다가 갑자기 Operator의 개념이 나온 글입니다. 이때의 감정은 아직도 생생한데요. 본래 계획이라면 Challenge CR를 설명하고 HexaCTF 8에서 설명한 내용을 정리할 예정이었습니다.&lt;br>
+그러나 글로 서술하는 과정에서 &lt;strong>&amp;ldquo;Operator는 근본적으로 무엇을 만드는거지?&amp;rdquo;&lt;/strong> 라는 의문점을 가지게 되었고, 쿠버네티스 시스템 관점에서 Operator의 개념에 대해 작성하게 되었습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>거의 의식의 흐름으로 글을 전개했으므로 구성이 아쉽상 3등을 드립니다.&lt;/p>&lt;/blockquote>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-9.png"
+width="911"
+height="720"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-9_hu_6afcad397687233.png 480w, https://s0okju.github.io/p/hexactf-awards/image-9_hu_59b93b0c1667e0dd.png 1024w"
+loading="lazy"
+alt="난.장.판"
+class="gallery-image"
+data-flex-grow="126"
+data-flex-basis="303px"
+>&lt;/p>
+&lt;h3 id="아이디어-실천상">아이디어 실천상
+&lt;/h3>&lt;p>나름 만족한 아이디어를 실천한 글에게 주는 상입니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-10.png"
+width="800"
+height="638"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-10_hu_8fd174b6f7b3057b.png 480w, https://s0okju.github.io/p/hexactf-awards/image-10_hu_6f6e7d93482c65c4.png 1024w"
+loading="lazy"
+alt="흡족"
+class="gallery-image"
+data-flex-grow="125"
+data-flex-basis="300px"
+>&lt;/p>
+&lt;ul>
+&lt;li>👑 Top 1. &lt;a class="link" href="https://s0okju.github.io/p/hexactf-6/" target="_blank" rel="noopener"
+>HexaCTF 6. Kubebuilder를 활용한 ChallengeDefinition&amp;amp;Challenge Type 구현&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>Challenge 구조를 설계할 당시 AWS SysOps 자격증을 준비하고 있었습니다. CloudFormation 범위를 중심으로 공부하고 있었는데, &lt;strong>&amp;ldquo;Template이라는 개념을 프로젝트에 대입할 수 있을까?&amp;rdquo;&lt;/strong> 라는 생각이 들었고 직접 적용하기로 결심했습니다.&lt;br>
+지금은 ChallengeDefinition이지만 초기 이름은 ChallengeTemplate이었습니다. 자주 사용하는 플랫폼 구성을 작은 Template으로 구성하여 CloudFormation 처럼 여러 개의 Template를 참조할 수 있도록 설계했습니다. 그렇다면 사용자는 사용할 템플릿과 필요한 소수의 정보만으로 Challenge를 생성할 수 있게 됩니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-11.png"
+width="811"
+height="521"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-11_hu_173218540e9de991.png 480w, https://s0okju.github.io/p/hexactf-awards/image-11_hu_425c4174e0dc03cc.png 1024w"
+loading="lazy"
+alt="초기 ChallengeDefinition 구성 - ChallengeTemplate"
+class="gallery-image"
+data-flex-grow="155"
+data-flex-basis="373px"
+>&lt;/p>
+&lt;p>그런데 중간 점검에 팀원과 상의하는 과정에서 이러한 방식은 사용자에게 오히려 혼란을 야기할 수 있다는 의견을 받았습니다. 의견을 일부 수용하여 구성 파일에는 쿠버네티스 구성 형식을 따르기로 결정했고 ChallengeTemplate 대신 ChallengeDefinition으로 이름을 바꾸게 됩니다.&lt;/p>
+&lt;blockquote>
+&lt;p>아이디어를 직접 구현한 것과 더불어 아이디어에 서사가 있어 아이디어 실천상 1등을 드립니다.&lt;/p>&lt;/blockquote>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-12.png"
+width="1024"
+height="586"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-12_hu_6cbbca9d4fafe287.png 480w, https://s0okju.github.io/p/hexactf-awards/image-12_hu_7eda853a1be3ac09.png 1024w"
+loading="lazy"
+alt="오?!"
+class="gallery-image"
+data-flex-grow="174"
+data-flex-basis="419px"
+>&lt;/p>
+&lt;ul>
+&lt;li>Top 2. &lt;a class="link" href="https://s0okju.github.io/p/hexactf-10/#control-api-operator-%EC%82%AC%EC%9D%B4%EC%97%90-%ED%81%90%EB%A5%BC-%EB%91%94-%EC%9D%B4%EC%9C%A0" target="_blank" rel="noopener"
+>HexaCTF 10. 아키텍쳐 설계 및 Challenge Control API 제작&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>Challenge API를 별도로 생성하여 기존의 쿠버네티스 요청 방식이 아닌 독자적인 규격으로 생성을 요청할 수 있도록 구현했습니다. 즉 json 3개의 키-값만으로 하나의 Challenge를 만들 수 있는 것이죠.&lt;/p>
+&lt;blockquote>
+&lt;p>Challenge API와 Operator를 활용하여 Challenge만의 독자적인 오케스트레이터를 만들었으므로 아이디어 실천상 2등을 드립니다.&lt;/p>&lt;/blockquote>
+&lt;h3 id="최선의-선택상">최선의 선택상
+&lt;/h3>&lt;ul>
+&lt;li>👑 공동 Top 1. HexaCTF의 모든 글들&lt;/li>
+&lt;/ul>
+&lt;p>시간 차를 두고 글을 쓰다 보면 &amp;ldquo;왜 나는 이런 선택을 했지?&amp;rdquo; 라는 생각을 하곤 합니다. 냉정한 평가는 뒤로 미루고 &lt;strong>그때의 선택이 최선이었음을 인정하는 것도 중요하다고 생각합니다.&lt;/strong>&lt;/p>
+&lt;p>부족한 부분이 있으면 앞으로 고치면 되니까요. 😄&lt;/p>
+&lt;blockquote>
+&lt;p>스스로에게 고생했다는 의미에서 HexaCTF의 모든 글에게 최선의 선택상을 드리겠습니다.&lt;/p>&lt;/blockquote>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/i-did-best-i-could.gif"
+width="220"
+height="176"
+srcset="https://s0okju.github.io/p/hexactf-awards/i-did-best-i-could_hu_2ea5e7eee55ebb9.gif 480w, https://s0okju.github.io/p/hexactf-awards/i-did-best-i-could_hu_d9c973959770fa10.gif 1024w"
+loading="lazy"
+alt="그때는 최선의 선택이었다."
+class="gallery-image"
+data-flex-grow="125"
+data-flex-basis="300px"
+>&lt;/p>
+&lt;h2 id="수상-소감">수상 소감
+&lt;/h2>&lt;p>모든 글이 잘 썼다는 것이 아닙니다. 오히려 아쉬운 점을 나열하라고 하면 블로그로 몇편을 더 쓸 수 있을 것 같습니다.&lt;br>
+본래 글쓰기를 잘하는 편이 아니지만 서투른 필력으로 13편(12 + 후기)을 작성한 건 나름 자랑스럽습니다.&lt;br>
+이렇게 꾸준히 하다보면 저의 실력도 글쓰기 실력도 늘어나겠죠.&lt;/p>
+&lt;p>HexaCTF 시리즈 끝.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf-awards/image-13.png"
+width="563"
+height="315"
+srcset="https://s0okju.github.io/p/hexactf-awards/image-13_hu_fc563c5879620644.png 480w, https://s0okju.github.io/p/hexactf-awards/image-13_hu_3e29b70515ccc0b5.png 1024w"
+loading="lazy"
+alt="끝."
+class="gallery-image"
+data-flex-grow="178"
+data-flex-basis="428px"
+>&lt;/p></description></item><item><title>HexaCTF2025 대회 운영 후기</title><link>https://s0okju.github.io/p/hexactf2025-review/</link><pubDate>Fri, 28 Feb 2025 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/hexactf2025-review/</guid><description>&lt;p>2025.03.02 - 내용 수정&lt;/p>
+&lt;p>4개월 동안 여러 오류의 신세계의 맛본 결과 드디어 대회를 개최하게 되었습니다. 여타 CTF 대회와 다르게 3일이라는 긴 시간 동안 이뤄졌습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf2025-review/image.png"
+width="757"
+height="668"
+srcset="https://s0okju.github.io/p/hexactf2025-review/image_hu_4b1f04fd2608e8ba.png 480w, https://s0okju.github.io/p/hexactf2025-review/image_hu_771ae6c356221a37.png 1024w"
+loading="lazy"
+alt="두근"
+class="gallery-image"
+data-flex-grow="113"
+data-flex-basis="271px"
+>&lt;/p>
+&lt;h2 id="사전-점검">사전 점검
+&lt;/h2>&lt;p>대회 하루 전에 전반적인 검토를 수행하게 되었습니다. &lt;del>시간이 여유로울 때는 오류가 보이지 않았는데 왜 하루 이틀 전에 잘 보일까..&lt;/del>&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf2025-review/image-1.png"
+width="607"
+height="340"
+srcset="https://s0okju.github.io/p/hexactf2025-review/image-1_hu_ae1e1b3de1446789.png 480w, https://s0okju.github.io/p/hexactf2025-review/image-1_hu_c73bca90a4a07b0f.png 1024w"
+loading="lazy"
+alt="문제 생겼다고 연락올때마다 짓는 표정"
+class="gallery-image"
+data-flex-grow="178"
+data-flex-basis="428px"
+>&lt;/p>
+&lt;h3 id="서버가-좀-버벅거려요">서버가 좀 버벅거려요.
+&lt;/h3>&lt;p>중간에 웹 페이지에 멈춤 현상이 있다고 해서 웹을 담당하는 파드를 확인했습니다.&lt;br>
+다중 접속한 것도 아니고 어떠한 행위를 하지 않았는데 request 한 메모리 양에 근접하게 사용하게 되었습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf2025-review/image-2.png"
+width="565"
+height="218"
+srcset="https://s0okju.github.io/p/hexactf2025-review/image-2_hu_7cd3bbf130e352d7.png 480w, https://s0okju.github.io/p/hexactf2025-review/image-2_hu_cfb9d065fc0d9aa4.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="259"
+data-flex-basis="622px"
+>&lt;/p>
+&lt;p>웹 부분이 이런건 처음이 아니였습니다. 초기에는 Flask는 메모리를 적게 사용되지 않을까 하고 request, limits를 적게 잡았다가 pod가 강제 종료되기도 했습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf2025-review/image-3.png"
+width="793"
+height="274"
+srcset="https://s0okju.github.io/p/hexactf2025-review/image-3_hu_4d0a315c87b1bcbb.png 480w, https://s0okju.github.io/p/hexactf2025-review/image-3_hu_7fca4370b0c0510a.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="289"
+data-flex-basis="694px"
+>&lt;/p>
+&lt;p>메모리 사용 패턴이 짐작이 가지 않았다. 어쩔때는 팍 튀는 형태로 나타나기도 하고, 어쩔때는 메모리 양이 수직 상승하다가 지속적으로 유지되기도 했습니다.&lt;/p>
+&lt;p>그래서 request, limits를 지정하지 않았습니다.(&lt;del>실제로 이렇게 하면 안됩니다.&lt;/del>)
+근본적으로 저 문제를 해결하려면 애플리케이션을 우선 최적화해야 한다고 생각했습니다. 문제를 즉시 파악하고 해결하는데 시간이 부족하니 메모리 사용 패턴을 확인할 겸 과감하게 리소스 제한을 풀게 되었습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>여담
+서버 메모리가 생각보다 널널해서 리소스 제한을 풀었습니다. 그러나 다음 대회에서는 꼭 부하 테스트를 해서 적절하게 리소스를 제한을 설정할 것입니다.&lt;/p>&lt;/blockquote>
+&lt;h3 id="challenge가-안열려요">Challenge가 안열려요..
+&lt;/h3>&lt;h4 id="금쪽이-challenge-controller">금쪽이 Challenge Controller
+&lt;/h4>&lt;p>Challenge Controller 부분의 고질적인 문제는 바로 가끔 오류를 반환한다는 점이었습니다. 근본적인 원인은 사전에 파악은 하고 있었지만 관련 팀원과 함께 대공사가 필요하기에 바로 문제를 해결하지 않았습니다.&lt;/p>
+&lt;h2 id="대회-당일">대회 당일
+&lt;/h2>&lt;p>저는 전반적인 인프라 관리와 Challenge 관리를 담당하게 되었습니다. 앞서 말했다싶이 Challenge Controller가 오류를 자주 반환한다고 말씀 드렸죠?&lt;br>
+그래서 대회 하루 이틀 동안은 아래와 같은 표정으로 모니터를 바라봤습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf2025-review/image-5.png"
+width="540"
+height="304"
+srcset="https://s0okju.github.io/p/hexactf2025-review/image-5_hu_16b67f85867362b.png 480w, https://s0okju.github.io/p/hexactf2025-review/image-5_hu_3cf5457ab6afaf30.png 1024w"
+loading="lazy"
+alt="제발 터지지 말아줘"
+class="gallery-image"
+data-flex-grow="177"
+data-flex-basis="426px"
+>&lt;/p>
+&lt;p>예상보다 Challenge Operator 쪽에는 별다른 문제는 없었습니다.&lt;br>
+가끔 Challenge가 생성이 안된다고 연락이 오다가 &amp;ldquo;다시 해보니 됩니다.&amp;ldquo;라는 메세지를 많이 받았습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf2025-review/image-6.png"
+width="1584"
+height="711"
+srcset="https://s0okju.github.io/p/hexactf2025-review/image-6_hu_424f59dbe6f2d08c.png 480w, https://s0okju.github.io/p/hexactf2025-review/image-6_hu_77e8732e558b4689.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="222"
+data-flex-basis="534px"
+>&lt;/p>
+&lt;p>마지막 날에는 사용자도 요령을 익혔는지 Challenge 시스템과 관련된 문의는 없었습니다. &lt;del>나름 평화로웠습니다.&lt;/del>&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf2025-review/image-7.png"
+width="600"
+height="527"
+srcset="https://s0okju.github.io/p/hexactf2025-review/image-7_hu_9ab8ef8a654bddf7.png 480w, https://s0okju.github.io/p/hexactf2025-review/image-7_hu_8e107457ab6d77.png 1024w"
+loading="lazy"
+alt="마지막 날은 평화로웠다.."
+class="gallery-image"
+data-flex-grow="113"
+data-flex-basis="273px"
+>&lt;/p>
+&lt;h2 id="대회-후기---다음-과제">대회 후기 - 다음 과제
+&lt;/h2>&lt;p>일단 기간이 긴 대회인만큼 트래픽이 많이 몰린다는 이벤트는 없었습니다. 그래서 큰 문제 없이 대회를 마무리할 수 있었던 것 같습니다.&lt;/p>
+&lt;p>첫 대회에 큰 의미가 있지만 기술적으로 부족한 부분을 확실히 파악하게 된 것 같습니다.&lt;/p>
+&lt;h3 id="challenge-controller-고치기">Challenge Controller 고치기
+&lt;/h3>&lt;p>Chllanege Controller 관련해서 두 가지 문제점이 있습니다.&lt;/p>
+&lt;ol>
+&lt;li>데이터베이스 스키마의 설계적인 문제점&lt;/li>
+&lt;li>프론트엔드가 실시간으로 Challenge 정보를 가져오지 못해서 발생하는 문제점&lt;/li>
+&lt;/ol>
+&lt;p>2번 문제는 프론트엔드가 Controller에게 요청을 보내고 5초 동안 대기를 수행한 후에 Challenge 정보를 얻습니다. 문제에 따라서는 빌드 시간이 5초가 넘을때가 있습니다. 이럴 경우에 클라이언트 측에서는 오류가 뜨지만 실제로 Challenge는 생성되게 됩니다.&lt;/p>
+&lt;p>이번 대회 이후에는 위의 두 문제를 우선 고쳐야 할 것 같습니다.&lt;/p>
+&lt;h3 id="메모리가-계속-증가한다---flask-최적화">메모리가 계속 증가한다. - Flask 최적화
+&lt;/h3>&lt;p>사전 점검때도 말했지만 메모리가 지속적으로 증가하며 이를 해결하기 위해서는 코드를 수정해야 한다고 말씀 드렸습니다.&lt;/p>
+&lt;p>개인적으로 가장 심각하게 봤던 부분이 바로 메모리 사용량입니다.&lt;/p>
+&lt;p>CTF 대회 특성상 아래의 문제 패턴이 있습니다.&lt;/p>
+&lt;ol>
+&lt;li>문제 파일을 다운로드한 후 다른 도구로 문제를 해결하여 웹사이트에 정답를 입력한다.&lt;/li>
+&lt;li>Challenge를 생성하여 문제를 해결한 후 웹사이트에 정답을 입력한다.&lt;/li>
+&lt;/ol>
+&lt;p>웹사이트는 &amp;ldquo;정답 입력&amp;quot;을 위주로 활용됩니다.&lt;br>
+그렇다면 사용자가 문제를 해결할때 문제를 푸는 시간이 길까요? 입력하는 시간이 길까요? &lt;strong>당연 다른 도구로 문제 푸는 시간이 깁니다.&lt;/strong> 대회를 운영하면서 애플리케이션은 나름 상승폭이 적고 안정적인 메모리 사용량을 가질 것이라고 예상했습니다.&lt;/p>
+&lt;p>아래는 웹사이트 메모리 사용량입니다. 점진적으로 증가하죠? 개인적으로 불필요한 메모리를 활용하고 있다고 생각했습니다. (웹사이트 부분은 프론트와 백엔드가 하나로 합쳐져 있습니다.)&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf2025-review/image-8.png"
+width="1528"
+height="255"
+srcset="https://s0okju.github.io/p/hexactf2025-review/image-8_hu_ccc716e859cc8814.png 480w, https://s0okju.github.io/p/hexactf2025-review/image-8_hu_6337753dbe28d392.png 1024w"
+loading="lazy"
+alt="지속적으로 상승하는 웹사이트 메모리 사용량"
+class="gallery-image"
+data-flex-grow="599"
+data-flex-basis="1438px"
+>&lt;/p>
+&lt;p>Challenge Controller 부분도 똑같이 메모리가 쌓이는 문제를 가지고 있습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf2025-review/image-9.png"
+width="1379"
+height="250"
+srcset="https://s0okju.github.io/p/hexactf2025-review/image-9_hu_43e2b824dbdf9a06.png 480w, https://s0okju.github.io/p/hexactf2025-review/image-9_hu_532cc4c6a4c9182d.png 1024w"
+loading="lazy"
+alt="지속적으로 상승하는 Challenge Controller 메모리 사용량"
+class="gallery-image"
+data-flex-grow="551"
+data-flex-basis="1323px"
+>&lt;/p>
+&lt;p>Flask를 깊게 공부해서 메모리 상승 원인과 해결책을 찾아야겠습니다.&lt;/p>
+&lt;h3 id="challenge-리소스-용량-산정">Challenge 리소스 용량 산정
+&lt;/h3>&lt;p>대회 끝나고 대시보드를 보니 Challenge 문제마다 메모리 최대 사용량은 일정합니다.&lt;br>
+문제 등록할때는 Request, limits를 넉넉하게 256MiB, 512MiB로 잡았습니다. 다음부터는 문제마다 섬세하게 리소스 용량를 고려해야 할 것 같습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf2025-review/image-10.png"
+width="993"
+height="236"
+srcset="https://s0okju.github.io/p/hexactf2025-review/image-10_hu_45901eb02d5cc97a.png 480w, https://s0okju.github.io/p/hexactf2025-review/image-10_hu_39a366c043b35538.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="420"
+data-flex-basis="1009px"
+>&lt;/p>
+&lt;p>저는 CPU보다 메모리 용량이 상대적으로 부족하다고 느끼고 있습니다. 그래서 메모리 사용량을 유심히 살펴보고 있습니다.&lt;br>
+여기서 &amp;ldquo;웹 애플리케이션 부분에서는 메모리가 널널하다고 하시지 않았나요?&amp;rdquo; 라고 물어볼 수 있을 것입니다.
+쿠버네티스에서 멀티 노드를 구현할때 node1은 웹 애플리케이션과 기타 도구, node2는 Challenge를 위한 공간으로 분리했습니다. 즉 웹 애플리케이션이 있는 공간은 애플리케이션이 추가되지 않는 불변의 환경이고, Challenge는 언제 어디든지 리소스가 생성될 수 있는 가변의 환경입니다. 때에 따라서 메모리가 부족할 수도 널널할 수 있습니다.&lt;br>
+사람들의 문제 푸는 패턴을 보니 Challenge를 생성하고 삭제하는 것을 잊습니다. 즉, 한 사람당 2~3개를 생성한 후 방치한다는 의미입니다. &lt;strong>만약에 10명 이상의 사람이 만든 Challenge가 모두 살아있다면?&lt;/strong> 이 부분은 고민을 해야봐야겠습니다.&lt;/p>
+&lt;h2 id="대회는-계속된다">대회는 계속된다&amp;hellip;
+&lt;/h2>&lt;p>다음 대회 일정이 잡혔습니다.
+위의 내용은 주요 문제점일 뿐 실제로 크고 작은 다양한 수정사항들이 있습니다. 열심히 수정해야겠죠?&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/hexactf2025-review/image-11.png"
+width="768"
+height="398"
+srcset="https://s0okju.github.io/p/hexactf2025-review/image-11_hu_227035725f5b0b9e.png 480w, https://s0okju.github.io/p/hexactf2025-review/image-11_hu_f1adf1221ccbfb04.png 1024w"
+loading="lazy"
+alt="즐기자"
+class="gallery-image"
+data-flex-grow="192"
+data-flex-basis="463px"
+>&lt;/p></description></item><item><title>2024년 회고</title><link>https://s0okju.github.io/p/2024-review/</link><pubDate>Mon, 23 Dec 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/2024-review/</guid><description>&lt;p>대학교 마지막 학년이자 첫 회고록이기도 하다.
+작년 보안 공부를 해오면서 시스템에 대한 기초가 부족하다고 생각했었다. 그래서 보안이 아닌 개발 공부를 처음부터 다시 시작했다.&lt;/p>
+&lt;h3 id="상반기">상반기
+&lt;/h3>&lt;h4 id="개인-공부">개인 공부
+&lt;/h4>&lt;p>상반기에 주로 했던 공부는 Go 언어, 쿠버네티스 그리고 오픈스택이다.
+Go는 한번이라도 쿠버네티스 코드를 분석하고 싶다는 마음으로 시작했다. 기본적인 이론을 익히고 웹 서버를 개발했다. 비록 시작을 마이크로서비스로 구현해서 깔끔하게 마무리 하지 못했지만 Go 언어에 대한 애정은 생겼다.&lt;/p>
+&lt;ul>
+&lt;li>&lt;a class="link" href="https://s0okju.github.io/p/go-code-refactor-error-1/" target="_blank" rel="noopener"
+>Todopoint 서버코드 개선기 - 1. 공동 에러 처리하기&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>내가 만든 Go 웹 애플리케이션을 쿠버네티스에 배포하고 싶었다. 처음에는 클라우드를 활용하고 싶었지만 생각보다 CSP의 쿠버네티스는 비싸서 포기했다. 마침 집에 쓰지 않은 데스크톱이 있었고 전부 포맷하여 오픈 스택 서버를 구축하게 되었다.
+Multipass -&amp;gt; devstack -&amp;gt; Kolla ansible 순으로 중간에 배포 플랫폼을 바꾸는 과정에서 내가 리눅스의 리도 모르구나를 알게 되었다.
+환경 세팅을 마무리하는데 정말 많은 시간이 걸렸다. 대략 한달 정도 걸렸지만 중간에 다양한 오류를 마주하면서 문제를 해결하는 방법을 터득한 것 같다.&lt;/p>
+&lt;ul>
+&lt;li>&lt;a class="link" href="https://s0okju.github.io/categories/ops/" target="_blank" rel="noopener"
+>Category: Ops - S0okJu.dev&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>&lt;img src="https://s0okju.github.io/p/2024-review/image.png"
+width="407"
+height="338"
+srcset="https://s0okju.github.io/p/2024-review/image_hu_2c05e4533e3b666c.png 480w, https://s0okju.github.io/p/2024-review/image_hu_4a35e669b4fa6e37.png 1024w"
+loading="lazy"
+alt="오류 발생 시 내 기분"
+class="gallery-image"
+data-flex-grow="120"
+data-flex-basis="288px"
+>&lt;/p>
+&lt;p>쿠버네티스는 긴 시간동안 천천히 책을 읽어가면서 수행했던 것 같다. 지금 생각해보면 가장 아쉬운 공부가 쿠버네티스이지 않을까 싶다.&lt;/p>
+&lt;h4 id="스터디---대규모-시스템-설계-12">스터디 - 대규모 시스템 설계 1,2
+&lt;/h4>&lt;p>위의 책은 현직자가 많이 읽는 것으로 알고 있다. 그래도 큰 그림을 알고 싶었고, 현직자분들로 구성되어 있는 대규모 시스템 설계 책 스터디에 참여하게 되었다.
+솔직히 말하자면 어려웠다. 다른 스터디원들은 자신의 경험담과 함께 내용을 설명했지만 본인은 함께 설명할 만한 것이 없었다. 그래서 관련 기술 블로그를 찾아서 내용을 첨부했다.
+학생때는 기술적인 것만 집중해서 수행한다면 현직에 종사하시는 분들은 서비스의 도메인 특징에 맞게 기술을 선택한 것이 큰 차이점이라고 생각했다. 그래서 스터디원들의 의견 하나하나가 중요했고 배울점이 많았다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/2024-review/image-1.png"
+width="356"
+height="247"
+srcset="https://s0okju.github.io/p/2024-review/image-1_hu_d94ed4751026b8ba.png 480w, https://s0okju.github.io/p/2024-review/image-1_hu_9690ef6f8a5a2084.png 1024w"
+loading="lazy"
+alt="스터디 자료"
+class="gallery-image"
+data-flex-grow="144"
+data-flex-basis="345px"
+>&lt;/p>
+&lt;h4 id="기타-활동">기타 활동
+&lt;/h4>&lt;p>아는 대학교 지인의 웹 서버를 개발하고 있으며 인증 로직이 필요하다고 말씀하셨다. 그래서 짧게나마 Spring Boot를 공부하고 Google OAuth 처리를 개발했다. 해당 프로젝트 팀장이 스프링 부트에 열정적인 사람이었는데 친절하게 알려준 덕분에 스프링 부트 공부를 수월하게 할 수 있었다.&lt;/p>
+&lt;ul>
+&lt;li>&lt;a class="link" href="https://s0okju.github.io/p/basic-spring-1/" target="_blank" rel="noopener"
+>Spring - Spring Boot 간략하게 알아보기&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>자바와 같은 클래스 지향 언어는 자주 사용해보지 않아서 Interface는 언제 쓰며 어떤 것을 클래스로 작성해야 할까?에 대해 고민을 많이 했었다. 그래서 다른 사람들의 깃허브 레포지토리를 찾아가면서 어떻게든 해결했다.&lt;/p>
+&lt;h3 id="하반기">하반기
+&lt;/h3>&lt;h4 id="상반기에-했던-모든-것들을-하나로">상반기에 했던 모든 것들을 하나로
+&lt;/h4>&lt;p>직무로는 SRE가 되고 싶었다. 학교를 다니고 있는 입장에서 어느 기업에 소속되어 활동하는 것은 한계가 있었다. 그래서 시나리오 기반으로 시스템 아키텍쳐를 구성하고 필요한 기술들을 활용해보자! 라는 생각을 했다. 그리고 쇼핑몰이라는 가상의 도메인을 설정하여 차근차근 한 단계씩 시스템을 성장해보자는 마음으로 프로젝트를 수행했다.&lt;/p>
+&lt;ul>
+&lt;li>&lt;a class="link" href="https://medium.com/s0okju-tech/projects/home" target="_blank" rel="noopener"
+>Projects – S0okJu Tech Labs – Medium&lt;/a> 의 OpsAthlan 시리즈&lt;/li>
+&lt;/ul>
+&lt;p>여담으로 마이크로서비스 웹 서버 개발 프로젝트는 선택에 근거는 무조건 있어야 한다는 뼈저린 조언을 남겼다. 그래서 차근차근 성장하는 시나리오를 설정하게 된 것이다.&lt;/p>
+&lt;ul>
+&lt;li>&lt;a class="link" href="https://s0okju.github.io/p/todopoint-final-review/" target="_blank" rel="noopener"
+>왜 TodoPoint 프로젝트를 실패했는가?&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h4 id="클라우드-자격증">클라우드 자격증
+&lt;/h4>&lt;p>그 이전까지 프라이빗 클라우드(OpenStack)을 집중적으로 공부했지만 현실적으로 많은 기업들이 퍼블릭 클라우드 사용 기술을 요구한다.
+다행히 프라이빗 클라우드를 통해 전반적인 내용은 알고 있어서 공부하는데 수월했다. 공부의 일환으로 관련 자격증을 취득했다.&lt;/p>
+&lt;ul>
+&lt;li>NCP Associate&lt;/li>
+&lt;li>AWS Solution Architect&lt;/li>
+&lt;/ul>
+&lt;p>자격증 공부는 퍼블릭 클라우드를 이해하는데 큰 도움이 되었다. AWS는 상황을 우선 제시하고 해결 방안을 선택해야 하는 문제가 많았다. 수 많은 리소스에 대한 포괄적인 이해와 활용 능력이 필요했고 이를 연습하게 된 계기가 되었다.&lt;/p>
+&lt;h4 id="아쉬운-부분을-보완하다">아쉬운 부분을 보완하다.
+&lt;/h4>&lt;p>상반기를 보면 쿠버네티스 공부가 부족한 것에 대해 아쉬움이 남았다고 말했다. 한 해가 마무리 되던 시기에 쿠버네티스 관련 프로젝트를 수행하게 되었다. 쿠버네티스 오퍼레이터 제작과 컨테이너 모니터링 환경 구성 담당이 되었다. 자세한 내용은 2025년 블로그에서 확인할 수 있을 것이다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/2024-review/image-2.png"
+width="600"
+height="399"
+srcset="https://s0okju.github.io/p/2024-review/image-2_hu_beccc74d5d63a3f8.png 480w, https://s0okju.github.io/p/2024-review/image-2_hu_b0c2fb1a046cde37.png 1024w"
+loading="lazy"
+alt="Good bye 2024"
+class="gallery-image"
+data-flex-grow="150"
+data-flex-basis="360px"
+>&lt;/p>
+&lt;h3 id="올해의-평점">올해의 평점
+&lt;/h3>&lt;p>올해는 모든 과정이 의미가 있었다. 그래서 별점으로 ⭐️⭐️⭐️⭐️ 4점을 주고 싶다.&lt;/p></description></item></channel></rss>

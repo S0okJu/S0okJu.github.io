@@ -1,0 +1,1292 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Ops on S0okJu.dev</title><link>https://s0okju.github.io/categories/ops/</link><description>Recent content in Ops on S0okJu.dev</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Tue, 01 Oct 2024 00:00:00 +0900</lastBuildDate><atom:link href="https://s0okju.github.io/categories/ops/index.xml" rel="self" type="application/rss+xml"/><item><title>서버 구축기 - 4. Kolla-ansible 설치 시 마주한 네트워크 문제</title><link>https://s0okju.github.io/p/server-setup-4/</link><pubDate>Tue, 01 Oct 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/server-setup-4/</guid><description>&lt;h2 id="devstack의-한계">DevStack의 한계
+&lt;/h2>&lt;p>DevStack으로 Openstack을 배포하면서 큰 문제점을 느끼게 되었습니다.&lt;/p>
+&lt;ul>
+&lt;li>Nova Instance에 직접 접근하는 것이 어렵다.&lt;/li>
+&lt;li>리소스를 추가 및 삭제하는 것이 어렵다.&lt;/li>
+&lt;/ul>
+&lt;p>위의 문제점은 &lt;strong>네트워크로 인해 발생&lt;/strong>한 것입니다.
+예로 제가 Nova Instance를 생성해 Floating ip를 할당한다고 가정해 봅시다. External Network의 IP 범위가 외부와 연결이 불가능해 직접적으로 접근할 수 없게 됩니다. 그럼 ssh로 서버에 직접 접속해서 관리하는 방안도 있습니다. 그럼 Openstack을 왜 쓴거지? 키는 어떻게 관리하지? 등 다양한 꼬리 질문이 따라오게 됩니다.&lt;/p>
+&lt;h2 id="kolla-ansible">Kolla Ansible
+&lt;/h2>&lt;p>방안을 모색하는 중 Openstack은 DevStack 이외에도 다양한 배포 방안이 있다는 것을 알게 되었습니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-4/image.png"
+width="1083"
+height="609"
+srcset="https://s0okju.github.io/p/server-setup-4/image_hu_d0a000f910760807.png 480w, https://s0okju.github.io/p/server-setup-4/image_hu_1c212db233c3f527.png 1024w"
+loading="lazy"
+alt="출처 - https://docs.openstack.org/contributors/ko_KR/common/introduction.html"
+class="gallery-image"
+data-flex-grow="177"
+data-flex-basis="426px"
+>&lt;/p>
+&lt;blockquote>
+&lt;p>Kolla Ansible이란 Ansible 플레이북을 통해 OpenStack의 모든 서비스를 &lt;strong>컨테이너로 배포&lt;/strong>하고 유지 보수하며 운영할 수 있도록 도와주는 프로젝트이다. 이를 통해 복잡한 설치 과정과 수동 설정을 최소화하고, 재현 가능한 환경을 제공하여 효율적이며 안정적인 클라우드 인프라 운영을 가능하게 한다.&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>&lt;/p>&lt;/blockquote>
+&lt;p>즉 우리가 설정한 시스템 서비스를 컨테이너 형태로 구축되는 것입니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-4/image-1.png"
+width="983"
+height="925"
+srcset="https://s0okju.github.io/p/server-setup-4/image-1_hu_8352fe0984792688.png 480w, https://s0okju.github.io/p/server-setup-4/image-1_hu_50ffe7b3191fc881.png 1024w"
+loading="lazy"
+alt="출처 - https://velog.io/@larshavin/Kolla-Ansible%EC%9D%84-%ED%99%9C%EC%9A%A9%ED%95%9C-OpenStack-%EC%84%A4%EC%B9%98-1"
+class="gallery-image"
+data-flex-grow="106"
+data-flex-basis="255px"
+>&lt;/p>
+&lt;h2 id="설치">설치
+&lt;/h2>&lt;blockquote>
+&lt;p>설치는 &lt;a class="link" href="https://parandol.tistory.com/72" target="_blank" rel="noopener"
+>파란돌님의 블로그 - Kolla-ansible로 Openstack All-in-one 설치하기(Installing Openstack All-in-one with Kolla-ansible)&lt;/a>를 적극 참고했습니다.&lt;/p>&lt;/blockquote>
+&lt;h3 id="설치-목록">설치 목록
+&lt;/h3>&lt;p>Kolla-ansible의 장점은 원하는 리소스 선택과 설정이 쉽다는 것입니다. 그래서 저는 기본적인 리소스를 선택하여 설치했습니다.&lt;/p>
+&lt;p>&lt;strong>설치할 리소스&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>Keystone&lt;/li>
+&lt;li>Glance&lt;/li>
+&lt;li>Nova&lt;/li>
+&lt;li>Neutron&lt;/li>
+&lt;li>Cinder&lt;/li>
+&lt;li>Swift&lt;/li>
+&lt;li>Horizon&lt;/li>
+&lt;/ul>
+&lt;h3 id="all-in-one-or-node">all-in-one or node?
+&lt;/h3>&lt;p>오픈스택은 크게 3가지 노드가 있습니다.&lt;/p>
+&lt;ul>
+&lt;li>Controller node : 전체 오픈스택 서비스를 관리하기 위해 사용됩니다. 컨트롤러 관리 및 노드 간 연결을 의해서는 최소한 2개 이상의 인터넷 인터페이스가 필요합니다.&lt;/li>
+&lt;li>Compute node : Nova 기반의 인스턴스를 작동하기 위해 사용되는 하이퍼바이저를 실행하는 노드입니다.&lt;/li>
+&lt;li>Network node : 다양한 네트워크 서비스 에이전트를 실행하며, 이를 가상 네트워크에 인스턴스를 연결합니다.&lt;/li>
+&lt;/ul>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-4/image-2.png"
+width="626"
+height="686"
+srcset="https://s0okju.github.io/p/server-setup-4/image-2_hu_3563153eabd2edd.png 480w, https://s0okju.github.io/p/server-setup-4/image-2_hu_e1b4bbd897ee5577.png 1024w"
+loading="lazy"
+alt="출처 - https://docs.oracle.com/cd/E36784_01/html/E54155/archover.html"
+class="gallery-image"
+data-flex-grow="91"
+data-flex-basis="219px"
+>&lt;/p>
+&lt;p>여러 가이드를 보면 노드들은 물리적으로 분리되어 있습니다. 서버 내 가상머신을 구축하여 구현하는 방법이 있습니다. 그러나 복잡한 관계로 &lt;strong>서비스 기능을 하나의 호스트에 설치할 수 있는 all-in-one&lt;/strong>&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>을 선택하게 되었습니다.&lt;/p>
+&lt;h2 id="openstack-네트워크">Openstack 네트워크
+&lt;/h2>&lt;p>&lt;strong>가장 어렵고 앞으로 계속 공부해야 하는 분야&lt;/strong>인 것 같습니다. 완전히 이해한 것은 아니지만 알고 있는 그대로 작성하겠습니다.&lt;/p>
+&lt;p>오픈 스택에서 네트워크는 Management, Tunnel, External 네트워크가 있습니다.&lt;/p>
+&lt;ul>
+&lt;li>Management Network : 관리용 네트워크로 각 컴포넌트와 관련된 API를 호출하는데 사용됩니다.&lt;/li>
+&lt;li>Tunnel Network : vm instance 간 네트워크를 구축하는데 사용됩니다.&lt;/li>
+&lt;li>External Network : vm instance가 인터넷과 통신하기 위한 네트워크입니다.&lt;/li>
+&lt;/ul>
+&lt;p>네트워크 서비스는 크게 두 가지 옵션이 있습니다.&lt;/p>
+&lt;ul>
+&lt;li>Provider Network : 가상 네트워크를 물리적 네트워크로 연결합니다. 즉 물리적인 네트워크가 vm 인스턴스가 활용하는 네트워크가 됩니다.&lt;/li>
+&lt;li>Self-Service Network : 오픈스택을 사용하는 사용자가 직접 자신만의 네트워크를 구축할 수 있는 네트워크 입니다.&lt;/li>
+&lt;/ul>
+&lt;blockquote>
+&lt;p>Provider 네트워크는 부하분산 서비스 혹은 방화벽 서비스 등 고급 기능을 지원하지 않습니다.&lt;/p>&lt;/blockquote>
+&lt;p>제가 사용하는 옵션은 비교적 간단한 Provider Network 입니다.&lt;/p>
+&lt;h2 id="테스트용-openstack-서버의-네트워크-접근-문제">테스트용 Openstack 서버의 네트워크 접근 문제
+&lt;/h2>&lt;p>kolla-ansible에서 제공해주는 &lt;code>globals.yml&lt;/code> 를 확인해보겠습니다. 환경 파일을 보면 Internal, External Network로 구분되어 있습니다.&lt;br>
+network_interface는 Internal network에 해당되는 인터페이스를 지정하는 것으로 저는 외부 인터넷과 연결되지 않는 &lt;code>enp2s0&lt;/code> 인터페이스를 사용했습니다. 반면 neutron_external_interface는 provider로 제공할 인터페이스로 인터넷과 연결할 수 있는 &lt;code>enp3s0&lt;/code> 인터페이스를 사용했습니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yml" data-lang="yml">&lt;span class="line">&lt;span class="cl">&lt;span class="c">##############################&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="c"># Neutron - Networking Options&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="c">##############################&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="c"># ...&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="c"># followed for other types of interfaces.&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">network_interface&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;enp2s0&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nn">---&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="c"># ...&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">neutron_external_interface&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;enp3s0&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>그림을 그려보면 아래와 같습니다.&lt;br>
+(아래의 그림은 &lt;code>172.17.0.250/24&lt;/code>이 아니라 &lt;code>172.16.0.250/24&lt;/code> 입니다. )&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-4/image-3.png"
+width="504"
+height="423"
+srcset="https://s0okju.github.io/p/server-setup-4/image-3_hu_a9481fa49341ced5.png 480w, https://s0okju.github.io/p/server-setup-4/image-3_hu_add6a79d669ec86c.png 1024w"
+loading="lazy"
+alt="네트워크 토폴로지"
+class="gallery-image"
+data-flex-grow="119"
+data-flex-basis="285px"
+>&lt;/p>
+&lt;p>하지만 이번 오픈스택 서버는 어디까지나 개인으로만 사용되는 공간입니다. 즉 &lt;strong>클라우드 서비스를 쓰는 것도 저 혼자이고, 관리하는 것도 저 혼자인 것입니다&lt;/strong>. 관리를 위한 네트워크 접속(Internal Network)도, 오픈스택 리소스 접근할 수 있는 네트워크 접속(External Network)도 가능해야 합니다.&lt;/p>
+&lt;p>그러나 저는 클라우드 리소스의 API를 접근할 수 없습니다. 왜냐하면 서로 다른 네트워크 대역을 가지고 있기 때문입니다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-4/image-4.png"
+width="615"
+height="510"
+srcset="https://s0okju.github.io/p/server-setup-4/image-4_hu_d197fff7b22f75e5.png 480w, https://s0okju.github.io/p/server-setup-4/image-4_hu_a4b6f4b5facc9ec2.png 1024w"
+loading="lazy"
+alt="네트워크 구성도"
+class="gallery-image"
+data-flex-grow="120"
+data-flex-basis="289px"
+>&lt;/p>
+&lt;p>이러한 문제를 해결하기 위해서는 라우팅 테이블을 설정해야 할 것입니다. 라우터에 직접 설정하는 방법과 운영체제에서 처리하는 방법이 있는데, 물리적으로 라우터가 하나만 존재하기 때문에 운영체제에서 처리해야 합니다.&lt;/p>
+&lt;p>저는 ip forward를 사용했습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>IP-Forward란 커널 기반 라우팅 포워딩으로 하나의 인터페이스로 들어온 패킷을 다른 서브넷을 가진 네트워크 인터페이스로 패킷을 포워딩시키는 것이다.&lt;/p>&lt;/blockquote>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Kernel parameter update&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ sudo sysctl -w net.ipv4.conf.all.forwarding&lt;span class="o">=&lt;/span>&lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">$ sudo sysctl net.ipv4.conf.all.forwarding net.ipv4.conf.all.forwarding &lt;span class="o">=&lt;/span> &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>br-ex 송신되어 enp2s0 인터페이스에 수신되는 것을 허락한다는 의미입니다.&lt;/p>
+&lt;blockquote>
+&lt;p>br-ex은 OpenVSwitch(OVS) 적용시 물리 네트워크 인터페이스와 직접 연결되는 가상 스위치입니다. 외부 네트워크에서 가상 머신을 접근할때 사용됩니다.&lt;/p>&lt;/blockquote>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">sudo iptables -I FORWARD -i br-ex -o enp2s0 -j ACCEPT
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo iptables -nL FORWARD
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>클라이언트도 설정이 필요합니다.&lt;br>
+192.168.50.27를 통해 172.16.0.0/24(enp2s0)에 접근한다는 routing rule를 추가합니다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">sudo route -n add 172.16.0.0/24 192.168.50.27
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>여기서 왜 192.168.50.27를 통해 172.16.0.0/24 네트워크에 접근한다고 설정한 것일까요?&lt;br>
+오픈 스택 서버에서 ip_forward를 시켰습니다. 즉 서버가 라우터의 역할을 하는 것입니다. 그래서 클라이언트에서 라우팅 룰을 설정할 때에는 172.16.0.250/24에 포워딩을 시킨 서버의 ip 주소로 설정해야 하는 것입니다.&lt;/p>
+&lt;h2 id="정리">정리
+&lt;/h2>&lt;p>테스트를 수행하기 위해 Openstack 서버를 구축하게 되었습니다. 구축 시 요구사항은 인스턴스에 접근할 수 있으면서 리소스 API에 접근 가능해야 한다는 것이었습니다.
+서로 다른 네트워크 대역을 가져 리소스 API에 접근하지 못했으나 서버에 ip forward를 수행하여 문제를 해결했습니다.&lt;/p>
+&lt;p>문제를 해결해 보니 Neutron에 대해 모르고 있다는 사실을 알게 되었습니다. 다음 포스팅은 Neutron 톱아보기로 돌아오겠습니다.&lt;/p>
+&lt;h2 id="reference">Reference
+&lt;/h2>&lt;ul>
+&lt;li>&lt;a class="link" href="https://velog.io/@lijahong/0%EB%B6%80%ED%84%B0-%EC%8B%9C%EC%9E%91%ED%95%98%EB%8A%94-Linux-%EA%B3%B5%EB%B6%80-%EB%B0%A9%ED%99%94%EB%B2%BD-%EC%BB%B4%ED%93%A8%ED%84%B0" target="_blank" rel="noopener"
+>https://velog.io/@lijahong/0%EB%B6%80%ED%84%B0-%EC%8B%9C%EC%9E%91%ED%95%98%EB%8A%94-Linux-%EA%B3%B5%EB%B6%80-%EB%B0%A9%ED%99%94%EB%B2%BD-%EC%BB%B4%ED%93%A8%ED%84%B0&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://velog.io/@larshavin/Kolla-Ansible%EC%9D%84-%ED%99%9C%EC%9A%A9%ED%95%9C-OpenStack-%EC%84%A4%EC%B9%98-1" target="_blank" rel="noopener"
+>https://velog.io/@larshavin/Kolla-Ansible%EC%9D%84-%ED%99%9C%EC%9A%A9%ED%95%9C-OpenStack-%EC%84%A4%EC%B9%98-1&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://blog.naver.com/love_tolty/220237750951" target="_blank" rel="noopener"
+>https://blog.naver.com/love_tolty/220237750951&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://tech.osci.kr/openstack_cinder/" target="_blank" rel="noopener"
+>https://tech.osci.kr/openstack_cinder/&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a class="link" href="https://blog.naver.com/love_tolty/220237750951" target="_blank" rel="noopener"
+>https://blog.naver.com/love_tolty/220237750951&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>Openstack - Kubespray를 활용한 Kubernetes 설치 시 Ansible 오류</title><link>https://s0okju.github.io/p/openstack-kubernetes-installation-2/</link><pubDate>Sat, 17 Aug 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/openstack-kubernetes-installation-2/</guid><description>&lt;p>Kubernetes 설치는 &lt;a class="link" href="https://velog.io/@jaehan/Openstack-%EA%B8%B0%EB%B0%98-Kubernets-%EA%B5%AC%EC%B6%95-with-Kubespray" target="_blank" rel="noopener"
+>변재한님의 블로그&lt;/a>를 참고했습니다.&lt;/p>
+&lt;h2 id="ansible-ping-문제">Ansible Ping 문제
+&lt;/h2>&lt;p>Ansible Ping 수행 시 모든 노드에 아래와 같은 오류가 발생했다. 에러 메세지를 확인해보니 ssh 키가 제대로 적용되지 않은 것처럼 보였다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">Kubernetes-k8s-node-nf-2 | UNREACHABLE! =&amp;gt; {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &amp;#34;changed&amp;#34;: false,
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &amp;#34;msg&amp;#34;: &amp;#34;Data could not be sent to remote host \&amp;#34;10.0.2.176\&amp;#34;. Make sure this host can be reached over ssh: kex_exchange_identification: Connection closed by remote host\r\nConnection closed by UNKNOWN port 65535\r\n&amp;#34;,
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &amp;#34;unreachable&amp;#34;: true
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;blockquote>
+&lt;p>Ansible은 ssh를 활용하여 target 노드와 통신한다.&lt;/p>&lt;/blockquote>
+&lt;h3 id="해결책-1-공개키-알고리즘-변경">해결책 1. 공개키 알고리즘 변경
+&lt;/h3>&lt;p>openstack log를 확인해보니 debian image에 공개키가 authorized_keys에 제대로 복사되지 않아 ssh 통신을 제대로 수행하지 못한 것이었다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img1.png"
+width="608"
+height="123"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img1_hu_e5807834ed8d4fd4.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-2/img1_hu_27f00a1ffa2a1250.png 1024w"
+loading="lazy"
+alt="publickey가 제대로 복사되지 않은 경우 instance log"
+class="gallery-image"
+data-flex-grow="494"
+data-flex-basis="1186px"
+>&lt;/p>
+&lt;p>ssh 키를 ed25519 알고리즘으로 생성하면 키가 제대로 복사되지 않았지만 rsa로 변경하면 아래와 같이 키가 복사된다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img2.png"
+width="1135"
+height="149"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img2_hu_9d69f1ff65c3dfe3.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-2/img2_hu_75d3c555cf79e835.png 1024w"
+loading="lazy"
+alt="publickey가 제대로 변경된 모습"
+class="gallery-image"
+data-flex-grow="761"
+data-flex-basis="1828px"
+>&lt;/p>
+&lt;blockquote>
+&lt;p>보안을 고려하면 rsa보다는 ed25519 알고리즘이 권장된다.&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>&lt;/p>&lt;/blockquote>
+&lt;p>다시 ping을 수행하면 제대로 수행된다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img3.png"
+width="831"
+height="784"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img3_hu_4089e898ba9ca705.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-2/img3_hu_d20a18dc5b158690.png 1024w"
+loading="lazy"
+alt="Ansible ping 성공"
+class="gallery-image"
+data-flex-grow="105"
+data-flex-basis="254px"
+>&lt;/p>
+&lt;h3 id="해결책-2-ssh-agent-실행">해결책 2. ssh-agent 실행
+&lt;/h3>&lt;p>만약에 원격으로 openstack 서버에 접속한다고 가정해보자. 사용자를 변경하거나 세션을 한번 끊게 되면 동일한 이유로 문제가 생긴다.&lt;/p>
+&lt;p>우선 우리가 초기에 ansible를 세팅할 때 ssh-agent를 실행하고 private key를 추가하는 작업을 한다. ssh-agent는 ssh-add 명령어를 활용하여 키를 기억하고 사용하게 된다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"># 백그라운드에 agent 실행
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">eval &amp;#34;$(ssh-agent -s)&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># 키 추가
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ssh-add ~/.ssh/id_rsa
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>ssh-agent는 프로세스로써 작동돼 중간에 ssh가 중단되더라도 프로세스가 남아있다. 그러므로 &lt;strong>현재 사용자(stack)가 실행시킨 프로세스를 먼저 없애고 ssh-agent를 실행시키도록 구현&lt;/strong>하면 된다.&lt;/p>
+&lt;p>openstack은 stack 사용자가 관리한다. stack 사용자의 &lt;code>~/.bashrc&lt;/code> 에 ssh-agent를 추가하여 stack 사용자로 로그인 성공할때마다 실행할 수 있도록 한다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Ansible ssh agent&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">## Delete used ssh-agent&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">if&lt;/span> &lt;span class="o">[&lt;/span> -f ~/scripts/delete_ssh_agent.sh &lt;span class="o">]&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">then&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> . ~/scripts/delete_ssh_agent.sh
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">fi&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">## Create new ssh-agent&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">eval&lt;/span> &lt;span class="k">$(&lt;/span>ssh-agent -s&lt;span class="k">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ssh-add ~/.ssh/id_rsa.kubespray
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;code>delete_ssh_agent.sh&lt;/code> 은 openstack을 관리하는 사용자(stack)가 가지고 있는 ssh-agent를 삭제하는 스크립트이다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">&lt;span class="cp">#!/bin/bash
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="cp">&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Get all PIDs of ssh-agent processes owned by the user &amp;#39;stack&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">pids&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="k">$(&lt;/span>pgrep -u stack ssh-agent&lt;span class="k">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Check if any PIDs were found&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">if&lt;/span> &lt;span class="o">[&lt;/span> -z &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$pids&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span> &lt;span class="o">]&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">then&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;No ssh-agent processes found for user &amp;#39;stack&amp;#39;.&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">exit&lt;/span> &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># Loop through each PID and attempt to kill the process&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">for&lt;/span> pid in &lt;span class="nv">$pids&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">do&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;Killing ssh-agent process with PID &lt;/span>&lt;span class="nv">$pid&lt;/span>&lt;span class="s2">...&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">kill&lt;/span> &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="nv">$pid&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> sleep &lt;span class="m">1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1"># Check if the process was successfully killed&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> pgrep -u stack -x ssh-agent &amp;gt; /dev/null&lt;span class="p">;&lt;/span> &lt;span class="k">then&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;Failed to kill process with PID &lt;/span>&lt;span class="nv">$pid&lt;/span>&lt;span class="s2">. You may need to use sudo.&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nb">echo&lt;/span> &lt;span class="s2">&amp;#34;Successfully killed process with PID &lt;/span>&lt;span class="nv">$pid&lt;/span>&lt;span class="s2">.&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">fi&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">done&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">fi&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>새롭게 접속하면 아래와 같이 정상적으로 실행되는 것을 알 수 있다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img7.png"
+width="610"
+height="92"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img7_hu_a8b640fef4c16e5c.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-2/img7_hu_4358267c652fdfaa.png 1024w"
+loading="lazy"
+alt="stack login 성공"
+class="gallery-image"
+data-flex-grow="663"
+data-flex-basis="1591px"
+>&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img8.png"
+width="723"
+height="67"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img8_hu_549a8973f9ecfad9.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-2/img8_hu_a7ace842a3dc952f.png 1024w"
+loading="lazy"
+alt="ssh-agent 프로세스 확인"
+class="gallery-image"
+data-flex-grow="1079"
+data-flex-basis="2589px"
+>&lt;/p>
+&lt;blockquote>
+&lt;p>이 방식은 단일 사용자만 관리한다는 가정하에서 만든 해결책이다.&lt;/p>&lt;/blockquote>
+&lt;h2 id="nameserver-문제">Nameserver 문제
+&lt;/h2>&lt;p>playbook를 배포해보자.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">ansible-playbook --become -i inventory/test-cluster/hosts cluster.yml
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>nameserver로 인해 문제가 발생했다. 보통 이런 문제는 nameserver의 설정이 잘못된 경우에 발생되며 안전한 google dns(8.8.8.8, 8.8.4.4)로 설정하면 해결된다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"> &amp;#34;msg&amp;#34;: &amp;#34;E: Failed to fetch http://security.debian.org/debian-security/pool/updates/main/p/python-apt/python-apt-common_1.8.4.3_all.deb Temporary failure resolving &amp;#39;deb.debian.org&amp;#39;\nE: Failed to fetch http://security.debian.org/debian-security/pool/updates/main/p/python-apt/python3-apt_1.8.4.3_amd64.deb Temporary failure resolving &amp;#39;deb.debian.org&amp;#39;\nE: Unable to fetch some archives, maybe run apt-get update or try with --fix-missing?&amp;#34;,
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="해결책-1-resolvconf-수정잘못된-접근">해결책 1. resolv.conf 수정(잘못된 접근)
+&lt;/h3>&lt;p>DNS를 설정하는 &lt;code>resolv.conf&lt;/code> 를 확인해보면 127.0.0.53로 설정되어 있다. 안전하게 google dns 서버로 변경해보자&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl"># Dynamic resolv.conf(5) file for glibc resolver(3) generated by resolvconf(8)
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"># DO NOT EDIT THIS FILE BY HAND -- YOUR CHANGES WILL BE OVERWRITTEN
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">nameserver 127.0.0.53
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>실제로는 &lt;strong>우리가 직접 변경하면 안된다.&lt;/strong>&lt;/p>
+&lt;blockquote>
+&lt;p>DO NOT EDIT THIS FILE BY HAND &amp;ndash; YOUR CHANGES WILL BE OVERWRITTEN&lt;/p>&lt;/blockquote>
+&lt;p>resolv.conf은 /run 폴더 내에 심볼링 링크가 되어 있기 때문에 마음대로 수정하는 것은 권장하지 않는다.&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img4.png"
+width="945"
+height="89"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img4_hu_73ed2070f1e893e9.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-2/img4_hu_e21ab95a89f6dc6f.png 1024w"
+loading="lazy"
+alt="resolv.conf 심볼릭 링크"
+class="gallery-image"
+data-flex-grow="1061"
+data-flex-basis="2548px"
+>&lt;/p>
+&lt;p>실제로 &lt;a class="link" href="https://libguestfs.org/virt-customize.1.html" target="_blank" rel="noopener"
+>virt-customize&lt;/a> 를 활용해서 resolv.conf를 수정하는 이미지를 별도로 만들었지만 의미가 없었다.&lt;/p>
+&lt;h3 id="해결책-2-terraform-수정">해결책 2. Terraform 수정
+&lt;/h3>&lt;p>가장 안전한 접근법이다.
+네트워크 토폴로지를 보면 쿠버네티스 노드들이 kubernetes-network subnet를 활용한다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img5.png"
+width="809"
+height="609"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img5_hu_8439cdaf7cf3ba90.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-2/img5_hu_bc133586b33d2d14.png 1024w"
+loading="lazy"
+alt="kubernetes 네트워크 토폴로지"
+class="gallery-image"
+data-flex-grow="132"
+data-flex-basis="318px"
+>&lt;/p>
+&lt;p>Openstack의 subnet에 DNS nameserver를 명시할 수 있다. 그러므로 Openstack 인스턴스를 배포하는 terraform 파일을 수정한다.
+&lt;code>~/kubespray/contrib/terraform/openstack/modules/network/main.tf&lt;/code> 내에 &lt;code>dns_nameservers&lt;/code> 를 google dns로 변경시킨다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-tf" data-lang="tf">&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;openstack_networking_subnet_v2&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;k8s&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">name&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">cluster_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-internal-network&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">count&lt;/span> = &lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">use_neutron&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">network_id&lt;/span> = &lt;span class="nx">openstack_networking_network_v2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">k8s&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="nb">count&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">index&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="nx">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">cidr&lt;/span> = &lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">subnet_cidr&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">ip_version&lt;/span> = &lt;span class="m">4&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">dns_nameservers&lt;/span> = &lt;span class="p">[&lt;/span>&lt;span class="s2">&amp;#34;8.8.8.8&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="s2">&amp;#34;8.8.4.4&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>원래라면 variables.tf를 수정해야 했지만 제대로 적용이 되지 않았고, google dns server는 거의 불변에 가깝기 때문에 main.tf에 직접 작성해도 된다고 판단했다.&lt;/p>
+&lt;p>아래와 같이 제대로 적용된다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img6.png"
+width="522"
+height="322"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img6_hu_51df20edfa301982.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-2/img6_hu_28c470b480812ee0.png 1024w"
+loading="lazy"
+alt="dns nameserver 성공"
+class="gallery-image"
+data-flex-grow="162"
+data-flex-basis="389px"
+>&lt;/p>
+&lt;h2 id="그-이외의-debian-문제들">그 이외의 debian 문제들
+&lt;/h2>&lt;p>그 이후부터 debian에는 잡다한 문제가 발생했다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img9.png"
+width="1036"
+height="237"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-2/img9_hu_553433dc621022b1.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-2/img9_hu_9f5de3996762c738.png 1024w"
+loading="lazy"
+class="gallery-image"
+data-flex-grow="437"
+data-flex-basis="1049px"
+>&lt;/p>
+&lt;h3 id="해결책-1-클라우드-이미지를-ubuntu로-변경">해결책 1. 클라우드 이미지를 ubuntu로 변경
+&lt;/h3>&lt;p>클라우드 이미지를 debian에서 ubuntu로 변경했다. ssh 키를 ed25519 알고리즘으로 적용해도 정상적으로 작동된다.
+Ansible playbook를 작동시키면 정상적으로 kubernetes가 배포된다.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://dev.to/ccoveille/how-to-generate-a-secure-and-robust-ssh-key-in-2024-3f4f" target="_blank" rel="noopener"
+>https://dev.to/ccoveille/how-to-generate-a-secure-and-robust-ssh-key-in-2024-3f4f&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a class="link" href="https://askubuntu.com/questions/351168/diffrence-between-the-dns-setting-in-etc-resolv-conf-and-etc-network-interfaces" target="_blank" rel="noopener"
+>https://askubuntu.com/questions/351168/diffrence-between-the-dns-setting-in-etc-resolv-conf-and-etc-network-interfaces&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>Openstack - Kubespray를 활용한 Kubernetes 설치 시 Terraform 오류</title><link>https://s0okju.github.io/p/openstack-kubernetes-installation-1/</link><pubDate>Thu, 01 Aug 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/openstack-kubernetes-installation-1/</guid><description>&lt;h2 id="openstack-설치">Openstack 설치
+&lt;/h2>&lt;p>&lt;a class="link" href="https://velog.io/@im2sh/Ubuntu-22.04%EC%97%90%EC%84%9C-Devstack-%EC%84%A4%EC%B9%98" target="_blank" rel="noopener"
+>im2sh.log velog&lt;/a>을 참고해서 Devstack을 활용해 Openstack을 설치하면 된다. 다만 로컬 환경에서만 수행할 예정이므로 가상 public ip 대역 생성은 제외했다.&lt;/p>
+&lt;h3 id="이미지-생성">이미지 생성
+&lt;/h3>&lt;p>Nova에 올린 이미지를 생성한다. Ubuntu보다 Debian이 가볍고 커스텀하기 용이해서 선택&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>하게 되었다.
+아래의 명령어는 &lt;a class="link" href="https://cloud.debian.org/cdimage/cloud/OpenStack/current-10/" target="_blank" rel="noopener"
+>debian 공식 홈페이지&lt;/a>를 참고했다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">wget https://cloud.debian.org/cdimage/cloud/OpenStack/current-10/debian-10-openstack-amd64.qcow2
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">openstack image create &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --container-format bare &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --disk-format qcow2 &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --file debian-10-openstack-amd64.qcow2 &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> debian-10-openstack-amd64
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>dashboard를 보면 정상적으로 이미지가 업로드된 것을 알 수 있다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img1.png"
+width="423"
+height="236"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img1_hu_7b3a554076681dea.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-1/img1_hu_53f471c3f0509ba8.png 1024w"
+loading="lazy"
+alt="horizon에서 확인한 이미지"
+class="gallery-image"
+data-flex-grow="179"
+data-flex-basis="430px"
+>&lt;/p>
+&lt;h2 id="kubespray를-활용한-kubernetes-구축">Kubespray를 활용한 Kubernetes 구축
+&lt;/h2>&lt;ul>
+&lt;li>OS - Ubuntu 24.04&lt;/li>
+&lt;li>Openstack - 2024.1&lt;/li>
+&lt;li>Kubespray - v2.21.0&lt;/li>
+&lt;li>Terraform - v1.9.3&lt;/li>
+&lt;/ul>
+&lt;p>전반적인 설치 과정은 &lt;a class="link" href="https://velog.io/@jaehan/Openstack-%EA%B8%B0%EB%B0%98-Kubernets-%EA%B5%AC%EC%B6%95-with-Kubespray" target="_blank" rel="noopener"
+>변재한님의 velog&lt;/a>를 참고했습니다.&lt;/p>
+&lt;blockquote>
+&lt;p>openstack v2, v3 API는 다른점이 많습니다. 만약에 v2 버전으로 하고 싶다면 운영체제와 kubespray, terraform 버전을 맞추는 것이 좋습니다.&lt;/p>&lt;/blockquote>
+&lt;h3 id="ssh-통신을-위한-공개키-생성">ssh 통신을 위한 공개키 생성
+&lt;/h3>&lt;p>쿠버네티스 환경 설정을 위해 Ansible를 사용한다. Ansible은 ssh를 활용하여 대상에 접속할 수 있다. 이 키는 추후 Kubernetes에서 노드끼리 통신할 수 있는 openstack의 keypair로써 활용된다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">ssh-keygen -t ed25519 -N &lt;span class="s1">&amp;#39;&amp;#39;&lt;/span> -f ~/.ssh/id_rsa.kubespray
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">eval&lt;/span> &lt;span class="k">$(&lt;/span>ssh-agent -s&lt;span class="k">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">ssh-add ~/.ssh/id_rsa.kubespray
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="오류---one-of-auth_url-or-cloud-must-be-specified">오류 - One of auth_url or cloud must be specified
+&lt;/h2>&lt;p>결론부터 말하자면 클라이언트와 관련된 환경 변수가 저장되지 않아서 생긴 일이다.&lt;/p>
+&lt;h3 id="해결-과정">해결 과정
+&lt;/h3>&lt;p>아래의 오류를 읽어보면 openstack의 provider를 정의하는 tf파일에 속성이 정의되어 있지 않다고 한다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img2.png"
+width="890"
+height="330"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img2_hu_fc4a8193524b8cf3.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-1/img2_hu_dd3a8e38b0318d0c.png 1024w"
+loading="lazy"
+alt="kubernetes 설치 시 발생하는 오류"
+class="gallery-image"
+data-flex-grow="269"
+data-flex-basis="647px"
+>&lt;/p>
+&lt;p>&lt;code>~/kubespray/contrib/terraform/openstack/version.tf&lt;/code> 를 보면 provider가 정의되어 있다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img4.png"
+width="536"
+height="172"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img4_hu_f38e3ad95202f96e.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-1/img4_hu_1484e534dcbff86a.png 1024w"
+loading="lazy"
+alt="~/kubespray/contrib/terraform/openstack/version.tf"
+class="gallery-image"
+data-flex-grow="311"
+data-flex-basis="747px"
+>&lt;/p>
+&lt;p>&lt;a class="link" href="https://registry.terraform.io/providers/terraform-provider-openstack/openstack/1.54.1/docs" target="_blank" rel="noopener"
+>공식 홈페이지&lt;/a>를 보면 설정값을 추가할 수 있는데 전부다 선택사항이지만 &lt;strong>Openstack 설정과 관련 환경변수가 반드시 저장&lt;/strong>되어 있어야 한다. 그렇지 않으면 terraform에 별도로 설정해야 한다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-hcl" data-lang="hcl">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Configure the OpenStack Provider
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="k">provider&lt;/span> &lt;span class="s2">&amp;#34;openstack&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> user_name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;admin&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> tenant_name&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;admin&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> password&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;pwd&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> auth_url&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;http://myauthurl:5000/v3&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n"> region&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;RegionOne&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>즉 위와 같은 문제가 발생한 것은 클라이언트와 identity 서비스가 상호 작용을 위한 환경 변수가 없어서 생긴 일인 것이다.&lt;/p>
+&lt;p>다만 수동으로 terraform 파일에 작성하거나 환경변수를 설정하게 되면 Domain 정보가 부정확하다는 에러 메세지를 마주할 수 있다. openstack 버전에 따라서 지원하는 환경 변수도 다르거나, 같은 조건에 사람마다 실행 가능 여부가 다른 등 복합적인 이유가 존재한 것 같았다.&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img3.png"
+width="937"
+height="174"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img3_hu_6ea1b2e2e8a36d5a.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-1/img3_hu_22bc8b542dd33664.png 1024w"
+loading="lazy"
+alt="Invalid DomainID 오류"
+class="gallery-image"
+data-flex-grow="538"
+data-flex-basis="1292px"
+>&lt;/p>
+&lt;h3 id="해결책">해결책
+&lt;/h3>&lt;p>Openstack에서 제공해주는 &lt;a class="link" href="https://docs.openstack.org/liberty/ko_KR/install-guide-obs/keystone-openrc.html" target="_blank" rel="noopener"
+>클라이언트 환경 스크립트(openrc)&lt;/a>를 사용하면 된다.&lt;/p>
+&lt;p>horizon에 사용자를 클릭하면 openstack rc 파일이 있는데, 이를 다운로드해서 실행시키면 된다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img5.png"
+width="266"
+height="290"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img5_hu_d249ba80f6d9d707.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-1/img5_hu_c4c096730e86dce0.png 1024w"
+loading="lazy"
+alt="horizon에서 다운로드 가능한 OpenStack RC 파일"
+class="gallery-image"
+data-flex-grow="91"
+data-flex-basis="220px"
+>&lt;/p>
+&lt;p>Linux에서 환경 변수는 bash를 exit하는 순간 사라진다.&lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup> 컴퓨터가 한번 꺼지게 되면 openrc 스크립트를 계속 실행시켜줘야 한다.
+환경변수를 영속적으로 저장하는 방법은 &lt;code>~/.bashrc&lt;/code>를 설정하는 것이다. 다운로드한 rc 파일을 실행시키도록 파일을 설정한다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="k">if&lt;/span> &lt;span class="o">[&lt;/span> -f ~/rc/k8s-openrc.sh &lt;span class="o">]&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">then&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> . ~/rc/k8s-openrc.sh
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">fi&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>중간에 비밀번호를 입력 받아야 하므로 openrc 스크립트에 비밀번호를 넣는다. 개인적으로 이런 방법은 보안 측면에서는 좋지 않아 보인다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sh" data-lang="sh">&lt;span class="line">&lt;span class="cl">&lt;span class="nb">export&lt;/span> &lt;span class="nv">OS_USERNAME&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;k8s&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># With Keystone you pass the keystone password.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># echo &amp;#34;Please enter your OpenStack Password for project $OS_PROJECT_NAME as user $OS_USERNAME: &amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># read -sr OS_PASSWORD_INPUT&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nb">export&lt;/span> &lt;span class="nv">OS_PASSWORD&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;yourpassword&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;code>source ~/.bashrc&lt;/code>를 수행하면 아래와 같이 환경 변수가 정상적으로 설정된다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img6.png"
+width="304"
+height="85"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img6_hu_b01a460903ee8bda.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-1/img6_hu_7b321d24896448f.png 1024w"
+loading="lazy"
+alt="환경 변수 확인"
+class="gallery-image"
+data-flex-grow="357"
+data-flex-basis="858px"
+>&lt;/p>
+&lt;p>다시 terraform으로 kubernetes를 설치하면 정상적으로 실행된다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img7.png"
+width="648"
+height="100"
+srcset="https://s0okju.github.io/p/openstack-kubernetes-installation-1/img7_hu_2c07656d4e44353f.png 480w, https://s0okju.github.io/p/openstack-kubernetes-installation-1/img7_hu_5bdecc80a8256da1.png 1024w"
+loading="lazy"
+alt="배포 완료"
+class="gallery-image"
+data-flex-grow="648"
+data-flex-basis="1555px"
+>&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://www.quora.com/Which-Linux-distribution-is-best-suited-for-a-cloud-server-environment-and-why" target="_blank" rel="noopener"
+>https://www.quora.com/Which-Linux-distribution-is-best-suited-for-a-cloud-server-environment-and-why&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a class="link" href="https://github.com/terraform-provider-openstack/terraform-provider-openstack/issues/267" target="_blank" rel="noopener"
+>https://github.com/terraform-provider-openstack/terraform-provider-openstack/issues/267&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>&lt;a class="link" href="https://askubuntu.com/questions/395212/why-environment-variable-disappears-after-terminal-reopen" target="_blank" rel="noopener"
+>https://askubuntu.com/questions/395212/why-environment-variable-disappears-after-terminal-reopen&lt;/a>&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>서버 구축기 - 3. 쿠버네티스에서 대시보드 접속하기 그리고 운영의 문제점</title><link>https://s0okju.github.io/p/server-access-dashboard-and-management-problems/</link><pubDate>Tue, 16 Jul 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/server-access-dashboard-and-management-problems/</guid><description>&lt;h2 id="서버-상태">서버 상태
+&lt;/h2>&lt;p>지금까지 Multipass 를 활용하여 쿠버네티스 환경을 만들고, 실제로 적용하는 과정을 거쳤다.
+현재 3개의 노드로 구성되어 있으며, nfs, mysql, mongo와 같이 데이터베이스가 있는 인스턴스는 nfs, 젠킨스 서버는 ops 인스턴스에 저장했다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img1.png"
+width="524"
+height="230"
+srcset="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img1_hu_26908dd3d6ecf74a.png 480w, https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img1_hu_67bcad73e4eaad12.png 1024w"
+loading="lazy"
+alt="multipass instance list"
+class="gallery-image"
+data-flex-grow="227"
+data-flex-basis="546px"
+>&lt;/p>
+&lt;p>왜 데이터베이스를 쿠버네티스의 statefulset으로 정의하지 않고 별도로 설치했는지 궁금할 것이다. 이유는 최대한 클라우드 스토리지처럼 구현하고 싶어서였다.&lt;/p>
+&lt;h2 id="대시보드-확인하기">대시보드 확인하기
+&lt;/h2>&lt;p>일단 쿠버네티스 내에서는 외부와 통신할 수 있는 기능은 크게 두 가지이다.&lt;/p>
+&lt;ul>
+&lt;li>Ingress&lt;/li>
+&lt;li>Nodeport&lt;/li>
+&lt;/ul>
+&lt;p>일단 사설 네트워크 내에서만 사용할 예정이므로 Nodeport 방식을 사용하도록 하겠다.&lt;/p>
+&lt;h3 id="예제---grafana-ui-확인하기">예제 - Grafana ui 확인하기
+&lt;/h3>&lt;p>예로 프로메테우스를 사용한다고 가정해보자. grafana 대시보드에 접근할 필요성이 있을 것이다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img2.png"
+width="655"
+height="364"
+srcset="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img2_hu_69efd821fe2ac60.png 480w, https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img2_hu_c38414d8f217fa40.png 1024w"
+loading="lazy"
+alt="server 구성도1"
+class="gallery-image"
+data-flex-grow="179"
+data-flex-basis="431px"
+>&lt;/p>
+&lt;p>grafana ui와 관련된 애플리케이션의 service type를 nodeport로 변경해준 후에 Host server(192.168.50.27)에 방화벽을 설정하면 192.168.50.27 주소로 Grafana ui에 접근할 수 있다.
+그러나 문제도 존재한다. 서버에 문제가 생기면 재배포하게 되는데, 쿠버네티스 스케줄러에 따라서 다른 노드에 배치될 수 있다. 이럴 경우 배치된 노드를 확인해가며 기존의 방화벽을 닫고, 새로운 방화벽을 열어줘야 한다.&lt;/p>
+&lt;p>쿠버네티스에서는 여러 스케줄링 방식이 있는데&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>, 그 중 간단한 &lt;code>nodeSelector&lt;/code> 로 node1에 강제 배치하여 정적으로 사용할 수 있도록 구성했다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img3.png"
+width="719"
+height="364"
+srcset="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img3_hu_1e27687eea6d08ff.png 480w, https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img3_hu_f4bd46c1e4b925f1.png 1024w"
+loading="lazy"
+alt="server 구성도2"
+class="gallery-image"
+data-flex-grow="197"
+data-flex-basis="474px"
+>&lt;/p>
+&lt;h4 id="nodeselector-설정">nodeSelector 설정
+&lt;/h4>&lt;p>node1에 label를 type=ui로 설정한다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">kubectl label nodes node1 &lt;span class="nv">type&lt;/span>&lt;span class="o">=&lt;/span>ui
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img4.png"
+width="473"
+height="168"
+srcset="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img4_hu_11d50e412be20e9b.png 480w, https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img4_hu_33efe596538f6b0a.png 1024w"
+loading="lazy"
+alt="kubectl describe node1"
+class="gallery-image"
+data-flex-grow="281"
+data-flex-basis="675px"
+>&lt;/p>
+&lt;h4 id="grafana-ui-service-type-변경">grafana ui service type 변경
+&lt;/h4>&lt;p>Prometheus, Grafana의 원활한 설치를 위해 &lt;a class="link" href="https://github.com/prometheus-operator/kube-prometheus" target="_blank" rel="noopener"
+>kube-prometheus helm&lt;/a>을 사용했다. helm 차트의 특성상 values.yaml를 설정하여 값을 주입하므로 &lt;strong>values.yaml&lt;/strong> 를 확인해야 한다.
+kube-prometheus helm 차트는 여러 helm 차트로 구성되어 있어, 설정하고 싶은 서비스의 &lt;strong>values.yaml&lt;/strong>를 설정하면 된다.&lt;/p>
+&lt;p>&lt;code>kube-prometheus-stack/charts/grafana/values.yaml&lt;/code> 파일에 대략 216번째 줄에 아래와 같은 서비스 타입을 Nodeport로 변경한다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="c">## Expose the grafana service to be accessed from outside the cluster (LoadBalancer service).&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="c">## or access it from within the cluster (ClusterIP service). Set the service type and the port to serve it.&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="c">## ref: http://kubernetes.io/docs/user-guide/services/&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="c">##&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">service&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">enabled&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="kc">true&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="c"># type: ClusterIP&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">type&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">NodePort&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># Custom&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">loadBalancerIP&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">loadBalancerClass&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="s2">&amp;#34;&amp;#34;&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">loadBalancerSourceRanges&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">[]&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">port&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="m">80&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">targetPort&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="m">3000&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">nodePort&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="m">30060&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="c"># Custom&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="helm-nodeselector-설정">helm nodeSelector 설정
+&lt;/h4>&lt;p>&lt;code>kube-prometheus-stack/charts/grafana/values.yaml&lt;/code> 의 314번째 줄에 node1에 배치되도록 설정했다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="c">## Node labels for pod assignment&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="c">## ref: https://kubernetes.io/docs/user-guide/node-selection/&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="c">#&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">nodeSelector&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">type&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">ui&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>helm으로 배포한 후 pod 리스트를 보면 &lt;strong>{helm으로 배포한 이름}-grafana-{문자열}&lt;/strong> 보이는데, 파드 내부에는 grafana와 관련된 컨테이너가 포함되어 있다. 즉, 우리가 찾던 ui도 grafana pod 내부에 있다는 것이다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img5.png"
+width="679"
+height="47"
+srcset="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img5_hu_1d5ab7067ca24a5.png 480w, https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img5_hu_477443e31f75a88.png 1024w"
+loading="lazy"
+alt="grafana pod"
+class="gallery-image"
+data-flex-grow="1444"
+data-flex-basis="3467px"
+>&lt;/p>
+&lt;p>grafana 파드의 정보를 보면 nodeSelector가 정상적으로 적용되었음을 알 수 있다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img6.png"
+width="1012"
+height="84"
+srcset="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img6_hu_4daa00ed4f52643a.png 480w, https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img6_hu_bfd4bd677bace9ff.png 1024w"
+loading="lazy"
+alt="grafana pod nodeSelector 확인"
+class="gallery-image"
+data-flex-grow="1204"
+data-flex-basis="2891px"
+>&lt;/p>
+&lt;h4 id="방화벽-설정">방화벽 설정
+&lt;/h4>&lt;p>node1 인스턴스의 nodeport(30060)에 트래픽이 들어올 수 있도록 허용한다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sudo iptables -t nat -I PREROUTING -i enp3s0 -p tcp --dport &lt;span class="m">30060&lt;/span> -j DNAT --to-destination 10.120.52.23:30060
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo iptables -I FORWARD &lt;span class="m">1&lt;/span> -p tcp -d 10.120.52.23 --dport &lt;span class="m">30060&lt;/span> -j ACCEPT
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;ol>
+&lt;li>30060 포트로 enp3s0 인터페이스에 들어오는 트래픽을 10.120.52.23:30060로 리다이렉션한다.&lt;/li>
+&lt;li>10.120.52.23:30060에 접속하는 트래픽을 허용한다.&lt;/li>
+&lt;/ol>
+&lt;p>서버의 IP로 접속하면 그라파나 대시보드를 확인할 수 있다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img7.png"
+width="1008"
+height="738"
+srcset="https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img7_hu_a2bc3e92cabc4f56.png 480w, https://s0okju.github.io/p/server-access-dashboard-and-management-problems/img7_hu_4b00befe13cbf46f.png 1024w"
+loading="lazy"
+alt="grafana dashboard 접속하기"
+class="gallery-image"
+data-flex-grow="136"
+data-flex-basis="327px"
+>&lt;/p>
+&lt;h2 id="문제점">문제점
+&lt;/h2>&lt;p>Multipass로 인스턴스를 만들고, 외부와의 접속을 위해 트래픽을 제어하는 것은 문제점이 있다.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>외부와의 접속을 할때마다 iptable를 설정해야 한다.&lt;/p>
+&lt;ul>
+&lt;li>서버가 shutdown이 될 경우 이전에 설정했던 iptables rule이 사라진다. 이럴 경우 규칙을 다시 설정하거나, 이를 대비해서 별도의 패키지를 설치해서 iptables이 영속성이 있도록 설정&lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>해야 한다.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>인스턴스가 많으면 많을수록 관리하기 어렵다.&lt;/p>
+&lt;ul>
+&lt;li>쿠버네티스 이외에도 다양한 인스턴스가 있지만 일리리 명령어로 상태를 확인하고, 설정하는 것은 번거롭다. 그러므로 &lt;strong>오케스트레이션 도구가 필요&lt;/strong>했다.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;p>위의 해결책으로 &lt;a class="link" href="https://www.openstack.org/software/project-navigator/openstack-components#openstack-services" target="_blank" rel="noopener"
+>OpenStack&lt;/a> 서버를 구축하고자 한다. 인스턴스를 public cloud 처럼 자유자재로 생성 및 삭제할 수 있으며, 네트워크 설정이 용이했다. 또한 클라우드에 사용되는 기술을 대부분 활용할 수 있어 클라우드를 알아가는데 좋은 도구라고 생각했다.&lt;/p>
+&lt;p>다음 포스팅은 기존의 서버를 포맷시키고, openstack 서버 구축기로 찾아오겠다.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://kubernetes.io/ko/docs/tasks/configure-pod-container/assign-pods-nodes/" target="_blank" rel="noopener"
+>https://kubernetes.io/ko/docs/tasks/configure-pod-container/assign-pods-nodes/&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a class="link" href="https://unix.stackexchange.com/questions/52376/why-do-iptables-rules-disappear-when-restarting-my-debian-system" target="_blank" rel="noopener"
+>https://unix.stackexchange.com/questions/52376/why-do-iptables-rules-disappear-when-restarting-my-debian-system&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>서버 구축기 - 2. Multipass를 활용한 NFS 구성</title><link>https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/</link><pubDate>Sun, 14 Jul 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/</guid><description>&lt;h2 id="들어가며">들어가며
+&lt;/h2>&lt;p>쿠버네티스에서 유상태 애플리케이션을 실행할때 주로 PV, PVC를 활용해서 데이터를 저장한다. 위치에 따라 내부, 외부 저장 유무를 결정하는데, 내부적으로 저장하는 것은 접근성도 떨어질 뿐만 아니라 노드를 운용하는데 비효율적이라고 판단했다. 외부적인 방안은 네트워크를 통한 데이터 저장이다.&lt;/p>
+&lt;p>그렇다면 &lt;strong>온프로미스 환경에서 네트워크로 통신하여 저장할 수 있는 방법이 있을까?&lt;/strong> 직접 쿠버네티스 환경에 구축하여 적용하고자 한다.&lt;/p>
+&lt;h2 id="nfsnetwork-file-system">NFS(Network File System)
+&lt;/h2>&lt;p>네트워크에 파일을 저장하는 방식이다. 즉, 원격 컴퓨터에 있는 파일 및 디렉토리에 엑세스하고, 해당 파일 디렉토리가 로컬에 있는 것처럼 사용하는 분산 파일 시스템이다.&lt;/p>
+&lt;blockquote>
+&lt;p>파일 시스템 중에 ZFS가 있다. 중간에 두 개의 개념이 혼용돼서 NFS에 ZFS 파일 시스템을 설치했다. 그리고 다시 포맷팅했다..
+자세히 알고 싶으면 &lt;a class="link" href="https://toss.tech/article/engineering-note-8" target="_blank" rel="noopener"
+>토스 블로그, OpenZFS로 성능과 비용, 두 마리 토끼 잡기&lt;/a> 참고하길 바란다.&lt;/p>&lt;/blockquote>
+&lt;h2 id="용량-부족-문제">용량 부족 문제
+&lt;/h2>&lt;p>유상태 애플리케이션은 무엇이 있을까? 대부분 데이터베이스를 꼽을 것이다. 데이터베이스는 생각보다 큰 용량을 차지한다. 자체 서버는 SSD 1TB용량을 가지고 있다. 그러나 4개의 노드 인스턴스와 시스템 데이터, 미래에 추가할 인스턴스까지 더하면 많은 용량이 요구된다. 개인적으로 SSD라는 비싼 저장소를 단순 데이터 보관용으로 사용하기에는 많이 아깝다고 생각했다.&lt;/p>
+&lt;p>다행히 DAS와 4TB HDD가 있었다. SSD에는 시스템에 활용될 데이터를 저장하고, 그 외의 데이터는 DAS에 저장하도록 구성하려고 한다.&lt;/p>
+&lt;h2 id="구성">구성
+&lt;/h2>&lt;p>가상 환경을 하나 만들어서 NFS 관련 패키지를 설치하고, 각각의 노드가 네트워킹을 통해 접속할 수 있게 구성할 예정이다.&lt;/p>
+&lt;h3 id="구성도">구성도
+&lt;/h3>&lt;p>구성을 간략하게 설명하자면 아래와 같다.&lt;/p>
+&lt;ol>
+&lt;li>NFS 서버 전용 가상 머신을 만든다.&lt;/li>
+&lt;li>Host 서버에 DAS를 마운팅하고, NFS Server 인스턴스에 host에 마운팅된 경로를 다시 마운트한다.&lt;/li>
+&lt;/ol>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img1.png"
+width="1153"
+height="917"
+srcset="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img1_hu_4f5e076430a1b681.png 480w, https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img1_hu_a9defccfd292535d.png 1024w"
+loading="lazy"
+alt="서버 구성도"
+class="gallery-image"
+data-flex-grow="125"
+data-flex-basis="301px"
+>&lt;/p>
+&lt;h2 id="환경-설정하기">환경 설정하기
+&lt;/h2>&lt;h3 id="disk-format">Disk Format
+&lt;/h3>&lt;p>DAS에 있는 HDD는 4TB로 1TB, 1TB, 1.8TB로 파티셔닝했다.&lt;/p>
+&lt;blockquote>
+&lt;p>디스크 포맷 및 파티셔닝은 &lt;a class="link" href="https://zero-gravity.tistory.com/297" target="_blank" rel="noopener"
+>무중력 인간님의 블로그&lt;/a>를 참고하자.&lt;/p>&lt;/blockquote>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img2.png"
+width="673"
+height="98"
+srcset="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img2_hu_f6d472c1915d046e.png 480w, https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img2_hu_cd241824df23d7c2.png 1024w"
+loading="lazy"
+alt="파티션 정보"
+class="gallery-image"
+data-flex-grow="686"
+data-flex-basis="1648px"
+>&lt;/p>
+&lt;p>부팅될때마다 자동 마운팅이 될 수 있도록 &lt;a class="link" href="https://guide.ncloud-docs.com/docs/server-ts-fstab-vpc" target="_blank" rel="noopener"
+>fstab 파일을 수정&lt;/a>했다.&lt;/p>
+&lt;h3 id="문제1-uuid가-없는-경우">문제1. UUID가 없는 경우
+&lt;/h3>&lt;p>ext4로 포맷이 안된경우 PARTITION UUID만 있다. 그러므로 &lt;code>mkfs.ext4&lt;/code> 를 활용하여 ext4를 포맷시키자.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img3.png"
+width="577"
+height="212"
+srcset="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img3_hu_fdf3c3eaa542e4b3.png 480w, https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img3_hu_d2211c90a3af10aa.png 1024w"
+loading="lazy"
+alt="ext4 포맷이 완전히 안된 경우"
+class="gallery-image"
+data-flex-grow="272"
+data-flex-basis="653px"
+>&lt;/p>
+&lt;h3 id="문제-2-emergency-mode">문제 2. Emergency Mode
+&lt;/h3>&lt;p>fsatab를 잘못 설정하면 Linux는 최소한의 권한만 제공하는 emergency mode로 도입하게 된다. fstab 파일을 적절하게 기입하자.&lt;/p>
+&lt;h2 id="nfs-설치하기">NFS 설치하기
+&lt;/h2>&lt;h3 id="nfs-multipass-mounting">NFS Multipass mounting
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">multipass mount /mnt/das/vol1 nfs:/nfs/vol1
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img4.png"
+width="431"
+height="235"
+srcset="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img4_hu_2dd8060bcbfc8d60.png 480w, https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img4_hu_3e557e4bf878d913.png 1024w"
+loading="lazy"
+alt="nfs multipass 정보"
+class="gallery-image"
+data-flex-grow="183"
+data-flex-basis="440px"
+>&lt;/p>
+&lt;h3 id="nfs-server-설치">NFS Server 설치
+&lt;/h3>&lt;p>NFS multipass Instance 내에 NFS 서버 라이브러리를 설치하자. 설정은 &lt;a class="link" href="https://heartsavior.medium.com/%ED%98%B8%EC%8A%A4%ED%8A%B8-%EC%84%9C%EB%B2%84-ubuntu-20-04-%EC%97%90-nfs-%EB%A5%BC-%EC%84%A4%EC%A0%95%ED%95%98%EA%B3%A0-spark-on-kubernetes-%EC%97%90%EC%84%9C-%EB%8F%99%EC%A0%81%EC%9C%BC%EB%A1%9C-%EB%B3%BC%EB%A5%A8%EC%9D%84-%ED%95%A0%EB%8B%B9%EB%B0%9B%EA%B8%B0-6c80bc71e6ed" target="_blank" rel="noopener"
+>Jung-taek Lim님의 블로그&lt;/a>를 참고했다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sudo apt-get install nfs-common nfs-kernel-server rpcbind portmap
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">systemctl &lt;span class="nb">enable&lt;/span> nfs-kernel-server
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">systemctl start nfs-kernel-server
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>네트워크 범위를 10.120.52.0/24로 지정했는데, 이는 multipass instance가 &lt;code>10.120.52.0/24&lt;/code> 범위 내에 있기 때문이다.&lt;/p>
+&lt;p>mulitpass에서 사용되는 네트워크 드라이브를 보면 qemu를 사용한다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img6.png"
+width="415"
+height="47"
+srcset="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img6_hu_57abf956a8cddf30.png 480w, https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img6_hu_6d83b1742a784f6b.png 1024w"
+loading="lazy"
+alt="multipass driver 확인"
+class="gallery-image"
+data-flex-grow="882"
+data-flex-basis="2119px"
+>&lt;/p>
+&lt;p>네트워크 인터페이스를 보면 사용가능한 IP 범위는 &lt;code>10.120.52.0/24&lt;/code> 임을 알 수 있다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img7.png"
+width="627"
+height="161"
+srcset="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img7_hu_7886d31d3e600245.png 480w, https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img7_hu_803e59ea62f087b1.png 1024w"
+loading="lazy"
+alt="Network Interface 확인"
+class="gallery-image"
+data-flex-grow="389"
+data-flex-basis="934px"
+>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">sudo mkdir -p /nfs/vol1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo chown nobody:nogroup /nfs/vol1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># nfs가 공유할 수 있는 네트워크 설정&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo vim /etc/exports/nfs/vol1 10.120.52.0/24&lt;span class="o">(&lt;/span>rw,sync,no_subtree_check,no_root_squash&lt;span class="o">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># 위의 설정 반영&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">sudo exportfs -r
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>마스터 노드에 showmount하여 NFS가 제대로 작동되었는지 확인했을때 아래와 같이 export list가 잘 보여지면 된다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img8.png"
+width="533"
+height="68"
+srcset="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img8_hu_7b65f564bbd46654.png 480w, https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img8_hu_975226d256c93c6c.png 1024w"
+loading="lazy"
+alt="Show mount 정보"
+class="gallery-image"
+data-flex-grow="783"
+data-flex-basis="1881px"
+>&lt;/p>
+&lt;h2 id="dynamic-provisioner">Dynamic Provisioner
+&lt;/h2>&lt;p>쿠버네티스에서 스토리지를 사용하는 방식을 생각해보자. 전역적인 데이터 스토리지에 접근하기 위해서는 [[D K8S- Pod|Pod]]를 생성할때 PVC를 생성하여, 관리자가 생성한 PV와 연결하게 된다. 그러나 파드를 생성할때마다 PV, PVC를 만들어서 스토리지에 접근해야 한다. 이와 같이 번거로움을 해결하고자 자동으로 볼륨을 생성해주는 Dynamic Provisioner를 사용하게 된다.&lt;/p>
+&lt;p>Provisioner는 &lt;a class="link" href="https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner#with-helm" target="_blank" rel="noopener"
+>kubernetes-sigs Github에 있는 nfs-subdir-external-provisioner&lt;/a>를 사용했다.&lt;/p>
+&lt;p>위의 파일을 적절하게 설정하게 test를 실행시키면, 아래와 같이 pvc가 만들어지게 된다. 또한 파드를 삭제하게 되면 자동으로 pvc가 삭제되는 것을 볼 수 있다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img9.png"
+width="958"
+height="154"
+srcset="https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img9_hu_f0518911e66c1ff.png 480w, https://s0okju.github.io/p/server-setup-nfs-in-multipass-instance/img9_hu_16bf5558f02f00f6.png 1024w"
+loading="lazy"
+alt="DAS에 저장된 데이터 확인"
+class="gallery-image"
+data-flex-grow="622"
+data-flex-basis="1492px"
+>&lt;/p>
+&lt;h2 id="참고">참고
+&lt;/h2>&lt;ul>
+&lt;li>&lt;a class="link" href="https://gruuuuu.github.io/cloud/k8s-volume/" target="_blank" rel="noopener"
+>https://gruuuuu.github.io/cloud/k8s-volume/&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://do-hansung.tistory.com/57" target="_blank" rel="noopener"
+>https://do-hansung.tistory.com/57&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://1week.tistory.com/114" target="_blank" rel="noopener"
+>https://1week.tistory.com/114&lt;/a>&lt;/li>
+&lt;/ul></description></item><item><title>서버 구축기 - 1. 쿠버네티스 멀티 노드 환경 구성하기</title><link>https://s0okju.github.io/p/server-setup-multinode-kubernetes/</link><pubDate>Fri, 12 Jul 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/server-setup-multinode-kubernetes/</guid><description>&lt;p>사이드 프로젝트를 직접 운영하기 위해 서버를 구축하기로 결심했다. 그래서 기존에 있는 Windows 데스크톱을 ubuntu 20.04 서버 환경으로 세팅했다.&lt;/p>
+&lt;h2 id="rtl8125-오류">RTL8125 오류
+&lt;/h2>&lt;p>여기서 문제가 발생했다. LAN 카드 정보 확인 결과, 네트워크 인터페이스가 제대로 인식되지 않았던 것이었다. 랜카드가 RTL8125의 경우에는 별도의 드라이버 설치가 필요했다. 하나의 모순이 생겼다. 우리가 패키지를 설치할때는 네트워크 연결이 필수지만, 네트워크에 문제가 생겨 외부 패키지를 다운받을 수 없던 것이었다.
+물론 해결책이 없던 것이 아니였다.&lt;/p>
+&lt;ul>
+&lt;li>안드로이드 폰을 이용해 tethering해서 네트워크 연결을 시키고 해당 라이브러리를 설치&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>&lt;/li>
+&lt;li>20.04 은 커널 버전을 5.4를 쓰는데 이 버전에서 LAN이 인식이 안돼 5.8 이상 버전을 설치 &lt;sup id="fnref:2">&lt;a href="#fn:2" class="footnote-ref" role="doc-noteref">2&lt;/a>&lt;/sup>&lt;/li>
+&lt;/ul>
+&lt;p>슬프게도 나는 두 방법에 실패하게 되었고 &lt;strong>22.04LTS를 설치&lt;/strong>하게 되었다. 그리고 깔끔하게 성공했다.&lt;/p>
+&lt;h2 id="구축">구축
+&lt;/h2>&lt;p>쿠버네티스의 구축 자체는 생각보다 간단하지만 상업 환경에서 안전하고 가용성 있게 지속적으로 관리하는 것은 어렵다. 그래서 자체 호스팅하는 것은 권장하지 않는다고 한다. &lt;sup id="fnref:3">&lt;a href="#fn:3" class="footnote-ref" role="doc-noteref">3&lt;/a>&lt;/sup>&lt;/p>
+&lt;p>그러나 교육의 관점에서는 자체 호스팅해서 사용하는 것은 좋은 선택이라고 생각한다. 퍼블릭 클라우드를 사용하다가 요금을 폭탄맞을 수 있기 때문이다.&lt;/p>
+&lt;h3 id="multipass-선택한-이유">Multipass 선택한 이유
+&lt;/h3>&lt;p>리눅스 기반 가상 머신은 선택지가 생각보다 다양하게 있다. 나는 vagrant, multipass 중에서 고민했다. Multipass를 선택한 이유는 사용하기 쉬워서이다.&lt;/p>
+&lt;p>vagrant의 장점은 다양한 이미지를 사용할 수 있다는 점과 Vagrantfile를 통해 자동화 스크립트를 만들 수 있다는 점이었다. 하지만 단점이 존재했는데, 스크립트를 짜는 법을 알아야한다는 점과 내가 쿠버네티스 구축하는 전반적인 방식을 이해하지 못해 디버깅 하지 못한다는 것이었다. 실제로 깃허브의 오픈소스를 clone해서 구성해봤는데, 네트워크 할당이 제대로 되지 않아 많은 시간을 쓰기도 했다.&lt;/p>
+&lt;p>multipass는 Canonical에서 만들었으며 Ubuntu의 가상화환경(VM)을 쉽게 구성할 수 있도록 해주는 도구&lt;sup id="fnref:4">&lt;a href="#fn:4" class="footnote-ref" role="doc-noteref">4&lt;/a>&lt;/sup>이다. 즉 우분투 보급사가 만든 가상환경이라고 보면 된다. 우분투 외의 리눅스를 써야한다면 multipass는 좋은 선택지는 아니지만 centOS Linux가 더이상 지원되지 않는다는 점&lt;sup id="fnref:5">&lt;a href="#fn:5" class="footnote-ref" role="doc-noteref">5&lt;/a>&lt;/sup>에서 쓸 수 있는 건 우분투 밖에 없는 것 같다.&lt;/p>
+&lt;h3 id="쿠베네티스-구성">쿠베네티스 구성
+&lt;/h3>&lt;p>자세한 설치는 &lt;a class="link" href="https://enumclass.tistory.com/261" target="_blank" rel="noopener"
+>enumclass tistory&lt;/a>를 참고했다.&lt;/p>
+&lt;h3 id="calico-선택한-이유">Calico 선택한 이유
+&lt;/h3>&lt;p>CNI 플러그인에서 가장 대중적으로 쓰이는 것은 &lt;a class="link" href="https://docs.tigera.io/calico/latest/getting-started/kubernetes/quickstart" target="_blank" rel="noopener"
+>Calico&lt;/a>이다. CNI 플러그인 벤치마크를 보면 리소스 사용률이나, 속도 측면에서 Calico가 우수한 편이다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-multinode-kubernetes/img1.png"
+width="1920"
+height="521"
+srcset="https://s0okju.github.io/p/server-setup-multinode-kubernetes/img1_hu_c39ce88bace82fc6.png 480w, https://s0okju.github.io/p/server-setup-multinode-kubernetes/img1_hu_e4c3d9995e2cdda5.png 1024w"
+loading="lazy"
+alt="출처 - https://itnext.io/benchmark-results-of-kubernetes-network-plugins-cni-over-10gbit-s-network-updated-august-2020-6e1b757b9e49"
+class="gallery-image"
+data-flex-grow="368"
+data-flex-basis="884px"
+>&lt;/p>
+&lt;p>CNI의 특징은 Pod에 IP를 할당한다. 이러한 특징이 대규모 환경에서는 IP 부족으로 이어질 수 있다. &lt;sup id="fnref:6">&lt;a href="#fn:6" class="footnote-ref" role="doc-noteref">6&lt;/a>&lt;/sup> 그러나 소규모 프로젝트는 많은 pod를 생성하지 않으므로 IP는 부족하지 않을 것이다.&lt;/p>
+&lt;h2 id="결과">결과
+&lt;/h2>&lt;p>10.120.52.x IP는 multipass instance의 IP이고, 192.168.x.x는 calico의 IP이다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-multinode-kubernetes/img2.png"
+width="705"
+height="192"
+srcset="https://s0okju.github.io/p/server-setup-multinode-kubernetes/img2_hu_156a281ea8b2dfb3.png 480w, https://s0okju.github.io/p/server-setup-multinode-kubernetes/img2_hu_171765a0309d4d10.png 1024w"
+loading="lazy"
+alt="Multipass Instance IP"
+class="gallery-image"
+data-flex-grow="367"
+data-flex-basis="881px"
+>&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-multinode-kubernetes/img3.png"
+width="1213"
+height="960"
+srcset="https://s0okju.github.io/p/server-setup-multinode-kubernetes/img3_hu_57f39bcc386db3ad.png 480w, https://s0okju.github.io/p/server-setup-multinode-kubernetes/img3_hu_cbd0b6b91efb4ddc.png 1024w"
+loading="lazy"
+alt="쿠버네티스 구성도"
+class="gallery-image"
+data-flex-grow="126"
+data-flex-basis="303px"
+>&lt;/p>
+&lt;p>실제로 파드를 생성해 실행시켜 보면 아래와 같은 결과를 얻을 수 있다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-setup-multinode-kubernetes/img4.png"
+width="856"
+height="643"
+srcset="https://s0okju.github.io/p/server-setup-multinode-kubernetes/img4_hu_1fa5215ed6faa70.png 480w, https://s0okju.github.io/p/server-setup-multinode-kubernetes/img4_hu_65cf92db79dd599d.png 1024w"
+loading="lazy"
+alt="nginx 파드 생성 결과"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="319px"
+>&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://physical-world.tistory.com/56" target="_blank" rel="noopener"
+>https://physical-world.tistory.com/56&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:2">
+&lt;p>&lt;a class="link" href="https://romillion.tistory.com/96" target="_blank" rel="noopener"
+>https://romillion.tistory.com/96&lt;/a>&amp;#160;&lt;a href="#fnref:2" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:3">
+&lt;p>쿠버네티스를 활용한 클라우드 네이티브 데브옵스, 존 어렌들, 저스틴 도밍거스 지음, 한빛 미디어&amp;#160;&lt;a href="#fnref:3" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:4">
+&lt;p>&lt;a class="link" href="https://kim-dragon.tistory.com/176" target="_blank" rel="noopener"
+>https://kim-dragon.tistory.com/176&lt;/a>&amp;#160;&lt;a href="#fnref:4" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:5">
+&lt;p>&lt;a class="link" href="https://arstechnica.com/gadgets/2020/12/centos-shifts-from-red-hat-unbranded-to-red-hat-beta/" target="_blank" rel="noopener"
+>https://arstechnica.com/gadgets/2020/12/centos-shifts-from-red-hat-unbranded-to-red-hat-beta/&lt;/a>&amp;#160;&lt;a href="#fnref:5" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;li id="fn:6">
+&lt;p>&lt;a class="link" href="https://dobby-isfree.tistory.com/201" target="_blank" rel="noopener"
+>https://dobby-isfree.tistory.com/201&lt;/a>&amp;#160;&lt;a href="#fnref:6" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item><item><title>그 많은 서버 디스크 용량을 누가 잡아 먹었는가?</title><link>https://s0okju.github.io/p/server-management-disk-1/</link><pubDate>Tue, 28 May 2024 00:00:00 +0900</pubDate><guid>https://s0okju.github.io/p/server-management-disk-1/</guid><description>&lt;p>Multipass를 구동하려고 하는 중 디스크 용량이 꽉찼다는 메세지를 얻게 되었다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">cannot create temporary directory for the root file system: No space left on device
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>서버에서 사용중인 SSD는 1TB인데 5개의 Multipass 인스턴스로 다 찬다는 것은 말이 되지 않았다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-management-disk-1/img1.png"
+width="752"
+height="206"
+srcset="https://s0okju.github.io/p/server-management-disk-1/img1_hu_bfddb805cd3a384e.png 480w, https://s0okju.github.io/p/server-management-disk-1/img1_hu_3df0d2e23adb097b.png 1024w"
+loading="lazy"
+alt="df -h 결과"
+class="gallery-image"
+data-flex-grow="365"
+data-flex-basis="876px"
+>&lt;/p>
+&lt;p>실제 하드웨어 상에서 부착된 용량과 ubuntu lvm에서 사용되는 최대 용량이 달랐다. 그러므로 이 용량을 적절하게 조절해야 한다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-management-disk-1/img2.png"
+width="690"
+height="115"
+srcset="https://s0okju.github.io/p/server-management-disk-1/img2_hu_7a8a582ccd866cae.png 480w, https://s0okju.github.io/p/server-management-disk-1/img2_hu_150efb3957288be.png 1024w"
+loading="lazy"
+alt="lsblk 결과"
+class="gallery-image"
+data-flex-grow="600"
+data-flex-basis="1440px"
+>&lt;/p>
+&lt;h2 id="해결">해결
+&lt;/h2>&lt;p>LV의 용량을 VG의 크기만큼 조절한다. &lt;a class="link" href="https://askubuntu.com/questions/1106795/ubuntu-server-18-04-lvm-out-of-space-with-improper-default-partitioning" target="_blank" rel="noopener"
+>Stack Exchange&lt;/a>에서 요구한대로 명령어를 사용하면 해결된다.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">lvm
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lvm&amp;gt; lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">lvm&amp;gt; &lt;span class="nb">exit&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">resize2fs /dev/ubuntu-vg/ubuntu-lv
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>자세하게 봐보자. ubuntu-vg는 SSD의 용량만큼 적절하게 할당 받았다. 그러나 Alloc PE를 보면 100 GB 밖에 남지 않았다는 것을 알 수 있다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-management-disk-1/img3.png"
+width="640"
+height="466"
+srcset="https://s0okju.github.io/p/server-management-disk-1/img3_hu_d8be1a9972764812.png 480w, https://s0okju.github.io/p/server-management-disk-1/img3_hu_593cde591a0a8c2b.png 1024w"
+loading="lazy"
+alt="vgdisplay 결과"
+class="gallery-image"
+data-flex-grow="137"
+data-flex-basis="329px"
+>&lt;/p>
+&lt;p>&lt;code>lvdisplay&lt;/code>로 lv를 확인해보면 ubuntu-lv가 100GB로 할당되었음을 확인할 수 있다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-management-disk-1/img4.png"
+width="406"
+height="50"
+srcset="https://s0okju.github.io/p/server-management-disk-1/img4_hu_9fae2dac11c10c6c.png 480w, https://s0okju.github.io/p/server-management-disk-1/img4_hu_e6eaa65ee67de668.png 1024w"
+loading="lazy"
+alt="lvdisplay 결과"
+class="gallery-image"
+data-flex-grow="812"
+data-flex-basis="1948px"
+>&lt;/p>
+&lt;p>여기서 LVM(Logical Volume Manager)의 개념을 알아야 하는데, 파일 시스템에 추상화 계층을 추가하여 논리적 스토리지를 생성할 수 있게 해준다.&lt;sup id="fnref:1">&lt;a href="#fn:1" class="footnote-ref" role="doc-noteref">1&lt;/a>&lt;/sup>&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-management-disk-1/img5.png"
+width="720"
+height="671"
+srcset="https://s0okju.github.io/p/server-management-disk-1/img5_hu_53fa4e24073d1a81.png 480w, https://s0okju.github.io/p/server-management-disk-1/img5_hu_4f1eb9bac622877f.png 1024w"
+loading="lazy"
+alt="출처 - https://medium.com/@yhakimi/lvm-how-to-create-and-extend-a-logical-volume-in-linux-9744f27eacfe"
+class="gallery-image"
+data-flex-grow="107"
+data-flex-basis="257px"
+>&lt;/p>
+&lt;p>저자의 환경에서는 Root LV가 100GB로만 할당되어 있어, 하드 디스크의 용량 만큼 사용할 수 없었던 것이었다.&lt;/p>
+&lt;p>&lt;img src="https://s0okju.github.io/p/server-management-disk-1/img6.png"
+width="305"
+height="375"
+srcset="https://s0okju.github.io/p/server-management-disk-1/img6_hu_d2fcb7f6eed75cc4.png 480w, https://s0okju.github.io/p/server-management-disk-1/img6_hu_a8511e0bd8cb7e8d.png 1024w"
+loading="lazy"
+alt="VG, LV 관계도"
+class="gallery-image"
+data-flex-grow="81"
+data-flex-basis="195px"
+>&lt;/p>
+&lt;p>현재 환경에서는 하나의 물리 디스크만 사용하기 때문에 설정하는데 복잡한 것은 없다. 그러므로 추가적으로 ubuntu-vg에 lv를 추가하지 않는 한 Root lv를 vg 크기만큼 사이즈를 키우면 된다.&lt;/p>
+&lt;div class="footnotes" role="doc-endnotes">
+&lt;hr>
+&lt;ol>
+&lt;li id="fn:1">
+&lt;p>&lt;a class="link" href="https://tech.cloud.nongshim.co.kr/2018/11/23/lvmlogical-volume-manager-1-%EA%B0%9C%EB%85%90/" target="_blank" rel="noopener"
+>https://tech.cloud.nongshim.co.kr/2018/11/23/lvmlogical-volume-manager-1-%EA%B0%9C%EB%85%90/&lt;/a>&amp;#160;&lt;a href="#fnref:1" class="footnote-backref" role="doc-backlink">&amp;#x21a9;&amp;#xfe0e;&lt;/a>&lt;/p>
+&lt;/li>
+&lt;/ol>
+&lt;/div></description></item></channel></rss>

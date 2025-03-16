@@ -1,0 +1,496 @@
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="Go를 활용하여 직접 2~3개의 서비스를 만들고 나니, 구현할때 지나쳤던 에러들이 큰 눈덩이로 변해서 덮쳐왔다. 문제가 생긴 지점은 명확했지만, 그것보다는 문제 발생의 근본적인 원인을 찾고자 했었다. 내가 생각한 가장 큰 원인은 테스트 코드의 부재였다. 테스트의 장점은 누구나 알고 있을 것이다. 코드의 안전성을 확보할 수 있으며 문제 발생 시 빠르게 수정할 수 있다는 것이다. 현재 코드에는 숨겨진 구멍들이 존재하는데, 이를 해결하기 위해서는 단위 테스트, 통합 테스트가 필요했다. 기존에 있던 코드를 활용하여 테스트 코드로 작성하려고 시도했으나, 지금까지 적은 Go 코드는 테스트를 용이하도록 작성되지 않았다. 특히 인터페이스를 적절하게 사용하지 않아서 Mock를 사용하는데 어려움이 생기기도 했다. 그래서 처음부터 다시 제작하고자 한다.\n"><title>Todopoint 서버코드 개선기 - 1. 공동 에러 처리하기</title>
+<link rel=canonical href=https://s0okju.github.io/p/go-code-refactor-error-1/><link rel=stylesheet href=/scss/style.min.663803bebe609202d5b39d848f2d7c2dc8b598a2d879efa079fa88893d29c49c.css><meta property='og:title' content="Todopoint 서버코드 개선기 -  1. 공동 에러 처리하기"><meta property='og:description' content="Go를 활용하여 직접 2~3개의 서비스를 만들고 나니, 구현할때 지나쳤던 에러들이 큰 눈덩이로 변해서 덮쳐왔다. 문제가 생긴 지점은 명확했지만, 그것보다는 문제 발생의 근본적인 원인을 찾고자 했었다. 내가 생각한 가장 큰 원인은 테스트 코드의 부재였다. 테스트의 장점은 누구나 알고 있을 것이다. 코드의 안전성을 확보할 수 있으며 문제 발생 시 빠르게 수정할 수 있다는 것이다. 현재 코드에는 숨겨진 구멍들이 존재하는데, 이를 해결하기 위해서는 단위 테스트, 통합 테스트가 필요했다. 기존에 있던 코드를 활용하여 테스트 코드로 작성하려고 시도했으나, 지금까지 적은 Go 코드는 테스트를 용이하도록 작성되지 않았다. 특히 인터페이스를 적절하게 사용하지 않아서 Mock를 사용하는데 어려움이 생기기도 했다. 그래서 처음부터 다시 제작하고자 한다.\n"><meta property='og:url' content='https://s0okju.github.io/p/go-code-refactor-error-1/'><meta property='og:site_name' content='S0okJu.dev'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='Go'><meta property='article:tag' content='Gin'><meta property='article:tag' content='Web'><meta property='article:published_time' content='2024-05-11T00:00:00+09:00'><meta property='article:modified_time' content='2024-05-11T00:00:00+09:00'><meta name=twitter:title content="Todopoint 서버코드 개선기 -  1. 공동 에러 처리하기"><meta name=twitter:description content="Go를 활용하여 직접 2~3개의 서비스를 만들고 나니, 구현할때 지나쳤던 에러들이 큰 눈덩이로 변해서 덮쳐왔다. 문제가 생긴 지점은 명확했지만, 그것보다는 문제 발생의 근본적인 원인을 찾고자 했었다. 내가 생각한 가장 큰 원인은 테스트 코드의 부재였다. 테스트의 장점은 누구나 알고 있을 것이다. 코드의 안전성을 확보할 수 있으며 문제 발생 시 빠르게 수정할 수 있다는 것이다. 현재 코드에는 숨겨진 구멍들이 존재하는데, 이를 해결하기 위해서는 단위 테스트, 통합 테스트가 필요했다. 기존에 있던 코드를 활용하여 테스트 코드로 작성하려고 시도했으나, 지금까지 적은 Go 코드는 테스트를 용이하도록 작성되지 않았다. 특히 인터페이스를 적절하게 사용하지 않아서 Mock를 사용하는데 어려움이 생기기도 했다. 그래서 처음부터 다시 제작하고자 한다.\n"><link rel="shortcut icon" href=/favicon.ico></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_c3a763b4e1e1539a.png width=300 height=248 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>👾</span></figure><div class=site-meta><h1 class=site-name><a href=/>S0okJu.dev</a></h1><h2 class=site-description>경험으로 학습합니다.</h2></div></header><ol class=menu-social><li><a href=https://github.com/S0okJu target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+<span>About</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li><a href=/links/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>Links</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><div class=widget-icon><svg class="icon icon-tabler icon-tabler-hash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="11" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="13" y2="20"/></svg></div><h2 class="widget-title section-title">Table of contents</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#초기---go-한달차의-적응기>초기 - Go 한달차의 적응기</a><ol><li><a href=#에러-타입과-상태-타입>에러 타입과 상태 타입</a></li><li><a href=#에러-반환>에러 반환</a></li></ol></li><li><a href=#1차---middleware가-있었다고요>1차 - Middleware가 있었다고요?</a><ol><li><a href=#에러-상태-타입>에러 상태 타입</a></li><li><a href=#에러-타입과-반환>에러 타입과 반환</a></li><li><a href=#성공>성공</a></li></ol></li><li><a href=#2차---프론트엔드를-하고나니>2차 - 프론트엔드를 하고나니&mldr;</a><ol><li><a href=#response-format>Response Format</a></li><li><a href=#에러-상태-타입-1>에러 상태 타입</a></li><li><a href=#에러-타입>에러 타입</a></li><li><a href=#에러-반환-1>에러 반환</a></li></ol></li><li><a href=#테스트>테스트</a></li><li><a href=#마치며>마치며</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><header class=article-category><a href=/categories/todopoint/>TodoPoint</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/go-code-refactor-error-1/>Todopoint 서버코드 개선기 - 1. 공동 에러 처리하기</a></h2></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>May 11, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>7 minute read</time></div></footer></div></header><section class=article-content><p>Go를 활용하여 직접 2~3개의 서비스를 만들고 나니, 구현할때 지나쳤던 에러들이 큰 눈덩이로 변해서 덮쳐왔다.
+문제가 생긴 지점은 명확했지만, 그것보다는 문제 발생의 근본적인 원인을 찾고자 했었다. 내가 생각한 가장 큰 원인은 <strong>테스트 코드의 부재</strong>였다.
+테스트의 장점은 누구나 알고 있을 것이다. 코드의 안전성을 확보할 수 있으며 문제 발생 시 빠르게 수정할 수 있다는 것이다. 현재 코드에는 숨겨진 구멍들이 존재하는데, 이를 해결하기 위해서는 단위 테스트, 통합 테스트가 필요했다.
+기존에 있던 코드를 활용하여 테스트 코드로 작성하려고 시도했으나, 지금까지 적은 Go 코드는 테스트를 용이하도록 작성되지 않았다. 특히 인터페이스를 적절하게 사용하지 않아서 Mock를 사용하는데 어려움이 생기기도 했다.
+그래서 처음부터 다시 제작하고자 한다.</p><p>나는 동일한 코드에 대해 이번까지 포함해서 2번 변경했다. 어떻게 변경했는지 알아보자</p><h2 id=초기---go-한달차의-적응기>초기 - Go 한달차의 적응기</h2><h3 id=에러-타입과-상태-타입>에러 타입과 상태 타입</h3><p>1차에서는 <code>ErrorType</code>으로 특정 에러 타입을 정의하는데 사용할 타입을 지정해줬다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>type</span> <span class=nx>ErrorType</span> <span class=kt>int</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>Error</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Code is a custom error code</span>
+</span></span><span class=line><span class=cl>	<span class=nx>ErrorType</span> <span class=nx>ErrorType</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Err is a error string</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Err</span> <span class=kt>error</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Description is a human-friendly message.</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Description</span> <span class=kt>string</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>ErrorRes</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Code is http status code</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Code</span> <span class=kt>int</span> <span class=s>`json:&#34;code&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>모든 서비스들이 사용할 경우, 각 서비스가 사용할 에러 코드를 일리리 지정했다. map를 활용하여 에러 타입에 해당되는 상태 코드를 매핑했다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>const</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Common</span>
+</span></span><span class=line><span class=cl>	<span class=nx>SUCCESS</span>             <span class=nx>ErrorType</span> <span class=p>=</span> <span class=mi>0</span>
+</span></span><span class=line><span class=cl>	<span class=nx>INVALID_JSON_FORMAT</span> <span class=nx>ErrorType</span> <span class=p>=</span> <span class=mi>1001</span>
+</span></span><span class=line><span class=cl>	<span class=nx>INVALID_URI_FORMAT</span>  <span class=nx>ErrorType</span> <span class=p>=</span> <span class=mi>1002</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// Member</span>
+</span></span><span class=line><span class=cl>	<span class=nx>INVALID_MEMBER</span>  <span class=nx>ErrorType</span> <span class=p>=</span> <span class=mi>2001</span>
+</span></span><span class=line><span class=cl>	<span class=nx>ERROR_MEMBER_DB</span> <span class=nx>ErrorType</span> <span class=p>=</span> <span class=mi>2101</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// Task</span>
+</span></span><span class=line><span class=cl>	<span class=nx>ERROR_TASK_DB</span> <span class=nx>ErrorType</span> <span class=p>=</span> <span class=mi>3101</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>var</span> <span class=nx>codeMap</span> <span class=p>=</span> <span class=kd>map</span><span class=p>[</span><span class=nx>ErrorType</span><span class=p>]</span><span class=kt>int</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=c1>// Common</span>
+</span></span><span class=line><span class=cl>	<span class=nx>INVALID_JSON_FORMAT</span><span class=p>:</span> <span class=nx>http</span><span class=p>.</span><span class=nx>StatusBadRequest</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=nx>INVALID_URI_FORMAT</span><span class=p>:</span>  <span class=nx>http</span><span class=p>.</span><span class=nx>StatusBadRequest</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// Member</span>
+</span></span><span class=line><span class=cl>	<span class=nx>INVALID_MEMBER</span><span class=p>:</span>  <span class=nx>http</span><span class=p>.</span><span class=nx>StatusUnauthorized</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=nx>ERROR_MEMBER_DB</span><span class=p>:</span> <span class=nx>http</span><span class=p>.</span><span class=nx>StatusInternalServerError</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=c1>// Task</span>
+</span></span><span class=line><span class=cl>	<span class=nx>ERROR_TASK_DB</span><span class=p>:</span> <span class=nx>http</span><span class=p>.</span><span class=nx>StatusInternalServerError</span><span class=p>,</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=에러-반환>에러 반환</h3><p>직접 커스텀한 에러값을 입력값으로 해서 context를 활용해 Json 형태로 반환해줬다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// getCode is get Status code from codeMap.</span>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>getCode</span><span class=p>(</span><span class=nx>flag</span> <span class=nx>ErrorType</span><span class=p>)</span> <span class=o>*</span><span class=nx>ErrorRes</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=o>&amp;</span><span class=nx>ErrorRes</span><span class=p>{</span><span class=nx>Code</span><span class=p>:</span> <span class=nx>codeMap</span><span class=p>[</span><span class=nx>flag</span><span class=p>]}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>ErrorFunc</span><span class=p>(</span><span class=nx>ctx</span> <span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>err</span> <span class=o>*</span><span class=nx>Error</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>res</span> <span class=o>:=</span> <span class=nf>getCode</span><span class=p>(</span><span class=nx>err</span><span class=p>.</span><span class=nx>ErrorType</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=nx>log</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=nx>ctx</span><span class=p>.</span><span class=nf>AbortWithStatusJSON</span><span class=p>(</span><span class=nx>res</span><span class=p>.</span><span class=nx>Code</span><span class=p>,</span> <span class=nx>res</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>&ldquo;저렇게 하면 오류가 제대로 반환되지 않을텐데?&ldquo;라고 생각하는 사람이 있을 것이다. 저때 당시 gin이 에러를 응답하는 매커니즘을 잘 몰라 단순하게 AbortWithStatusJson으로 응답하도록 했다. 비록 결과는 에러 json + 성공 json 둘다 나왔지만 말이다.</p><h2 id=1차---middleware가-있었다고요>1차 - Middleware가 있었다고요?</h2><p>gin의 오류 처리 매커니즘을 제대로 이해하지 못해 단순하게 응답을 처리했다. 이제는 Middleware를 제작함으로써 에러 응답 반환이 수월하도록 구현했다.</p><h3 id=에러-상태-타입>에러 상태 타입</h3><p>ErrorType -> WebCode로 이름을 변경했으며, 에러뿐만 아니라 상태 전체를 표시했다.
+여기서 눈치 빠르신 분은 알겠지만 에러 타입에는 상태값을 직접 포함하도록 구현했다. 왜냐하면 상태 코드를 추가할 일이 많은데 작업을 두번해야 하기 때문이다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=nx>TaskCreationSuccess</span>    <span class=nx>WebCode</span> <span class=p>=</span> <span class=mi>220101</span>
+</span></span><span class=line><span class=cl><span class=nx>SubtaskCreationSuccess</span> <span class=nx>WebCode</span> <span class=p>=</span> <span class=mi>220151</span>
+</span></span></code></pre></td></tr></table></div></div><p>예로 220101 이라면 2(Task Service)/201(Status code)/01(Unique number)로 구성하도록 했다.</p><h3 id=에러-타입과-반환>에러 타입과 반환</h3><p>이전에는 에러 타입을 Error라고 정했지만 gin 내부의 에러를 쓰면서 헷갈리기 시작했다. 그래서 NetError로 이름을 변경했으며, Description field는 잘 사용하지 않는 것 같아 삭제했다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>type</span> <span class=nx>NetError</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Code</span> <span class=nx>codes</span><span class=p>.</span><span class=nx>WebCode</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Err</span>  <span class=kt>error</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>NewNetError</span><span class=p>(</span><span class=nx>code</span> <span class=nx>codes</span><span class=p>.</span><span class=nx>WebCode</span><span class=p>,</span> <span class=nx>err</span> <span class=kt>error</span><span class=p>)</span> <span class=o>*</span><span class=nx>NetError</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>logrus</span><span class=p>.</span><span class=nf>Errorf</span><span class=p>(</span><span class=s>&#34;Code : %d, Error : %v&#34;</span><span class=p>,</span> <span class=nx>code</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>       <span class=k>return</span> <span class=o>&amp;</span><span class=nx>NetError</span><span class=p>{</span><span class=nx>Code</span><span class=p>:</span> <span class=nx>code</span><span class=p>,</span> <span class=nx>Err</span><span class=p>:</span> <span class=nx>err</span><span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=o>&amp;</span><span class=nx>NetError</span><span class=p>{</span><span class=nx>Code</span><span class=p>:</span> <span class=nx>code</span><span class=p>,</span> <span class=nx>Err</span><span class=p>:</span> <span class=kc>nil</span><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>에러는 동일하게 code만 반환하도록 구현했다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// Response</span>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>ErrorResponse</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=nx>Code</span> <span class=nx>codes</span><span class=p>.</span><span class=nx>WebCode</span> <span class=s>`json:&#34;codes&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>NewErrorResponse</span><span class=p>(</span><span class=nx>code</span> <span class=nx>codes</span><span class=p>.</span><span class=nx>WebCode</span><span class=p>)</span> <span class=o>*</span><span class=nx>ErrorResponse</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>	<span class=k>return</span> <span class=o>&amp;</span><span class=nx>ErrorResponse</span><span class=p>{</span><span class=nx>Code</span><span class=p>:</span> <span class=nx>code</span><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=성공>성공</h3><p>응답값을 생각해보면 크게 두 가지가 존재한다.</p><ul><li>데이터가 없는 경우</li><li>데이터가 있는 경우</li></ul><p>이 두가지를 나눠서 별도의 함수를 만들었다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>func</span> <span class=nf>SuccessWith</span><span class=p>(</span><span class=nx>ctx</span> <span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>code</span> <span class=nx>codes</span><span class=p>.</span><span class=nx>WebCode</span><span class=p>,</span> <span class=nx>data</span> <span class=kt>any</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>status</span> <span class=o>:=</span> <span class=nx>codes</span><span class=p>.</span><span class=nf>GetStatus</span><span class=p>(</span><span class=nx>code</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>res</span> <span class=o>:=</span> <span class=nf>NewSuccessResponseWith</span><span class=p>(</span><span class=nx>code</span><span class=p>,</span> <span class=nx>data</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>ctx</span><span class=p>.</span><span class=nf>Header</span><span class=p>(</span><span class=s>&#34;Content-Type&#34;</span><span class=p>,</span> <span class=s>&#34;application/json&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>ctx</span><span class=p>.</span><span class=nf>AbortWithStatusJSON</span><span class=p>(</span><span class=nx>status</span><span class=p>,</span> <span class=nx>res</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>Success</span><span class=p>(</span><span class=nx>ctx</span> <span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>code</span> <span class=nx>codes</span><span class=p>.</span><span class=nx>WebCode</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>status</span> <span class=o>:=</span> <span class=nx>codes</span><span class=p>.</span><span class=nf>GetStatus</span><span class=p>(</span><span class=nx>code</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>ctx</span><span class=p>.</span><span class=nf>Header</span><span class=p>(</span><span class=s>&#34;Content-Type&#34;</span><span class=p>,</span> <span class=s>&#34;application/json&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nx>res</span> <span class=o>:=</span> <span class=nf>NewSuccessResponse</span><span class=p>(</span><span class=nx>code</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>ctx</span><span class=p>.</span><span class=nf>JSON</span><span class=p>(</span><span class=nx>status</span><span class=p>,</span> <span class=nx>res</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>에러 반환 로직은 gin Middleware를 사용했다. 자세한 사항은 [[Gin - 예외처리 2. 커스텀 예외처리 구현하기]] 를 참고하길 바란다.</p><h2 id=2차---프론트엔드를-하고나니>2차 - 프론트엔드를 하고나니&mldr;</h2><p>왜 백엔드와 프론트엔드가 짝꿍이 맞아야 하는지 알 것 같았다.
+플러터의 경우에는 응답값과 똑같은 필드를 가진 모델로 반환해야 한다. 만약에 정확하게 받지 못하면, 아무런 값도 받을 수 없다.(심지어 상태값도 말이다.) 플러터로써는 해결 방안을 찾지 못해서 <strong>서버측에서 성공이든 오류든 모두 동일한 형태로 반환하도록 구현해야 했었다.</strong></p><h3 id=response-format>Response Format</h3><p>위에서 1차, 2차를 보면 구체적인 메세지가 없었다. 메세지를 넣지 않은 이유는 클라이언트에게 저런것까지 보여줄 필요가 없다고 생각해서였다. 그러나 앱개발하면서 정보가 없어서 정말 힘들었다. 😥<br>Error Response의 Best Practice를 찾아보니 대부분 자체적인 code와 이를 설명하는 메세지가 포함되어 있었다.<sup id=fnref:1><a href=#fn:1 class=footnote-ref role=doc-noteref>1</a></sup> 이번에 수정한 응답에서는 메세지를 추가하기로 했다.</p><h3 id=에러-상태-타입-1>에러 상태 타입</h3><p>일단 지금까지 사용했던 에러 코드보다 길이를 더 축소시켰다. 그래서 자주 사용하는 상태 코드를 백의 자리로 두고, 1씩 카운트를 추가하면서 에러 코드를 정의했다.
+또한 에러코드에 매핑되는 에러 메세지를 추가함으로써, 동일한 에러 메세지를 반환하도록 했다. 메세지는 정확하게 적지 않고, 문제를 전반적으로 보여줄 수 있도록 작성했다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>const</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// 1xx is Bad Request error code</span>
+</span></span><span class=line><span class=cl>    <span class=nx>InvalidHeader</span> <span class=nx>ErrorCode</span> <span class=p>=</span> <span class=mi>101</span>
+</span></span><span class=line><span class=cl>    <span class=nx>InvalidBody</span>   <span class=nx>ErrorCode</span> <span class=p>=</span> <span class=mi>102</span>
+</span></span><span class=line><span class=cl>    <span class=nx>InvalidQuery</span>  <span class=nx>ErrorCode</span> <span class=p>=</span> <span class=mi>103</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// 2xx is Unauthorized error code</span>
+</span></span><span class=line><span class=cl>    <span class=nx>BadAuthenticationData</span> <span class=nx>ErrorCode</span> <span class=p>=</span> <span class=mi>201</span>
+</span></span><span class=line><span class=cl>    <span class=nx>TokenExpired</span>          <span class=nx>ErrorCode</span> <span class=p>=</span> <span class=mi>202</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>	<span class=o>...</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>var</span> <span class=nx>errorMessage</span> <span class=p>=</span> <span class=kd>map</span><span class=p>[</span><span class=nx>ErrorCode</span><span class=p>]</span><span class=kt>string</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>InvalidHeader</span><span class=p>:</span> <span class=s>&#34;The provided header values are invalid.&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=nx>InvalidBody</span><span class=p>:</span>   <span class=s>&#34;The body of the request is invalid.&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=nx>InvalidQuery</span><span class=p>:</span>  <span class=s>&#34;The query parameters are invalid.&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>	<span class=o>...</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=에러-타입>에러 타입</h3><p><code>netErrorOptions</code> 라는 옵션을 추가시켰는데, 여기에는 서비스의 메타 정보가 포함되어 있다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// NetError have options and ErrorCode that contains status code.</span>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>NetError</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// options is metadata about service    options</span>
+</span></span><span class=line><span class=cl>    <span class=nx>netErrorOptions</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// Type is a unique data that contains http status code.</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Code</span> <span class=nx>ErrorCode</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// Description is an error details.</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Description</span> <span class=kt>string</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// Err is an error message.</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Err</span> <span class=kt>error</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>메타 정보로써 태그가 있는데, 서비스 이름을 문자열로 표시하는 것이다.
+태그는 서버에서 디버깅을 조금더 수월하게 하기 위해서 도입했다. 오류코드가 모두 동일해서 어떤 서비스의 오류인지 명시하는 용도로 사용된다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// netErrorOptions is meta data about service</span>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>netErrorOptions</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// tag is the service name</span>
+</span></span><span class=line><span class=cl>    <span class=nx>tag</span> <span class=kt>string</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>이 태그는 애플리케이션을 시작할때 한번만 설정하도록 함으로써, 모든 NetError가 해당 tag를 가지도록 구현했다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>var</span> <span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=nx>opts</span> <span class=nx>netErrorOptions</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// netErrorOptions is meta data about service</span>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>netErrorOptions</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// tag is the service name</span>
+</span></span><span class=line><span class=cl>    <span class=nx>tag</span> <span class=kt>string</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// SetTag sets the service name</span>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>SetTag</span><span class=p>(</span><span class=nx>tag</span> <span class=kt>string</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>mu</span> <span class=o>:=</span> <span class=nx>sync</span><span class=p>.</span><span class=nx>Mutex</span><span class=p>{}</span>
+</span></span><span class=line><span class=cl>    <span class=nx>mu</span><span class=p>.</span><span class=nf>Lock</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=k>defer</span> <span class=nx>mu</span><span class=p>.</span><span class=nf>Unlock</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nx>opts</span><span class=p>.</span><span class=nx>tag</span> <span class=p>=</span> <span class=nx>tag</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=에러-반환-1>에러 반환</h3><p>에러는 크게 두 가지로 나눠져 있다.</p><ul><li>Status: 응답의 타입 (&ldquo;Success&rdquo; or &ldquo;Error&rdquo;)</li><li>Data : 에러 데이터 혹은 성공 시 반환할 데이터</li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// BaseResponse is common response that use in success and failed</span>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>BaseResponse</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Status</span> <span class=kt>string</span>      <span class=s>`json:&#34;status&#34;`</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Data</span>   <span class=kd>interface</span><span class=p>{}</span> <span class=s>`json:&#34;data&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>다만 생성자를 만들때 성공, 실패 여부를 따로 만들었다. 그 이유는 입력하는 값이 다 달랐기 때문이다.</p><p>성공한 경우 반환하고자 하는 데이터를 Data 필드에 넣기만 하면 된다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>func</span> <span class=nf>NewSuccessBaseResponse</span><span class=p>(</span><span class=nx>data</span> <span class=kd>interface</span><span class=p>{})</span> <span class=o>*</span><span class=nx>BaseResponse</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=o>&amp;</span><span class=nx>BaseResponse</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>       <span class=nx>Status</span><span class=p>:</span> <span class=s>&#34;Success&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>       <span class=nx>Data</span><span class=p>:</span>   <span class=nx>data</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>그러나 오류인 경우는 다르다. 반환할 오류 타입은 형식화되어 있으므로, <code>ErrorResponse</code> 구조체를 따로 만들어서 Data 필드에 저장했다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// ErrorResponse is the error response format</span>
+</span></span><span class=line><span class=cl><span class=kd>type</span> <span class=nx>ErrorResponse</span> <span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Code</span>    <span class=nx>ErrorCode</span> <span class=s>`json:&#34;code&#34;`</span>
+</span></span><span class=line><span class=cl>    <span class=nx>Message</span> <span class=kt>string</span>    <span class=s>`json:&#34;message&#34;`</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>NewErrorBaseResponse</span><span class=p>(</span><span class=nx>data</span> <span class=nx>NetError</span><span class=p>)</span> <span class=o>*</span><span class=nx>BaseResponse</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>res</span> <span class=o>:=</span> <span class=nx>ErrorResponse</span><span class=p>{</span><span class=nx>Code</span><span class=p>:</span> <span class=nx>data</span><span class=p>.</span><span class=nx>Code</span><span class=p>,</span> <span class=nx>Message</span><span class=p>:</span> <span class=nf>GetErrorMsg</span><span class=p>(</span><span class=nx>data</span><span class=p>.</span><span class=nx>Code</span><span class=p>)}</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=o>&amp;</span><span class=nx>BaseResponse</span><span class=p>{</span>
+</span></span><span class=line><span class=cl>       <span class=nx>Status</span><span class=p>:</span> <span class=s>&#34;Error&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>       <span class=nx>Data</span><span class=p>:</span>   <span class=nx>res</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>BaseResponse가 반환되면, 메소드로 응답값을 반환하도록 구현했다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=c1>// Failed response failed formatted response.</span>
+</span></span><span class=line><span class=cl><span class=c1>// It converts NetError to ErrorResponse to extract necessary things.</span>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>b</span> <span class=nx>BaseResponse</span><span class=p>)</span> <span class=nf>Failed</span><span class=p>(</span><span class=nx>ctx</span> <span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Context</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>res</span> <span class=o>:=</span> <span class=nx>b</span><span class=p>.</span><span class=nf>GetErrorData</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=nx>status</span> <span class=o>:=</span> <span class=nf>parseStatusCode</span><span class=p>(</span><span class=nx>res</span><span class=p>.</span><span class=nx>Code</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>ctx</span><span class=p>.</span><span class=nf>AbortWithStatusJSON</span><span class=p>(</span><span class=nx>status</span><span class=p>,</span> <span class=nx>b</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// OKSuccess uses when status code is 200</span>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=p>(</span><span class=nx>b</span> <span class=nx>BaseResponse</span><span class=p>)</span> <span class=nf>OKSuccess</span><span class=p>(</span><span class=nx>ctx</span> <span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Context</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>ctx</span><span class=p>.</span><span class=nf>Header</span><span class=p>(</span><span class=s>&#34;Content-Type&#34;</span><span class=p>,</span> <span class=s>&#34;application/json&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>ctx</span><span class=p>.</span><span class=nf>AbortWithStatusJSON</span><span class=p>(</span><span class=mi>200</span><span class=p>,</span> <span class=nx>b</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=테스트>테스트</h2><p>gin 테스트 사례<sup id=fnref:2><a href=#fn:2 class=footnote-ref role=doc-noteref>2</a></sup>를 참고해서 성공했을 경우의 테스트 코드를 작성해보았다.
+테스트 코드는 테이블 중심 테스트(Table-Driven Test) 방식<sup id=fnref:3><a href=#fn:3 class=footnote-ref role=doc-noteref>3</a></sup>을 채택했다. 단위 테스트가 비슷한 구조로 이뤄져 있는 경우, 테이블 중심 테스트로 수행하면 코드 중복을 피할 수 있어 로직을 변경하거나 새로운 케이스를 추가하기 쉽다는 장점이 있다.
+작성한 테스트 코드에는 테스트 구조가 비슷하고, 라우팅 설정 등 공통된 부분이 많아서 테이블 중심 테스트를 선택하게 되었다.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>func</span> <span class=nf>setupRouter</span><span class=p>()</span> <span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Engine</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>r</span> <span class=o>:=</span> <span class=nx>gin</span><span class=p>.</span><span class=nf>Default</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=nx>r</span><span class=p>.</span><span class=nf>Use</span><span class=p>(</span><span class=nx>errorutils</span><span class=p>.</span><span class=nf>ErrorMiddleware</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=nx>r</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>func</span> <span class=nf>TestSuccessResponse</span><span class=p>(</span><span class=nx>t</span> <span class=o>*</span><span class=nx>testing</span><span class=p>.</span><span class=nx>T</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>r</span> <span class=o>:=</span> <span class=nf>setupRouter</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=nx>res</span> <span class=o>:=</span> <span class=nx>errorutils</span><span class=p>.</span><span class=nf>NewSuccessBaseResponse</span><span class=p>(</span><span class=kc>nil</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// Set table</span>
+</span></span><span class=line><span class=cl>    <span class=nx>tests</span> <span class=o>:=</span> <span class=p>[]</span><span class=kd>struct</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>       <span class=nx>description</span>  <span class=kt>string</span>
+</span></span><span class=line><span class=cl>       <span class=nx>fn</span>           <span class=kd>func</span><span class=p>(</span><span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Context</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>       <span class=nx>expectedCode</span> <span class=kt>int</span>
+</span></span><span class=line><span class=cl>       <span class=nx>path</span>         <span class=kt>string</span>
+</span></span><span class=line><span class=cl>    <span class=p>}{</span>
+</span></span><span class=line><span class=cl>       <span class=p>{</span>
+</span></span><span class=line><span class=cl>          <span class=c1>// Ok Success</span>
+</span></span><span class=line><span class=cl>          <span class=nx>description</span><span class=p>:</span> <span class=s>&#34;OKSuccess&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=nx>fn</span><span class=p>:</span> <span class=kd>func</span><span class=p>(</span><span class=nx>c</span> <span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Context</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>             <span class=nx>res</span><span class=p>.</span><span class=nf>OKSuccess</span><span class=p>(</span><span class=nx>c</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>          <span class=p>},</span>
+</span></span><span class=line><span class=cl>          <span class=nx>expectedCode</span><span class=p>:</span> <span class=mi>200</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=nx>path</span><span class=p>:</span>         <span class=s>&#34;/test/ok&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>       <span class=p>},</span>
+</span></span><span class=line><span class=cl>       <span class=p>{</span>
+</span></span><span class=line><span class=cl>          <span class=c1>// Created Success</span>
+</span></span><span class=line><span class=cl>          <span class=nx>description</span><span class=p>:</span> <span class=s>&#34;CreatedSuccess&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=nx>fn</span><span class=p>:</span> <span class=kd>func</span><span class=p>(</span><span class=nx>c</span> <span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Context</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>             <span class=nx>res</span><span class=p>.</span><span class=nf>CreatedSuccess</span><span class=p>(</span><span class=nx>c</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>          <span class=p>},</span>
+</span></span><span class=line><span class=cl>          <span class=nx>expectedCode</span><span class=p>:</span> <span class=mi>201</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=nx>path</span><span class=p>:</span>         <span class=s>&#34;/test/created&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>       <span class=p>},</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=k>for</span> <span class=nx>_</span><span class=p>,</span> <span class=nx>tc</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>tests</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>       <span class=nx>t</span><span class=p>.</span><span class=nf>Run</span><span class=p>(</span><span class=nx>tc</span><span class=p>.</span><span class=nx>description</span><span class=p>,</span> <span class=kd>func</span><span class=p>(</span><span class=nx>t</span> <span class=o>*</span><span class=nx>testing</span><span class=p>.</span><span class=nx>T</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>          <span class=nx>w</span> <span class=o>:=</span> <span class=nx>httptest</span><span class=p>.</span><span class=nf>NewRecorder</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>          <span class=nx>req</span><span class=p>,</span> <span class=nx>_</span> <span class=o>:=</span> <span class=nx>http</span><span class=p>.</span><span class=nf>NewRequest</span><span class=p>(</span><span class=s>&#34;GET&#34;</span><span class=p>,</span> <span class=nx>tc</span><span class=p>.</span><span class=nx>path</span><span class=p>,</span> <span class=kc>nil</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>          <span class=c1>// Specific handler function and serve</span>
+</span></span><span class=line><span class=cl>          <span class=nx>r</span><span class=p>.</span><span class=nf>GET</span><span class=p>(</span><span class=nx>tc</span><span class=p>.</span><span class=nx>path</span><span class=p>,</span> <span class=nx>tc</span><span class=p>.</span><span class=nx>fn</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>          <span class=nx>r</span><span class=p>.</span><span class=nf>ServeHTTP</span><span class=p>(</span><span class=nx>w</span><span class=p>,</span> <span class=nx>req</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>          <span class=k>if</span> <span class=nx>w</span><span class=p>.</span><span class=nx>Code</span> <span class=o>!=</span> <span class=nx>tc</span><span class=p>.</span><span class=nx>expectedCode</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>             <span class=nx>t</span><span class=p>.</span><span class=nf>Errorf</span><span class=p>(</span><span class=s>&#34;Expected %d, got %d&#34;</span><span class=p>,</span> <span class=nx>tc</span><span class=p>.</span><span class=nx>expectedCode</span><span class=p>,</span> <span class=nx>w</span><span class=p>.</span><span class=nx>Code</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>          <span class=p>}</span>
+</span></span><span class=line><span class=cl>       <span class=p>})</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>테스트 코드를 실행하면 아래와 같은 결과를 얻을 수 있다.</p><p><img src=/image1.png loading=lazy></p><h2 id=마치며>마치며</h2><p>하나의 간단한 CRUD가 있는 서비스 2개를 가지고 코드를 여러번 수정했다. 그 과정에서 다양한 오류를 만났고, 테스트 코드의 중요성도 확실히 알았다.
+특히 이번에 테스트 코드를 작성하면서 오류를 많이 마주 했는데, 이를 재빠르게 수정하면서 테스트의 중요성을 느끼게 되었다.</p><div class=footnotes role=doc-endnotes><hr><ol><li id=fn:1><p><a class=link href=https://pjh3749.tistory.com/273 target=_blank rel=noopener>https://pjh3749.tistory.com/273</a>&#160;<a href=#fnref:1 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li><li id=fn:2><p><a class=link href=https://gin-gonic.com/docs/testing/ target=_blank rel=noopener>https://gin-gonic.com/docs/testing/</a>&#160;<a href=#fnref:2 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li><li id=fn:3><p><a class=link href=https://bugoverdose.github.io/development/go-table-driven-tests/ target=_blank rel=noopener>https://bugoverdose.github.io/development/go-table-driven-tests/</a>&#160;<a href=#fnref:3 class=footnote-backref role=doc-backlink>&#8617;&#xfe0e;</a></p></li></ol></div></section><footer class=article-footer><section class=article-tags><a href=/tags/go/>Go</a>
+<a href=/tags/gin/>Gin</a>
+<a href=/tags/web/>Web</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>Licensed under CC BY-NC-SA 4.0</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/p/gin-error-handling-2/><div class=article-details><h2 class=article-title>Gin 예외처리 - 2. 커스텀 예외처리</h2></div></a></article><article><a href=/p/gin-error-handling-1/><div class=article-details><h2 class=article-title>Gin 예외처리 - 1. Go Error</h2></div></a></article><article><a href=/p/todopoint-final-review/><div class=article-details><h2 class=article-title>왜 TodoPoint 프로젝트를 실패했는가?</h2></div></a></article><article><a href=/p/entgo-1/><div class=article-details><h2 class=article-title>Entgo - Ent ORM</h2></div></a></article><article><a href=/p/go-db-migration/><div class=article-details><h2 class=article-title>Go-DB에 마그이션하기</h2></div></a></article></div></div></aside><footer class=site-footer><section class=copyright>&copy;
+2024 -
+2025 S0okJu.dev</section><section class=powerby>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>
