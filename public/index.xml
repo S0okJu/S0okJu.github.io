@@ -209,7 +209,7 @@ hexactf 내에 있는 애플리케이션은 모두 하나의 Helm으로 배포�
 </description>
         </item>
         <item>
-        <title>HexaCTF 13 Awards. 12개의 HexaCTF 글에게 상을 줍시다.</title>
+        <title>HexaCTF Awards. 12개의 HexaCTF 글에게 상을 줍시다.</title>
         <link>http://localhost:1313/p/hexactf-awards/</link>
         <pubDate>Sun, 16 Mar 2025 00:00:00 +0900</pubDate>
         
@@ -451,8 +451,8 @@ HexaCTF 시리즈는 제가 프로젝트를 하면서 작성한 글입니다. �
 		data-flex-basis=&#34;303px&#34;
 	
 &gt;&lt;/p&gt;
-&lt;p&gt;아이디어 실천상
-나름 만족한 아이디어를 실천한 글에게 주는 상입니다.&lt;/p&gt;
+&lt;h3 id=&#34;아이디어-실천상&#34;&gt;아이디어 실천상
+&lt;/h3&gt;&lt;p&gt;나름 만족한 아이디어를 실천한 글에게 주는 상입니다.&lt;/p&gt;
 &lt;p&gt;&lt;img src=&#34;http://localhost:1313/p/hexactf-awards/image-10.png&#34;
 	width=&#34;800&#34;
 	height=&#34;638&#34;
