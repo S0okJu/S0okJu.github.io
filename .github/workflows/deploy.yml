@@ -1,51 +1,105 @@
-name: Deploy to Github Pages
+name: Deploy site
 
 on:
-    push:
-        branches: [main]
-    pull_request:
-        branches: [main]
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - "assets/**"
+      - "_sass/**"
+      - "_scripts/**"
+      - "**.bib"
+      - "**.html"
+      - "**.js"
+      - "**.liquid"
+      - "**/*.md"
+      - "**.yml"
+      - "Gemfile"
+      - "Gemfile.lock"
+      - "!.github/workflows/axe.yml"
+      - "!.github/workflows/broken-links.yml"
+      - "!.github/workflows/deploy-docker-tag.yml"
+      - "!.github/workflows/deploy-image.yml"
+      - "!.github/workflows/docker-slim.yml"
+      - "!.github/workflows/lighthouse-badger.yml"
+      - "!.github/workflows/prettier.yml"
+      - "!lighthouse_results/**"
+      - "!CONTRIBUTING.md"
+      - "!CUSTOMIZE.md"
+      - "!FAQ.md"
+      - "!INSTALL.md"
+      - "!README.md"
+  pull_request:
+    branches:
+      - master
+      - main
+    paths:
+      - "assets/**"
+      - "_sass/**"
+      - "_scripts/**"
+      - "**.bib"
+      - "**.html"
+      - "**.js"
+      - "**.liquid"
+      - "**/*.md"
+      - "**.yml"
+      - "Gemfile"
+      - "Gemfile.lock"
+      - "!.github/workflows/axe.yml"
+      - "!.github/workflows/broken-links.yml"
+      - "!.github/workflows/deploy-docker-tag.yml"
+      - "!.github/workflows/deploy-image.yml"
+      - "!.github/workflows/docker-slim.yml"
+      - "!.github/workflows/lighthouse-badger.yml"
+      - "!.github/workflows/prettier.yml"
+      - "!lighthouse_results/**"
+      - "!CONTRIBUTING.md"
+      - "!CUSTOMIZE.md"
+      - "!FAQ.md"
+      - "!INSTALL.md"
+      - "!README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-
-        permissions:
-            # Give the default GITHUB_TOKEN write permission to commit and push the
-            # added or changed files to the repository.
-            contents: write
-
-        steps:
-            - uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            
-            - name: Cache Hugo resources
-              uses: actions/cache@v4
-              env:
-                  cache-name: cache-hugo-resources
-              with:
-                  path: resources
-                  key: ${{ env.cache-name }}
-
-            - uses: actions/setup-go@v5
-              with:
-                  go-version: "^1.17.0"
-            - run: go version
-
-            - name: Setup Hugo
-              uses: peaceiris/actions-hugo@v2
-              with:
-                  hugo-version: "latest"
-                  extended: true
-
-            - name: Build
-              run: hugo --minify --gc
-
-            - name: Deploy 🚀
-              uses: JamesIves/github-pages-deploy-action@v4
-              with:
-                  branch: gh-pages
-                  folder: public
-                  clean: true
-                  single-commit: true
+  deploy:
+    # available images: https://github.com/actions/runner-images#available-images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+      - name: Setup Ruby 💎
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3.5"
+          bundler-cache: true
+      - name: Setup Python 🐍
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip" # caching pip dependencies
+      - name: Update _config.yml ⚙️
+        uses: fjogeleit/yaml-update-action@main
+        with:
+          commitChange: false
+          valueFile: "_config.yml"
+          propertyPath: "giscus.repo"
+          value: ${{ github.repository }}
+      - name: Install and Build 🔧
+        run: |
+          sudo apt-get update && sudo apt-get install -y imagemagick
+          pip3 install --upgrade nbconvert
+          export JEKYLL_ENV=production
+          bundle exec jekyll build
+      - name: Purge unused CSS 🧹
+        run: |
+          npm install -g purgecss
+          purgecss -c purgecss.config.js
+      - name: Deploy 🚀
+        if: github.event_name != 'pull_request'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: _site
