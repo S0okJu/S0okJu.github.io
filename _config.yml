@@ -200,7 +200,7 @@ plugins:
   - jekyll-feed
   - jekyll-get-json
   - jekyll-imagemagick
-  - jekyll-jupyter-notebook
+  # - jekyll-jupyter-notebook
   - jekyll-link-attributes
   - jekyll-minifier
   - jekyll-paginate-v2
@@ -210,7 +210,7 @@ plugins:
   - jekyll-tabs
   - jekyll-terser
   - jekyll-toc
-  - jekyll-twitter-plugin
+  # - jekyll-twitter-plugin
   - jemoji
 
 # Sitemap settings
