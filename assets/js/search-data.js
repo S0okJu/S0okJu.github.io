@@ -7,42 +7,42 @@ ninja.data = [{
     title: "about",
     section: "Navigation",
     handler: () => {
-      window.location.href = "/al-folio/";
+      window.location.href = "/whoami/";
     },
   },{id: "nav-group",
           title: "group",
           description: "members of the lab or group",
           section: "Navigation",
           handler: () => {
-            window.location.href = "/al-folio/group/";
+            window.location.href = "/whoami/group/";
           },
         },{id: "nav-projects",
           title: "projects",
           description: "A growing collection of your cool projects.",
           section: "Navigation",
           handler: () => {
-            window.location.href = "/al-folio/projects/";
+            window.location.href = "/whoami/projects/";
           },
         },{id: "nav-repositories",
           title: "repositories",
           description: "Edit the `_data/repositories.yml` and change the `github_users` and `github_repos` lists to include your own GitHub profile and repositories.",
           section: "Navigation",
           handler: () => {
-            window.location.href = "/al-folio/repositories/";
+            window.location.href = "/whoami/repositories/";
           },
         },{id: "nav-cv",
           title: "cv",
           description: "",
           section: "Navigation",
           handler: () => {
-            window.location.href = "/al-folio/cv/";
+            window.location.href = "/whoami/cv/";
           },
         },{id: "nav-blog",
           title: "blog",
           description: "",
           section: "Navigation",
           handler: () => {
-            window.location.href = "/al-folio/blog/";
+            window.location.href = "/whoami/blog/";
           },
         },{id: "post-서버-구축기-part-5-openstack을-설치하면서-마주한-오류들",
         
@@ -158,7 +158,7 @@ ninja.data = [{
           title: 'The Godfather',
           description: "",
           section: "Books",handler: () => {
-              window.location.href = "/al-folio/books/the_godfather/";
+              window.location.href = "/whoami/books/the_godfather/";
             },},{id: "news-first-announcement",
           title: 'First announcement!',
           description: "",
@@ -166,12 +166,12 @@ ninja.data = [{
           title: 'HexaCTF Challenge Controller',
           description: "Kubernetes Operator and API",
           section: "Projects",handler: () => {
-              window.location.href = "/al-folio/projects/hexactf/";
+              window.location.href = "/whoami/projects/hexactf/";
             },},{id: "projects-pyclassanalyzer",
           title: 'pyclassanalyzer',
           description: "pyclassanalyzer automatically analyzes the class structure of a Python project and exports the result as a diagram.",
           section: "Projects",handler: () => {
-              window.location.href = "/al-folio/projects/pyclassanalyzer/";
+              window.location.href = "/whoami/projects/pyclassanalyzer/";
             },},{
         id: 'social-email',
         title: 'email',
