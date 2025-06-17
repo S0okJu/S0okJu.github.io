@@ -1,4 +1,4 @@
 User-agent: *
 Disallow:
 
-Sitemap: https://s0okju.github.io//whoami/sitemap.xml
+Sitemap: https://s0okju.github.io/sitemap.xml
