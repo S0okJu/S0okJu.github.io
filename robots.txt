@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://S0okJu.github.io/al-folio/sitemap.xml
