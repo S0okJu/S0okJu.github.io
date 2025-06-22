@@ -162,9 +162,9 @@ ninja.data = [{
             },},{id: "news-first-announcement",
           title: 'First announcement!',
           description: "",
-          section: "News",},{id: "projects-hexactf-challenge-controller",
-          title: 'HexaCTF Challenge Controller',
-          description: "Kubernetes Operator and API",
+          section: "News",},{id: "projects-sample",
+          title: 'sample',
+          description: "sample",
           section: "Projects",handler: () => {
               window.location.href = "/projects/hexactf/";
             },},{id: "projects-pyclassanalyzer",
@@ -172,6 +172,11 @@ ninja.data = [{
           description: "pyclassanalyzer automatically analyzes the class structure of a Python project and exports the result as a diagram.",
           section: "Projects",handler: () => {
               window.location.href = "/projects/pyclassanalyzer/";
+            },},{id: "projects-sample2",
+          title: 'sample2',
+          description: "sample2",
+          section: "Projects",handler: () => {
+              window.location.href = "/projects/sample/";
             },},{
         id: 'social-email',
         title: 'email',
