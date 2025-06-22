@@ -1,0 +1,64 @@
+{% assign status_order = "on track,maintenance,done,stopped,failed,unknown" | split: "," %}
+
+{% for status in status_order %}
+  {% assign projects_by_status = include.projects | where: "status", status %}
+  {% if projects_by_status.size > 0 %}
+    <div class="status-group">
+      <div class="status-group-header">
+        <span class="status-label {{ status | replace: ' ', '-' }}">
+          {% case status %}
+            {% when "on track" %}
+              <span class="status-label on-track"><i class="fa-solid fa-circle-dot" style="color:#28a745"></i> On track</span>
+            {% when "done" %}
+              <span class="status-label done"><i class="fa-solid fa-circle-check" style="color:#0969da"></i> Done</span>
+            {% when "maintenance" %}
+              <span class="status-label maintenance"><i class="fa-solid fa-screwdriver-wrench" style="color:#dbab09"></i> Maintenance</span>
+            {% when "stopped" %}
+              <span class="status-label stopped"><i class="fa-solid fa-circle-xmark" style="color:#d73a49"></i> Stopped</span>
+            {% when "failed" %}
+              <span class="status-label failed"><i class="fa-solid fa-ban" style="color:#d73a49"></i> Failed</span>
+            {% else %}
+              <span class="status-label unknown"><i class="fa-solid fa-circle" style="color:#6a737d"></i> Unknown</span>
+          {% endcase %}
+        </span>
+      </div>
+      <ul class="project-list">
+        {% assign seen_titles = "" %}
+        {% for project in projects_by_status %}
+          {% unless seen_titles contains project.title %}
+            {% assign seen_titles = seen_titles | append: project.title | append: "|" %}
+            <li class="project-item">
+              <div class="project-info">
+                <div class="project-header">
+                  <div class="project-title-row">
+                    <a class="title-link" href="{% if project.redirect %}{{ project.redirect }}{% else %}{{ project.url | relative_url }}{% endif %}">
+                      {{ project.title }}
+                    </a>
+                    {% if project.category %}
+                      <span class="badge">{{ project.category }}</span>
+                    {% endif %}
+                  </div>
+                  {% if project.startDate or project.endDate %}
+                    <div class="project-dates">
+                      {{ project.startDate | default: "?" }} - {{ project.endDate | default: "?" }}
+                    </div>
+                  {% endif %}
+                </div>
+                <div class="project-description">
+                  {{ project.description }}
+                </div>
+                <div class="project-meta">
+                  {% if project.github %}
+                    <a href="{{ project.github }}" class="github-link" target="_blank" rel="noopener">
+                      <i class="fa-brands fa-github"></i>
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+            </li>
+          {% endunless %}
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% endfor %}

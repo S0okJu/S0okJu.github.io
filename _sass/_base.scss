@@ -1422,3 +1422,240 @@ figure.cover {
     color: #23212d !important;
   }
 }
+
+/* Project List*/
+
+
+// .project-list {
+//   list-style: none;
+//   padding: 0;
+//   margin: 0;
+// }
+
+// .project-item {
+//   background: #fff;
+//   border-radius: 10px;
+//   box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+//   margin-bottom: 2rem;
+//   padding: 1.3rem 1.5rem;
+//   border: 1px solid #e5e8ed;
+//   transition: box-shadow 0.2s;
+// }
+// .project-item:hover {
+//   box-shadow: 0 4px 16px 0 rgba(0,85,170,0.10);
+//   border-color: #b3d1ee;
+// }
+
+// .project-header {
+//   display: flex;
+//   flex-direction: column;
+//   align-items: flex-start;
+// }
+
+// .project-title-row {
+//   display: flex;
+//   align-items: center;
+//   gap: 0.6rem;
+//   margin-bottom: 0.3rem;
+// }
+
+// .project-status i {
+//   font-size: 1.25rem;
+//   vertical-align: middle;
+// }
+
+// .title-link {
+//   font-size: 1.3rem;
+//   font-weight: 700;
+//   color: #003366;
+//   text-decoration: none;
+//   border-bottom: 2px solid transparent;
+//   transition: color 0.2s, border-bottom-color 0.2s;
+//   line-height: 1.2;
+// }
+// .title-link:hover,
+// .title-link:focus {
+//   color: #0055aa;
+//   border-bottom-color: #0055aa;
+// }
+
+// .badge {
+//   background: #e0e7ef;
+//   color: #0055aa;
+//   font-size: 0.85em;
+//   font-weight: 600;
+//   border-radius: 0.75em;
+//   padding: 0.15em 0.7em;
+//   margin-left: 0.2em;
+//   display: inline-block;
+//   vertical-align: middle;
+//   letter-spacing: 0.02em;
+// }
+
+// .project-dates {
+//   font-size: 0.98rem;
+//   color: #888;
+//   margin-bottom: 0.2rem;
+// }
+
+// .project-description {
+//   font-size: 1rem;
+//   color: #333;
+//   margin-bottom: 0.6rem;
+//   line-height: 1.5;
+// }
+
+// .project-meta {
+//   display: flex;
+//   align-items: center;
+//   gap: 0.4rem;
+//   font-size: 1rem;
+// }
+
+// .github-link {
+//   color:#0055aa;
+// }
+
+body {
+  font-family: 'Segoe UI', 'Apple SD Gothic Neo', Arial, sans-serif;
+  background: #fff;
+  color: #222;
+  margin: 0;
+  padding: 0;
+}
+
+.status-group {
+  border: 2px solid #e5e8ed;
+  border-radius: 12px;
+  margin-bottom: 2.2rem;
+  padding: 1.2rem 1.5rem 0.7rem 1.5rem;
+  background: transparent;
+}
+
+.status-group-header {
+  font-weight: 700;
+  font-size: 1.08rem;
+  margin-bottom: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+}
+
+.status-label,
+.status-label.on-track,
+.status-label.done,
+.status-label.stopped,
+.status-label.failed,
+.status-label.maintenance,
+.status-label.unknown {
+  font-weight: 700;
+  font-size: 1.08rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.status-label.on-track    { color: #28a745; }
+.status-label.done        { color: #0969da; }
+.status-label.stopped,
+.status-label.failed      { color: #d73a49; }
+.status-label.maintenance { color: #dbab09; }
+.status-label.unknown     { color: #888; }
+
+.status-label i {
+  color: inherit !important;
+  margin-right: 0.3em;
+}
+
+/* 상태별 박스 테두리 색상도 맞추고 싶다면 */
+.status-group.on-track    { border-color: #28a745; }
+.status-group.done        { border-color: #0969da; }
+.status-group.stopped,
+.status-group.failed      { border-color: #d73a49; }
+.status-group.maintenance { border-color: #dbab09; }
+.status-group.unknown     { border-color: #888; }
+
+.status-group-header,
+.project-info {
+  padding-left: 9px;
+}
+
+.project-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.project-item {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  margin-bottom: 0.4rem;
+  padding: 0.6rem 0.6rem 0.6rem 2rem; /* 왼쪽 패딩을 2rem 등으로 넉넉하게 */
+  transition: background 0.2s;
+}
+
+.project-item:hover {
+  background-color: #f6f8fa;
+  border-radius: 0.7rem;
+}
+
+.project-header {
+  margin-bottom: 0.6rem;
+}
+
+.project-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.12rem;
+}
+.project-dates {
+  margin-bottom: 0.18rem;
+  color:#888
+}
+.project-description {
+  margin-bottom: 0.25rem;
+  color: #404040;
+}
+.project-meta {
+  margin-top: 0.18rem;
+}
+.title-link {
+  color: #404040;
+  font-weight: 700;
+  font-size: 1.2rem;
+  border-bottom: 0.75px solid transparent;
+  transition: color 0.2s, border-bottom-color 0.2s;
+}
+.title-link:hover,
+.title-link:focus {
+  color: #707070;
+  border-bottom-color: #707070;
+}
+
+.github-link {
+  color: #404040;
+  font-size: 1.33rem;
+  transition: color 0.2s;
+}
+.github-link:hover {
+  color: #707070;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.04em 0.55em;
+  font-size: 0.86em;
+  font-weight: 700;
+  color: #2563eb;
+  background: transparent;
+  border: 1.2px solid currentColor;
+  border-radius: 500px;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  vertical-align: middle;
+  margin-left: 0.18em;
+  user-select: none;
+}
